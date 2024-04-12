@@ -16,13 +16,16 @@ log_file_handler = logging.handlers.RotatingFileHandler(
     config.LOG_FILE, mode='a', maxBytes=300*1024, backupCount=2)
 log_file_handler.setFormatter(logging.Formatter(config.LOG_FORMAT))
 log_file_handler.setLevel(config.LOG_LEVEL)
+log_handlers = [
+    log_file_handler
+]
+if config.LOG_LEVEL == logging.DEBUG:
+    log_handlers.append(logging.StreamHandler())
+
 logging.basicConfig(
     level=config.LOG_LEVEL,
     format=config.LOG_FORMAT,
-    handlers=[
-        log_file_handler,
-        logging.StreamHandler()
-    ]
+    handlers=log_handlers
 )
 
 
