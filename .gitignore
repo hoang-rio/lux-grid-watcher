@@ -1,3 +1,5 @@
 venv/
 *.log
 __pycache__
+*.ini
+.env
