@@ -1,3 +1,4 @@
+import logging.handlers
 import pychromecast
 import requests
 from config import BASE_URL, ACCOUNT, PASSWORD, SLEEP_TIME, USER_AGENT, SERIAL_NUM
@@ -5,30 +6,51 @@ import config
 import logging
 import time
 from os import path
+WAIT_MAP = {
+    "has-grid.mp3": 6,
+    "lost-grid.mp3": 9,
+}
 
 logger = logging.getLogger(__file__)
+log_file_handler = logging.handlers.RotatingFileHandler(
+    config.LOG_FILE, mode='a', maxBytes=300*1024, backupCount=2)
+log_file_handler.setFormatter(logging.Formatter(config.LOG_FORMAT))
+log_file_handler.setLevel(config.LOG_LEVEL)
 logging.basicConfig(
     level=config.LOG_LEVEL,
     format=config.LOG_FORMAT,
     handlers=[
-        logging.FileHandler(config.LOG_FILE),
+        log_file_handler,
         logging.StreamHandler()
     ]
 )
 
 
-def play_audio(audio_file: str):
+def play_audio(audio_file: str, repeat=3):
     chromecast, _ = pychromecast.get_listed_chromecasts([config.DEVICE_NAME])
     if len(chromecast) > 0:
         cast = chromecast[0]
-        logger.info("Cast info: %s", cast.cast_info)
+        logger.debug("Cast info: %s", cast.cast_info)
         cast.wait()
-        logger.info("Cast status: %s", cast.status)
+        logger.debug("Cast status: %s", cast.status)
         mediaController = cast.media_controller
-        mediaController.play_media(
-            f"{config.AUDIO_BASE_URL}/{audio_file}", "audio/mp3")
-        mediaController.block_until_active()
-        logger.info("MediaControler status: %s", mediaController.status)
+        logger.info(
+            "Playing %s on %s %s times repeat",
+            audio_file,
+            config.DEVICE_NAME,
+            repeat
+        )
+        while repeat > 0:
+            mediaController.play_media(
+                f"{config.AUDIO_BASE_URL}/{audio_file}", "audio/mp3")
+            mediaController.block_until_active()
+            repeat = repeat - 1
+            logger.info("Play time remaining: %s", repeat)
+            if repeat > 0:
+                logger.info("Wating for %s second before repeat",
+                            WAIT_MAP[audio_file])
+            time.sleep(WAIT_MAP[audio_file])
+        logger.debug("MediaControler status: %s", mediaController.status)
     else:
         logger.info("No device to play audio")
 
@@ -46,7 +68,8 @@ def get_run_time_data(session: requests.Session, retry_count=0):
         )
         res_json = req.json()
         logger.debug("All run time data response: %s", res_json)
-        is_grid_connected = res_json["fac"] > 0
+        is_grid_connected = res_json['fac'] > 0
+        # is_grid_connected = True
         if not is_grid_connected:
             logger.warning("_________Inverter disconnected from GRID_________")
         else:
@@ -61,7 +84,10 @@ def get_run_time_data(session: requests.Session, retry_count=0):
             with open(config.STATE_FILE, 'r') as f:
                 last_grid_connected = f.read() == "True"
         if last_grid_connected != is_grid_connected:
-            play_audio("has-grid.mp3" if is_grid_connected else "lost-grid.mp3")
+            if is_grid_connected:
+                play_audio("has-grid.mp3")
+            else:
+                play_audio("lost-grid.mp3", 5)
             with open(config.STATE_FILE, "w") as fw:
                 fw.write(str(is_grid_connected))
         else:
