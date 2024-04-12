@@ -74,10 +74,13 @@ def get_run_time_data(session: requests.Session, retry_count=0):
         is_grid_connected = res_json['fac'] > 0
         # is_grid_connected = True
         if not is_grid_connected:
-            logger.warning("_________Inverter disconnected from GRID_________")
+            logger.warning(
+                "_________Inverter disconnected from GRID since %s_________",
+                res_json['deviceTime'],
+            )
         else:
             logger.info(
-                "__GRID currently connected at deviceTime: %s with fac: %s Hz and vacr: %s V",
+                "__Inverter currently connected to GRID at deviceTime: %s with fac: %s Hz and vacr: %s V",
                 res_json['deviceTime'],
                 int(res_json['fac']) / 100,
                 int(res_json['vacr']) / 10,
