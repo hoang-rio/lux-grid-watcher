@@ -15,7 +15,7 @@ config = {
     **dotenv_values(".env"),
     **environ
 }
-log_level = logging.DEBUG if bool(config["IS_DEBUG"]) else logging.INFO
+log_level = logging.DEBUG if config["IS_DEBUG"] == 'True' else logging.INFO
 
 logger = logging.getLogger(__file__)
 log_file_handler = logging.handlers.RotatingFileHandler(
