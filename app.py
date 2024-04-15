@@ -5,6 +5,8 @@ import requests
 import logging
 import time
 from os import path, environ
+import socket_client
+import struct
 
 AUDIO_SLEEP_MAP = {
     "has-grid.mp3": 6,
@@ -129,10 +131,16 @@ def login(session: requests.Session):
 def main():
     session: requests.Session = requests.Session()
     try:
-        login(session)
+        # login(session)
+        client = socket_client.connect(
+            config["DOGGLE_TCP_HOST"], int(config["DOGGLE_TCP_PORT"]))
         while True:
-            get_run_time_data(session)
-            time.sleep(int(config["SLEEP_TIME"]))
+            client.send(bytes(0xc1))
+            data = client.recv(1024)
+            print("Server: ", data)
+            print("Server unpacked", struct.unpack('B', data[0:1]))
+            # get_run_time_data(session)
+            # time.sleep(int(config["SLEEP_TIME"]))
     except Exception as e:
         logger.exception("Got error when run main %s", e)
         exit(1)
