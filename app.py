@@ -4,14 +4,17 @@ import pychromecast
 import requests
 import logging
 import time
-from os import path
+from os import path, environ
 
 AUDIO_SLEEP_MAP = {
     "has-grid.mp3": 6,
     "lost-grid.mp3": 9,
 }
 
-config = dotenv_values(".env")
+config = {
+    **dotenv_values(".env"),
+    **environ
+}
 log_level = logging.DEBUG if bool(config["IS_DEBUG"]) else logging.INFO
 
 logger = logging.getLogger(__file__)
