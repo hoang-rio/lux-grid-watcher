@@ -1,3 +1,4 @@
 requests
 pychromecast
 python-dotenv
+google-auth

@@ -3,7 +3,10 @@ from os import path
 import json
 import requests
 import requests.auth
+import google
+from google.oauth2 import service_account
 
+SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"]
 
 class FCM():
     __config: dict
@@ -14,7 +17,14 @@ class FCM():
         self.__logger = logger
 
     def _get_access_token(self):
-        return ""
+        """Retrieve a valid access token that can be used to authorize requests.
+        :return: Access token.
+        """
+        credentials = service_account.Credentials.from_service_account_file(
+            self.__config["FCM_ADMIN_KEY_FILE"], scopes=SCOPES)
+        request = google.auth.transport.requests.Request()
+        credentials.refresh(request)
+        return credentials.token
 
     def __get_devices(self):
         if path.exists(self.__config["DEVICE_IDS_JSON_FILE"]):
@@ -23,12 +33,19 @@ class FCM():
         return []
 
     def __send_notify(self, title: str, body: str, devices: list[str]):
+        if not path.exists(self.__config["FCM_ADMIN_KEY_FILE"]):
+            self.__logger.warning("Missing FCM_ADMIN_KEY_FILE")
+            return
+        if 'FCM_PROJECT' not in self.__config or self.__config["FCM_PROJECT"] == "":
+            self.__logger.warning("Missing FCM_PROJECT")
+            return
         self.__logger.debug(
             "Send notify with title: %s and body: %s to %s devices", title, body, len(devices))
         requests.post(
-            "https://fcm.googleapis.com/v1/projects/chiasenhac-c845e/messages:send",
+            f"https://fcm.googleapis.com/v1/projects/{self.__config['FCM_PROJECT']}/messages:send",
             body=json.dumps({
                 "message": {
+                    "topic": "grid",
                     "notification": {
                         "title": title,
                         "body": body
@@ -36,9 +53,9 @@ class FCM():
                     "data": {
                         "title": title,
                         "body": body
-                    }
+                    },
+                    "tokens": devices,
                 },
-                "tokens": devices,
             }),
             headers={
                 'Authorization': 'Bearer ' + self._get_access_token(),
