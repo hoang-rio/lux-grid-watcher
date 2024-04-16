@@ -22,7 +22,7 @@ log_level = logging.DEBUG if config["IS_DEBUG"] == 'True' else logging.INFO
 
 logger = logging.getLogger(__file__)
 log_file_handler = logging.handlers.RotatingFileHandler(
-    config["LOG_FILE"], mode='a', maxBytes=300*1024, backupCount=2)
+    config["LOG_FILE"], mode='a', maxBytes=500*1024, backupCount=3)
 log_file_handler.setFormatter(logging.Formatter(config["LOG_FORMAT"]))
 log_file_handler.setLevel(log_level)
 log_handlers = [
