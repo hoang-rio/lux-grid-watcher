@@ -95,7 +95,7 @@ def handle_grid_status(json_data: dict):
         with open(config["STATE_FILE"], "w") as fw:
             fw.write(str(is_grid_connected))
     else:
-        logger.info("State did not change. Skip play notify auto")
+        logger.info("State did not change. Skip play notify audio")
 
 
 def main():
