@@ -13,7 +13,7 @@ class Http():
         self.__session = requests.Session()
         self.login()
 
-    def get_run_time_data(self, retry_count=0):
+    def get_run_time_data(self, retry_count=0) -> dict | None:
         try:
             self.__logger.info("Start get runtime data")
             req = self.__session.post(

@@ -76,6 +76,7 @@ def handle_grid_status(json_data: dict):
             "_________Inverter disconnected from GRID since %s_________",
             json_data['deviceTime'],
         )
+        logger.warning("All json data: %s", json_data)
     else:
         logger.info(
             "__Inverter currently connected to GRID at deviceTime: %s with fac: %s Hz and vacr: %s V",
@@ -106,7 +107,8 @@ def main():
             dongle = dongle_handler.Dongle(logger, config)
             while True:
                 inverter_data = dongle.get_dongle_input()
-                handle_grid_status(inverter_data)
+                if inverter_data is not None:
+                    handle_grid_status(inverter_data)
                 logger.info("Wating for %s second before next check",
                             config["SLEEP_TIME"])
                 time.sleep(int(config["SLEEP_TIME"]))

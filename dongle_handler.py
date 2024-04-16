@@ -16,7 +16,7 @@ class Dongle():
             config["DONGLE_TCP_HOST"], int(config["DONGLE_TCP_PORT"]))
         self.__logger = logger
 
-    def get_dongle_input(self):
+    def get_dongle_input(self) -> dict | None:
         # TCP Header to dataTranslated readInput1
         msg = [161, 26, 1, 0, 32, 0, 1, 194]
         dongle_serial_arr = bytearray(
@@ -34,11 +34,15 @@ class Dongle():
         self.__client.send(bytes(msg))
         data = self.__client.recv(1024)
         self.__logger.debug("Server: %s", list(data))
-        parsed_data = Dongle.readInput1(list(data))
-        self.__logger.debug("Parsed data: %s", parsed_data)
-        parsed_data['deviceTime'] = datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S")
-        return parsed_data
+        if Dongle.toInt(data[32:34]) == 0:
+            parsed_data = Dongle.readInput1(list(data))
+            self.__logger.debug("Parsed data: %s", parsed_data)
+            parsed_data['deviceTime'] = datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S")
+            return parsed_data
+        else:
+            self.__logger.info("Not Input1 data. Skip")
+            return None
 
     @staticmethod
     def toInt(ints: list[int]):
