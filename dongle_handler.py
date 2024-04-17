@@ -36,7 +36,7 @@ class Dongle():
             self.__client.send(bytes(msg))
             data = self.__client.recv(1024)
             self.__logger.debug("Server: %s", list(data))
-            if Dongle.toInt(data[32:34]) == 0:
+            if data[0] != 0 and Dongle.toInt(data[32:34]) == 0:
                 parsed_data = Dongle.readInput1(list(data))
                 self.__logger.debug("Parsed data: %s", parsed_data)
                 parsed_data['deviceTime'] = datetime.now().strftime(
