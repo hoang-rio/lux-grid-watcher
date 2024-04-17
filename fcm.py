@@ -27,6 +27,10 @@ class FCM():
         credentials.refresh(request)
         return credentials.token
 
+    def __save_device(self, devices: list[str]):
+        with open(self.__config["DEVICE_IDS_JSON_FILE"], "w") as fw:
+            fw.write(json.dumps(devices))
+
     def __get_devices(self):
         if path.exists(self.__config["DEVICE_IDS_JSON_FILE"]):
             with open(self.__config["DEVICE_IDS_JSON_FILE"], "r") as fr:
@@ -43,6 +47,7 @@ class FCM():
         self.__logger.info(
             "Send notify with title: %s and body: %s to %s devices", title, body, len(devices))
         access_token = self._get_access_token()
+        valid_devices = []
         for device in devices:
             req = requests.post(
                 f"https://fcm.googleapis.com/v1/projects/{self.__config['FCM_PROJECT']}/messages:send",
@@ -65,9 +70,13 @@ class FCM():
                     'Content-Type': 'application/json; UTF-8',
                 }
             )
+            if (req.status_code == 200):
+                valid_devices.append(device)
             self.__logger.info("FCM send to device: %s", device)
             self.__logger.info("FCM Status code: %s", req.status_code)
             self.__logger.info("FCM Result: %s", req.text)
+        if len(devices) != len(valid_devices):
+            self.__save_device(valid_devices)
 
     def ongrid_notify(self):
         self.__logger.info("ON: Start send notify")
