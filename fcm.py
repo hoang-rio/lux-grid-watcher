@@ -62,6 +62,18 @@ class FCM():
                             "body": body,
                             "is_grid_connected": "1" if is_grid_connected else "0"
                         },
+                        "android": {
+                            "priority": "HIGH",
+                            "direct_boot_ok": True,
+                            "notification": {
+                                "channel_id": "111",
+                                "notification_priority": "PRIORITY_HIGH",
+                                "visibility": "PUBLIC",
+                                "default_sound": True,
+                                "default_vibrate_timings": True,
+                                "default_light_settings": True,
+                            },
+                        },
                         "token": device,
                     },
                 },
