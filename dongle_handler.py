@@ -17,31 +17,36 @@ class Dongle():
         self.__logger = logger
 
     def get_dongle_input(self) -> dict | None:
-        # TCP Header to dataTranslated readInput1
-        msg = [161, 26, 1, 0, 32, 0, 1, 194]
-        dongle_serial_arr = bytearray(
-            str(self.__config["DONGLE_SERIAL"]).encode())
-        # Dongle SERIAL
-        msg.extend(dongle_serial_arr)
-        # msg.extend([66, 65, 51, 50, 56, 48, 49, 49, 54, 52])
-        msg.extend([18, 0, 0, 4])
-        # INVERTER SERIAL
-        invert_serial_arr = bytearray(
-            str(self.__config["INVERT_SERIAL"]).encode())
-        msg.extend(invert_serial_arr)
-        # msg.extend([51, 53, 48, 51, 54, 56, 48, 49, 54, 49])
-        msg.extend([0, 0, 40, 0, 226, 149])
-        self.__client.send(bytes(msg))
-        data = self.__client.recv(1024)
-        self.__logger.debug("Server: %s", list(data))
-        if Dongle.toInt(data[32:34]) == 0:
-            parsed_data = Dongle.readInput1(list(data))
-            self.__logger.debug("Parsed data: %s", parsed_data)
-            parsed_data['deviceTime'] = datetime.now().strftime(
-                "%Y-%m-%d %H:%M:%S")
-            return parsed_data
-        else:
-            self.__logger.info("Not Input1 data. Skip")
+        try:
+            # TCP Header to dataTranslated readInput1
+            msg = [161, 26, 1, 0, 32, 0, 1, 194]
+            dongle_serial_arr = bytearray(
+                str(self.__config["DONGLE_SERIAL"]).encode())
+            # Dongle SERIAL
+            msg.extend(dongle_serial_arr)
+            # msg.extend([66, 65, 51, 50, 56, 48, 49, 49, 54, 52])
+            msg.extend([18, 0, 0, 4])
+            # INVERTER SERIAL
+            invert_serial_arr = bytearray(
+                str(self.__config["INVERT_SERIAL"]).encode())
+            msg.extend(invert_serial_arr)
+            # msg.extend([51, 53, 48, 51, 54, 56, 48, 49, 54, 49])
+            msg.extend([0, 0, 40, 0, 226, 149])
+            self.__client.send(bytes(msg))
+            data = self.__client.recv(1024)
+            self.__logger.debug("Server: %s", list(data))
+            if Dongle.toInt(data[32:34]) == 0:
+                parsed_data = Dongle.readInput1(list(data))
+                self.__logger.debug("Parsed data: %s", parsed_data)
+                parsed_data['deviceTime'] = datetime.now().strftime(
+                    "%Y-%m-%d %H:%M:%S")
+                return parsed_data
+            else:
+                self.__logger.info("Not Input1 data. Skip")
+                return None
+        except Exception as e:
+            self.__logger.exception(
+                "Get exception when get_dongle_input %s", e)
             return None
 
     @staticmethod
