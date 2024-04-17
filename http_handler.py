@@ -1,5 +1,6 @@
 import requests
 import logging
+from typing_extensions import Optional
 
 
 class Http():
@@ -13,7 +14,7 @@ class Http():
         self.__session = requests.Session()
         self.login()
 
-    def get_run_time_data(self, retry_count=0) -> dict | None:
+    def get_run_time_data(self, retry_count=0) -> Optional[dict]:
         try:
             self.__logger.info("Start get runtime data")
             req = self.__session.post(

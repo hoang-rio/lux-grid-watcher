@@ -3,6 +3,7 @@ from socket import socket
 import socket_client
 from datetime import datetime
 import logging
+from typing_extensions import Optional
 
 
 class Dongle():
@@ -16,7 +17,7 @@ class Dongle():
             config["DONGLE_TCP_HOST"], int(config["DONGLE_TCP_PORT"]))
         self.__logger = logger
 
-    def get_dongle_input(self) -> dict | None:
+    def get_dongle_input(self) -> Optional[dict]:
         # TCP Header to dataTranslated readInput1
         msg = [161, 26, 1, 0, 32, 0, 1, 194]
         dongle_serial_arr = bytearray(

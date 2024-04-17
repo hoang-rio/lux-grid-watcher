@@ -2,3 +2,4 @@ requests
 pychromecast
 python-dotenv
 google-auth
+typing_extensions
