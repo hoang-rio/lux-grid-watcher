@@ -65,9 +65,9 @@ class FCM():
                     'Content-Type': 'application/json; UTF-8',
                 }
             )
-            self.__logger.info("FCM send to device %s result", device)
-            self.__logger.info("FCM Status code %s", req.status_code)
-            self.__logger.info("FCM Result %s", device, req.text)
+            self.__logger.info("FCM send to device: %s", device)
+            self.__logger.info("FCM Status code: %s", req.status_code)
+            self.__logger.info("FCM Result: %s", req.text)
 
     def ongrid_notify(self):
         self.__logger.info("ON: Start send notify")
