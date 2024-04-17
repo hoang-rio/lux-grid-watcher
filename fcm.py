@@ -40,11 +40,11 @@ class FCM():
         if 'FCM_PROJECT' not in self.__config or self.__config["FCM_PROJECT"] == "":
             self.__logger.warning("Missing FCM_PROJECT")
             return
-        self.__logger.debug(
+        self.__logger.info(
             "Send notify with title: %s and body: %s to %s devices", title, body, len(devices))
         access_token = self._get_access_token()
         for device in devices:
-            requests.post(
+            req = requests.post(
                 f"https://fcm.googleapis.com/v1/projects/{self.__config['FCM_PROJECT']}/messages:send",
                 json={
                     "message": {
@@ -65,12 +65,15 @@ class FCM():
                     'Content-Type': 'application/json; UTF-8',
                 }
             )
+            self.__logger.info("FCM send to device %s result", device)
+            self.__logger.info("FCM Status code %s", req.status_code)
+            self.__logger.info("FCM Result %s", device, req.text)
 
     def ongrid_notify(self):
-        self.__logger.debug("ON: Start send notify")
+        self.__logger.info("ON: Start send notify")
         devices = self.__get_devices()
         if len(devices) == 0:
-            self.__logger.debug("ON: No device to notify")
+            self.__logger.info("ON: No device to notify")
         else:
             self.__send_notify(
                 "Đã có điện lưới.",
@@ -78,13 +81,13 @@ class FCM():
                 devices,
                 True
             )
-        self.__logger.debug("ON: Finish send notify")
+        self.__logger.info("ON: Finish send notify")
 
     def offgrid_notify(self):
-        self.__logger.debug("OFF: Start send notify")
+        self.__logger.info("OFF: Start send notify")
         devices = self.__get_devices()
         if len(devices) == 0:
-            self.__logger.debug("OFF: No device to notify")
+            self.__logger.info("OFF: No device to notify")
         else:
             self.__send_notify(
                 "Mất điện lưới.",
@@ -92,4 +95,4 @@ class FCM():
                 devices,
                 False
             )
-        self.__logger.debug("OFF: Finish send notify")
+        self.__logger.info("OFF: Finish send notify")
