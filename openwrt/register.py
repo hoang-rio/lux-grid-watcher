@@ -23,8 +23,8 @@ try:
                     ret_data["message"] = "Device already register"
                 else:
                     with open(DEVICES_FILE, 'w') as fw:
-                        fw.write(json.dumps(devices_json))
                         devices_json.append(req_token)
+                        fw.write(json.dumps(devices_json))
                         ret_data["is_success"] = True
                         ret_data["message"] = "Device register success"
                         ret_data["device_count"] = len(devices_json)
