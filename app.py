@@ -90,14 +90,14 @@ def handle_grid_status(json_data: dict, fcm_service: FCM):
         with open(config["STATE_FILE"], 'r') as f:
             last_grid_connected = f.read() == "True"
     if last_grid_connected != is_grid_connected:
+        with open(config["STATE_FILE"], "w") as fw:
+            fw.write(str(is_grid_connected))
         if is_grid_connected:
             fcm_service.ongrid_notify()
             play_audio("has-grid.mp3")
         else:
             fcm_service.offgrid_notify()
             play_audio("lost-grid.mp3", 5)
-        with open(config["STATE_FILE"], "w") as fw:
-            fw.write(str(is_grid_connected))
     else:
         logger.info("State did not change. Skip play notify audio")
 
