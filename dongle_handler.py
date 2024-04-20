@@ -19,6 +19,7 @@ class Dongle():
 
     def get_dongle_input(self) -> Optional[dict]:
         try:
+            self.__logger.info("Start get dongle input")
             # TCP Header to dataTranslated readInput1
             msg = [161, 26, 1, 0, 32, 0, 1, 194]
             dongle_serial_arr = bytearray(
@@ -41,16 +42,20 @@ class Dongle():
                 self.__logger.debug("Parsed data: %s", parsed_data)
                 parsed_data['deviceTime'] = datetime.now().strftime(
                     "%Y-%m-%d %H:%M:%S")
+                self.__logger.info("Finish get dongle input")
                 return parsed_data
             else:
                 self.__logger.info("Not Input1 data. Skip")
                 return None
         except Exception as e:
-            str_err = str(e)
             self.__logger.exception(
                 "Get exception when get_dongle_input: %s", e)
-            if "Broken pipe" in str_err:
-                self.__client = socket_client.connect(config["DONGLE_TCP_HOST"], int(config["DONGLE_TCP_PORT"]))
+            str_err = str(e)
+            if "Broken pipe" in str_err or 'timed out' in str_err:
+                self.__client = socket_client.connect(
+                    self.__config["DONGLE_TCP_HOST"],
+                    int(self.__config["DONGLE_TCP_PORT"])
+                )
             return None
 
     @staticmethod
