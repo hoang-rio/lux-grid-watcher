@@ -46,8 +46,11 @@ class Dongle():
                 self.__logger.info("Not Input1 data. Skip")
                 return None
         except Exception as e:
+            str_err = str(e)
             self.__logger.exception(
                 "Get exception when get_dongle_input: %s", e)
+            if "Broken pipe" in str_err:
+                self.__client = socket_client.connect(config["DONGLE_TCP_HOST"], int(config["DONGLE_TCP_PORT"]))
             return None
 
     @staticmethod
