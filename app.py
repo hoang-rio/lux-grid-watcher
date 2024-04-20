@@ -6,6 +6,7 @@ import time
 from os import path, environ
 import dongle_handler
 import http_handler
+from datetime import datetime, timezone
 from fcm import FCM
 
 DONGLE_MODE = "DONGLE"
@@ -72,12 +73,21 @@ def play_audio(audio_file: str, repeat=3):
 def handle_grid_status(json_data: dict, fcm_service: FCM):
     # is_grid_connected = True
     is_grid_connected = json_data["fac"] > 0
+    last_grid_connected = True
+    disconnected_time = json_data["deviceTime"]
+    if path.exists(config["STATE_FILE"]):
+        with open(config["STATE_FILE"], 'r') as f:
+            last_grid_connected = f.read() == "True"
+        if not last_grid_connected:
+            # Only get disconneced time from state file if disconnected from previos
+            disconnected_time = datetime.fromtimestamp(
+                path.getmtime(config['STATE_FILE'])
+            ).strftime("%Y-%m-%d %H:%M:%S")
     if not is_grid_connected:
         logger.warning(
             "_________Inverter disconnected from GRID since %s_________",
-            json_data['deviceTime'],
+            disconnected_time,
         )
-        logger.warning("All json data: %s", json_data)
     else:
         logger.info(
             "__Inverter currently connected to GRID at deviceTime: %s with fac: %s Hz and vacr: %s V",
@@ -85,10 +95,6 @@ def handle_grid_status(json_data: dict, fcm_service: FCM):
             int(json_data['fac']) / 100,
             int(json_data['vacr']) / 10,
         )
-    last_grid_connected = True
-    if path.exists(config["STATE_FILE"]):
-        with open(config["STATE_FILE"], 'r') as f:
-            last_grid_connected = f.read() == "True"
     if last_grid_connected != is_grid_connected:
         with open(config["STATE_FILE"], "w") as fw:
             fw.write(str(is_grid_connected))
@@ -96,6 +102,7 @@ def handle_grid_status(json_data: dict, fcm_service: FCM):
             fcm_service.ongrid_notify()
             play_audio("has-grid.mp3")
         else:
+            logger.warning("All json data: %s", json_data)
             fcm_service.offgrid_notify()
             play_audio("lost-grid.mp3", 5)
     else:
