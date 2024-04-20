@@ -66,12 +66,13 @@ class FCM():
                             "priority": "HIGH",
                             "direct_boot_ok": True,
                             "notification": {
-                                "channel_id": "111",
+                                "channel_id": "111" if is_grid_connected else "222",
                                 "notification_priority": "PRIORITY_HIGH",
                                 "visibility": "PUBLIC",
-                                "default_sound": True,
+                                "default_sound": False,
                                 "default_vibrate_timings": True,
                                 "default_light_settings": True,
+                                "sound": "has_grid.mp3" if is_grid_connected else "lost_grid.mp3"
                             },
                         },
                         "token": device,
