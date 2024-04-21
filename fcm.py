@@ -67,10 +67,11 @@ class FCM():
                             "direct_boot_ok": True,
                             "notification": {
                                 "channel_id": "111" if is_grid_connected else "222",
-                                "notification_priority": "PRIORITY_HIGH",
+                                "notification_priority": "PRIORITY_MAX",
                                 "visibility": "PUBLIC",
                                 "default_sound": False,
-                                "default_vibrate_timings": True,
+                                "default_vibrate_timings": False,
+                                "vibrate_timings": ["0.1s", "1s", "0.1s", "1s", "0.1s"],
                                 "default_light_settings": True,
                                 "sound": "has_grid.mp3" if is_grid_connected else "lost_grid.mp3"
                             },
@@ -83,7 +84,7 @@ class FCM():
                     'Content-Type': 'application/json; UTF-8',
                 }
             )
-            if (req.status_code == 200):
+            if (req.status_code != 404):
                 valid_devices.append(device)
             self.__logger.info("FCM send to device: %s", device)
             self.__logger.info("FCM Status code: %s", req.status_code)
