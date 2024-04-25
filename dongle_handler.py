@@ -58,9 +58,10 @@ class Dongle():
                     "%Y-%m-%d %H:%M:%S")
                 self.__logger.info("Finish get dongle input")
                 if parsed_data["status"] == 0:
-                    self.__logger.info(
-                        "Status must not equal 0. Ignore this result.\nFull result: %s",
+                    self.__logger.warn(
+                        "Status must not equal 0. Ignore this result.\nFull result: %s.\nFull raw data: %s",
                         parsed_data,
+                        data,
                     )
                     return None
                 return parsed_data
