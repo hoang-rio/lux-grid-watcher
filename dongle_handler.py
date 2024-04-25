@@ -13,9 +13,15 @@ class Dongle():
 
     def __init__(self, logger: logging.Logger, config: dict) -> None:
         self.__config = config
-        self.__client = socket_client.connect(
-            config["DONGLE_TCP_HOST"], int(config["DONGLE_TCP_PORT"]))
         self.__logger = logger
+        self.__connect_socket()
+
+    def __connect_socket(self):
+        try:
+            self.__client = socket_client.connect(
+                self.__config["DONGLE_TCP_HOST"], int(self.__config["DONGLE_TCP_PORT"]))
+        except Exception as e:
+            self.__logger.exception("Got exception when connect socket %s", e)
 
     def get_dongle_input(self) -> Optional[dict]:
         try:
@@ -34,6 +40,12 @@ class Dongle():
             msg.extend(invert_serial_arr)
             # msg.extend([51, 53, 48, 51, 54, 56, 48, 49, 54, 49])
             msg.extend([0, 0, 40, 0, 226, 149])
+            if self.__client is None:
+                self.__logger.info(
+                    "Socket initial error. Re init for next time"
+                )
+                self.__connect_socket()
+                return None
             self.__client.send(bytes(msg))
             data = self.__client.recv(1024)
             self.__logger.debug("Server: %s", list(data))
@@ -52,10 +64,7 @@ class Dongle():
                 "Get exception when get_dongle_input: %s", e)
             str_err = str(e)
             if "Broken pipe" in str_err or 'timed out' in str_err:
-                self.__client = socket_client.connect(
-                    self.__config["DONGLE_TCP_HOST"],
-                    int(self.__config["DONGLE_TCP_PORT"])
-                )
+                self.__connect_socket()
             return None
 
     @staticmethod
