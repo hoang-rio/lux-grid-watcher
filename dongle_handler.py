@@ -19,7 +19,9 @@ class Dongle():
     def __connect_socket(self):
         try:
             self.__client = socket_client.connect(
-                self.__config["DONGLE_TCP_HOST"], int(self.__config["DONGLE_TCP_PORT"]))
+                self.__config["DONGLE_TCP_HOST"],
+                int(self.__config["DONGLE_TCP_PORT"])
+            )
         except Exception as e:
             self.__logger.exception("Got exception when connect socket %s", e)
 
@@ -55,6 +57,12 @@ class Dongle():
                 parsed_data['deviceTime'] = datetime.now().strftime(
                     "%Y-%m-%d %H:%M:%S")
                 self.__logger.info("Finish get dongle input")
+                if parsed_data["status"] == 0:
+                    self.__logger.info(
+                        "Status must not equal 0. Ignore this result.\nFull result: %s",
+                        parsed_data,
+                    )
+                    return None
                 return parsed_data
             else:
                 self.__logger.info("Not Input1 data. Skip")
