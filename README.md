@@ -1,5 +1,6 @@
 ## Configuration
-* Update configuration in `config.py` with your personal info
+* Copy `.env.example` to `.env`
+* Update configuration in `.env` with your personal info
 
 ## Installation and run
 * Python 3 required
