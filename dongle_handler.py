@@ -57,9 +57,9 @@ class Dongle():
                 parsed_data['deviceTime'] = datetime.now().strftime(
                     "%Y-%m-%d %H:%M:%S")
                 self.__logger.info("Finish get dongle input")
-                if parsed_data["status"] == 0:
+                if parsed_data["v_bat"] == 0:
                     self.__logger.warn(
-                        "Status must not equal 0. Ignore this result.\nFull result: %s.\nFull raw data: %s",
+                        "v_bat must not equal 0. Ignore this result.\nFull result: %s.\nFull raw data: %s",
                         parsed_data,
                         data,
                     )
