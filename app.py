@@ -8,6 +8,7 @@ import dongle_handler
 import http_handler
 from datetime import datetime, timezone
 from fcm import FCM
+import json
 
 DONGLE_MODE = "DONGLE"
 
@@ -24,10 +25,14 @@ log_level = logging.DEBUG if config["IS_DEBUG"] == 'True' else logging.INFO
 
 logger = logging.getLogger(__file__)
 log_file_handler = logging.handlers.RotatingFileHandler(
-    config["LOG_FILE"], mode='a', maxBytes=500*1024, backupCount=3)
+    config["LOG_FILE"],
+    mode='a',
+    maxBytes=500*1024,
+    backupCount=3
+)
 log_file_handler.setFormatter(logging.Formatter(config["LOG_FORMAT"]))
 log_file_handler.setLevel(log_level)
-log_handlers = [
+log_handlers: list[logging.Handler] = [
     log_file_handler
 ]
 if log_level == logging.DEBUG:
@@ -96,6 +101,18 @@ def handle_grid_status(json_data: dict, fcm_service: FCM):
             int(json_data['vacr']) / 10,
         )
     if last_grid_connected != is_grid_connected:
+        current_history = []
+        if path.exists(config['HISTORY_FILE']):
+            with open(config['HISTORY_FILE'], 'r') as f_history:
+                current_history = json.loads(f_history.read())
+        if len(current_history) == int(config["HISTRORY_COUNT"]):
+            del current_history[len(current_history) - 1]
+        current_history.append({
+            "type": "ON_GRID" if is_grid_connected else "OFF_GRID",
+            "time": json_data["deviceTime"],
+        })
+        with open(config['HISTORY_FILE'], 'w') as f_history_w:
+            f_history_w.write(json.dumps(current_history))
         with open(config["STATE_FILE"], "w") as fw:
             fw.write(str(is_grid_connected))
         if is_grid_connected:
