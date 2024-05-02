@@ -59,9 +59,8 @@ class Dongle():
                 self.__logger.info("Finish get dongle input")
                 if parsed_data["v_bat"] == 0:
                     self.__logger.warn(
-                        "v_bat must not equal 0. Ignore this result.\nFull result: %s.\nFull raw data: %s",
+                        "v_bat must not equal 0. Ignore this result.\nFull result: %s",
                         parsed_data,
-                        data,
                     )
                     return None
                 return parsed_data
