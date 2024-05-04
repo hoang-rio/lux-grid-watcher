@@ -105,7 +105,7 @@ def handle_grid_status(json_data: dict, fcm_service: FCM):
         if path.exists(config['HISTORY_FILE']):
             with open(config['HISTORY_FILE'], 'r') as f_history:
                 current_history = json.loads(f_history.read())
-        if len(current_history) == int(config["HISTRORY_COUNT"]):
+        if len(current_history) == int(config["HISTORY_COUNT"]):
             del current_history[len(current_history) - 1]
         current_history.append({
             "type": "ON_GRID" if is_grid_connected else "OFF_GRID",
