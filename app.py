@@ -107,7 +107,7 @@ def handle_grid_status(json_data: dict, fcm_service: FCM):
                 current_history = json.loads(f_history.read())
         if len(current_history) == int(config["HISTORY_COUNT"]):
             del current_history[len(current_history) - 1]
-        current_history.append({
+        current_history.insert(0, {
             "type": "ON_GRID" if is_grid_connected else "OFF_GRID",
             "time": json_data["deviceTime"],
         })
