@@ -76,9 +76,9 @@ class Dongle():
                     "%Y-%m-%d %H:%M:%S"
                 )
                 self.__logger.info("Finish get dongle input")
-                if parsed_data["v_bat"] == 0:
+                if parsed_data["v_bat"] < 40 or parsed_data["v_bat"] > 58:
                     self.__logger.warn(
-                        "v_bat must not equal 0. Ignore this result.\nFull result: %s",
+                        "v_bat must between 40 and must lower than 58. Ignore this result.\nFull result: %s",
                         parsed_data,
                     )
                     return None
