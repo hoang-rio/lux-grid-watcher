@@ -5,6 +5,22 @@ from datetime import datetime
 import logging
 from typing_extensions import Optional
 
+STATUS_MAP: dict = {
+    0: "idle / standby",
+    0x01: "fault",
+    0x02: "programming",
+    0x04: "pv supporting load first, surplus into grid",
+    0x08: "pv charging battery",
+    0x10: "discharge battery to support load, surplus into grid",
+    0x14: "pv + battery discharging to support load, surplus into grid",
+    0x20: "ac charging battery",
+    0x28: "pv + ac charging battery",
+    0x40: "battery powering EPS(grid off)",
+    0x80: "pv not sufficient to power EPS? (grid off)",
+    0xc0: "pv + battery powering EPS(grid off)",
+    0x88: "pv powering EPS(grid off), surplus stored in battery",
+}
+
 
 class Dongle():
     __client: socket
@@ -86,13 +102,18 @@ class Dongle():
     def readInput1(input: list[int]):
         # Remove header + checksum
         data = input[20: len(input) - 2]
+        status = Dongle.toInt(data[15:15 + 2])
+        status_text = "Unknow status"
+        if status in STATUS_MAP:
+            status_text = STATUS_MAP[status]
         return {
             # 0 = static 1
             # 1 = R_INPUT
             # 2..12 = serial
             # 13/14 = length
 
-            "status": Dongle.toInt(data[15:15 + 2]),
+            "status": status,
+            "status_text": status_text,
 
             "v_pv_1": Dongle.toInt(data[17:17 + 2]) / 10.0,  # V
             "v_pv_2": Dongle.toInt(data[19:19 + 2]) / 10.0,  # V
