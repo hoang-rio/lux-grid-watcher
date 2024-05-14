@@ -9,6 +9,11 @@
 * Install dependencies with `pip install -r requirements.txt`
 * Run application with `python app.py`
 
+## Notification app
+You can implement notification app for Android/iOS by your self and push Firebase Device ID to devices.json file to get notification when grid connect state change.
+
+I also developed an app for Android. If you need it feel free to contact me
+
 ## Third-party
 
 Thanks to [@celsworth](https://github.com/celsworth) by awesome project [celsworth/lxp-packet](https://github.com/celsworth/lxp-packet) (under MIT License)
