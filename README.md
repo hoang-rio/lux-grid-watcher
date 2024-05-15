@@ -1,3 +1,6 @@
+## About
+A python script allow watch Luxpower SNA interver grid connect state
+
 ## Configuration
 * Copy `.env.example` to `.env`
 * Update configuration in `.env` with your personal info
