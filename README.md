@@ -1,5 +1,5 @@
 ## About
-A python script allow watch Luxpower SNA interver grid connect state
+A python script allow watch Luxpower SNA inverter grid connect state
 
 ## Configuration
 * Copy `.env.example` to `.env`
