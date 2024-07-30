@@ -1,14 +1,15 @@
 from dotenv import dotenv_values
 import logging.handlers
-import pychromecast
 import logging
 import time
 from os import path, environ
 import dongle_handler
 import http_handler
-from datetime import datetime, timezone
+from datetime import datetime
 from fcm import FCM
 import json
+from play_audio import PlayAudio
+from typing_extensions import Optional
 
 DONGLE_MODE = "DONGLE"
 
@@ -17,7 +18,7 @@ AUDIO_SLEEP_MAP = {
     "lost-grid.mp3": 9,
 }
 
-config = {
+config: dict = {
     **dotenv_values(".env"),
     **environ
 }
@@ -44,35 +45,16 @@ logging.basicConfig(
     handlers=log_handlers
 )
 
+play_audio_thread: PlayAudio | None = None
+
 
 def play_audio(audio_file: str, repeat=3):
-    chromecast, _ = pychromecast.get_listed_chromecasts(
-        [config["CAST_DEVICE_NAME"]])
-    if len(chromecast) > 0:
-        cast = chromecast[0]
-        logger.debug("Cast info: %s", cast.cast_info)
-        cast.wait()
-        logger.debug("Cast status: %s", cast.status)
-        mediaController = cast.media_controller
-        logger.info(
-            "Playing %s on %s %s times repeat",
-            audio_file,
-            config["CAST_DEVICE_NAME"],
-            repeat
-        )
-        while repeat > 0:
-            mediaController.play_media(
-                f"{config['AUDIO_BASE_URL']}/{audio_file}", "audio/mp3")
-            mediaController.block_until_active()
-            repeat = repeat - 1
-            logger.info("Play time remaining: %s", repeat)
-            if repeat > 0:
-                logger.info("Wating for %s second before repeat",
-                            AUDIO_SLEEP_MAP[audio_file])
-            time.sleep(AUDIO_SLEEP_MAP[audio_file])
-        logger.debug("MediaControler status: %s", mediaController.status)
-    else:
-        logger.info("No device to play audio")
+    global play_audio_thread
+    if play_audio_thread is not None:
+        play_audio_thread.stop()
+    play_audio_thread = PlayAudio(
+        audio_file=audio_file, repeat=repeat, sleep=AUDIO_SLEEP_MAP[audio_file], config=config, logger=logger)
+    play_audio_thread.start()
 
 
 def handle_grid_status(json_data: dict, fcm_service: FCM):
