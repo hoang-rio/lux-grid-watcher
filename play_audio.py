@@ -27,11 +27,15 @@ class PlayAudio(threading.Thread):
     def run(self):
         try:
             chromecast, browser = pychromecast.get_listed_chromecasts(
-                [self.__config["CAST_DEVICE_NAME"]])
+                [self.__config["CAST_DEVICE_NAME"]],
+                tries=3,
+                timeout=self.__sleep,
+                discovery_timeout=self.__sleep
+            )
             if len(chromecast) > 0:
                 cast = chromecast[0]
                 self.__logger.debug("Cast info: %s", cast.cast_info)
-                cast.wait()
+                cast.wait(self.__sleep)
                 self.__logger.debug("Cast status: %s", cast.status)
                 mediaController = cast.media_controller
                 self.__logger.info(
