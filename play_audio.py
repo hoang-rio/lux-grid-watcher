@@ -48,6 +48,7 @@ class PlayAudio(threading.Thread):
                     if self.__stop_event.is_set():
                         self.__logger.info(
                             "[%s]: Stopped play audio with %s times repeat remaining", self.__audio_file, self.__repeat)
+                        cast.disconnect()
                         browser.stop_discovery()
                         break
                     mediaController.play_media(
@@ -62,6 +63,7 @@ class PlayAudio(threading.Thread):
                     time.sleep(self.__sleep)
                 self.__logger.debug("MediaControler status: %s",
                                     mediaController.status)
+                cast.disconnect()
                 browser.stop_discovery()
             else:
                 self.__logger.info(
