@@ -20,7 +20,7 @@ class FCMThread(Thread):
     __body: str
     __device: str
     __is_grid_connected: bool
-    valid_device: bool = False
+    valid_device: bool = True
 
     def __init__(self, logger: logging.Logger, config: dict, title: str, body: str, device: str, is_grid_connected: bool):
         super(FCMThread, self).__init__()
