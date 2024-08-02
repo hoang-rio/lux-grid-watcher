@@ -82,7 +82,7 @@ class FCMThread(Thread):
                         "payload": {
                             "aps": {
                                 "sound": "has_grid.aiff" if is_grid_connected else "lost_grid.aiff",
-                                "badge": 1
+                                "badge": 0
                             }
                         },
                     },
