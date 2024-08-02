@@ -78,6 +78,14 @@ class FCMThread(Thread):
                             "sound": "has_grid.mp3" if is_grid_connected else "lost_grid.mp3"
                         },
                     },
+                    "apns": {
+                        "payload": {
+                            "aps": {
+                                "sound": "has_grid.aiff" if is_grid_connected else "lost_grid.aiff",
+                                "badge": 1
+                            }
+                        },
+                    },
                     "token": device,
                 },
             },
