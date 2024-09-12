@@ -28,8 +28,8 @@ logger = logging.getLogger(__file__)
 log_file_handler = logging.handlers.RotatingFileHandler(
     config["LOG_FILE"],
     mode='a',
-    maxBytes=500*1024,
-    backupCount=3
+    maxBytes=int(config["LOG_FILE_SIZE"])*1024,
+    backupCount=int(config["LOG_FILE_COUNT"])
 )
 log_file_handler.setFormatter(logging.Formatter(config["LOG_FORMAT"]))
 log_file_handler.setLevel(log_level)
