@@ -38,6 +38,7 @@ class Http():
             if retry_count < int(self.__config["MAX_RETRY_COUNT"]):
                 self.login()
                 return self.get_run_time_data(retry_count + 1)
+            return None
 
     def login(self):
         self.__logger.info("Start login")
