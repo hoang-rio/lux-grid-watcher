@@ -23,7 +23,7 @@ STATUS_MAP: dict = {
 
 
 class Dongle():
-    __client: socket
+    __client: socket | None = None
     __config: dict
     __logger: logging.Logger
 
@@ -164,7 +164,8 @@ class Dongle():
             "p_to_user": Dongle.toInt(data[69:69 + 2]),  # W
 
             "e_pv_day": (Dongle.toInt(data[71:71 + 2]) +
-                         Dongle.toInt(data[73:73 + 2]) + Dongle.toInt(data[75:75 + 2])) / 10.0,  # kWh
+                         # kWh
+                         Dongle.toInt(data[73:73 + 2]) + Dongle.toInt(data[75:75 + 2])) / 10.0,
             "e_pv_1_day": Dongle.toInt(data[71:71 + 2]) / 10.0,  # kWh
             "e_pv_2_day": Dongle.toInt(data[73:73 + 2]) / 10.0,  # kWh
             "e_pv_3_day": Dongle.toInt(data[75:75 + 2]) / 10.0,  # kWh
