@@ -32,5 +32,5 @@ try:
         ret_data["is_success"] = False
         ret_data["message"] = "Missing required parameter 'token'"
 except Exception as e:
-    ret_data["message"] = "Got exception %s".format(e)
+    ret_data["message"] = f"Got exception {e}"
 print(json.dumps(ret_data))
