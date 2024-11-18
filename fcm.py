@@ -145,6 +145,9 @@ class FCM():
         if len(devices) == 0:
             self.__logger.info("ON: No device to notify")
         else:
+            self.__logger.info(
+                f"ON: Start send notifcation to {len(devices)} devices"
+            )
             for device in devices:
                 t = FCMThread(
                     self.__logger,
@@ -163,6 +166,9 @@ class FCM():
         if len(devices) == 0:
             self.__logger.info("OFF: No device to notify")
         else:
+            self.__logger.info(
+                f"OFF: Start send notifcation to {len(devices)} devices"
+            )
             for device in devices:
                 t = FCMThread(
                     self.__logger,
