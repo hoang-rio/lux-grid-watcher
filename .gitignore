@@ -4,3 +4,4 @@ __pycache__
 *.ini
 .env
 *.json
+.DS_Store
