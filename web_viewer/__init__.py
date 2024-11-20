@@ -1,4 +1,5 @@
 import asyncio
+import threading
 from aiohttp import web, WSCloseCode
 import aiohttp
 from os import environ, path
@@ -12,7 +13,8 @@ config: dict = {
 }
 
 async def http_handler(request: web.Request):
-    return web.FileResponse("./public/index.html")
+    index_file_path = path.join(path.dirname(__file__), 'public', 'index.html')
+    return web.FileResponse(index_file_path)
 
 
 async def websocket_handler(request):
@@ -48,9 +50,18 @@ async def start_server(host="127.0.0.1", port=1337):
     site = web.TCPSite(runner, host, port)
     await site.start()
 
-
-if __name__ == "__main__":
+def run_http_server():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(start_server(host=config["HOST"], port=int(config["PORT"])))
+    loop.run_until_complete(start_server(
+        host=config["HOST"], port=int(config["PORT"])))
     loop.run_forever()
+
+
+class WebViewer(threading.Thread):
+    def run(self) -> None:
+        run_http_server()
+
+
+if __name__ == "__main__":
+    run_http_server()

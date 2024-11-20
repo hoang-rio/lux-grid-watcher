@@ -9,7 +9,7 @@ from datetime import datetime
 from fcm import FCM
 import json
 from play_audio import PlayAudio
-from typing_extensions import Optional
+from web_viewer import WebViewer
 
 DONGLE_MODE = "DONGLE"
 
@@ -113,6 +113,8 @@ def handle_grid_status(json_data: dict, fcm_service: FCM):
 
 def main():
     try:
+        if config["RUN_WEB_VIEWER"] == "True":
+            WebViewer().start()
         logger.info("Grid connect watch working on mode: %s",
                     config["WORKING_MODE"])
         fcm_service = FCM(logger, config)
