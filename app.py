@@ -113,12 +113,12 @@ def handle_grid_status(json_data: dict, fcm_service: FCM):
 
 def main():
     try:
-        if config["RUN_WEB_VIEWER"] == "True":
-            WebViewer().start()
         logger.info("Grid connect watch working on mode: %s",
                     config["WORKING_MODE"])
         fcm_service = FCM(logger, config)
         if config["WORKING_MODE"] == DONGLE_MODE:
+            if config["RUN_WEB_VIEWER"] == "True":
+                WebViewer().start()
             dongle = dongle_handler.Dongle(logger, config)
             while True:
                 inverter_data = dongle.get_dongle_input()
