@@ -1,35 +1,94 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useCallback, useEffect, useRef, useState } from "react";
+import "./App.css";
+
+const MAX_RECONNECT_COUNT = 3;
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [inverterData, setInverterData] = useState<{
+    [key: string]: string | number;
+  }>({});
+  const socketRef = useRef<WebSocket>();
+  const selfCloseRef = useRef<boolean>(false);
+  const reconnectCountRef = useRef<number>(0);
+
+  const connectSocket = useCallback(() => {
+    if (socketRef.current && (socketRef.current.CONNECTING || !socketRef.current.CLOSED)) {
+      return;
+    }
+    console.log("[Socket] Connecting to socket server...");
+    // Create WebSocket connection.
+    const socket = new WebSocket(`${import.meta.env.VITE_API_BASE_URL}/ws`);
+    socketRef.current = socket;
+
+    // Connection opened
+    socket.addEventListener("open", () => {
+      reconnectCountRef.current = 0;
+      // socket.send(JSON.stringify({message: "Hello to server"}));
+      console.log("[Socket] Connected to server");
+    });
+
+    // Listen for messages
+    socket.addEventListener("message", (event) => {
+      const jsonData = JSON.parse(event.data);
+      setInverterData(jsonData);
+    });
+    socket.addEventListener("close", () => {
+      if (selfCloseRef.current || socketRef.current?.CONNECTING) {
+        return;
+      }
+      if (reconnectCountRef.current >= MAX_RECONNECT_COUNT) {
+        console.warn("[Socket] stop reconnect by reached MAX_RECONNECT_COUNT");
+        return;
+      }
+      reconnectCountRef.current++;
+      console.log("[Socket] connection closed. Reconnecting (%s)...", reconnectCountRef.current);
+      connectSocket();
+    });
+    socket.addEventListener("error", (event) => {
+      console.error("[Socket] socket error", event);
+    });
+  }, [setInverterData]);
+
+  const closeSocket = useCallback(() => {
+    selfCloseRef.current = true;
+    socketRef.current?.close();
+  }, []);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/state`)
+      .then((res) => res.json())
+      .then((json) => {
+        setInverterData(json);
+      })
+      .catch((err) => {
+        console.error("API get state error", err);
+      });
+    selfCloseRef.current = false;
+    connectSocket();
+    window.addEventListener("beforeunload", closeSocket);
+    document.addEventListener("visibilitychange", () => {
+      if (
+        !document.hidden &&
+        reconnectCountRef.current >= MAX_RECONNECT_COUNT
+      ) {
+        reconnectCountRef.current = 0;
+        console.warn("[Socket] reconnect when window active again");
+        connectSocket();
+      }
+    });
+    return closeSocket;
+  }, [connectSocket, closeSocket]);
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
+      <h1>Current working status</h1>
+      <h2 className="green">{inverterData.status_text}</h2>
+      <h3 className="red">{inverterData.deviceTime}</h3>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
+        <pre className="code">{JSON.stringify(inverterData, null, 2)}</pre>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
-  )
+  );
 }
 
-export default App
+export default App;

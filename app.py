@@ -10,6 +10,8 @@ from fcm import FCM
 import json
 from play_audio import PlayAudio
 from web_viewer import WebViewer
+from web_socket_client import WebSocketClient
+import asyncio
 
 DONGLE_MODE = "DONGLE"
 
@@ -111,19 +113,25 @@ def handle_grid_status(json_data: dict, fcm_service: FCM):
         logger.info("State did not change. Skip play notify audio")
 
 
-def main():
+async def main():
     try:
         logger.info("Grid connect watch working on mode: %s",
                     config["WORKING_MODE"])
         fcm_service = FCM(logger, config)
+        run_web_view = config["RUN_WEB_VIEWER"] == "True"
         if config["WORKING_MODE"] == DONGLE_MODE:
-            if config["RUN_WEB_VIEWER"] == "True":
-                WebViewer().start()
+            if run_web_view:
+                WebViewer(logger).start()
+                time.sleep(1)
+                ws_client = WebSocketClient(logger=logger, host=config["HOST"], port=int(config["PORT"]))
+                ws_client.start()
             dongle = dongle_handler.Dongle(logger, config)
             while True:
                 inverter_data = dongle.get_dongle_input()
                 if inverter_data is not None:
                     handle_grid_status(inverter_data, fcm_service)
+                    if ws_client is not None:
+                        await ws_client.send_json(inverter_data)
                 logger.info("Wating for %s second before next check",
                             config["SLEEP_TIME"])
                 time.sleep(int(config["SLEEP_TIME"]))
@@ -139,5 +147,4 @@ def main():
         logger.exception("Got error when run main %s", e)
         exit(1)
 
-
-main()
+asyncio.run(main())

@@ -1,9 +1,10 @@
 import asyncio
 import threading
-from aiohttp import web, WSCloseCode
+from aiohttp import web
 import aiohttp
 from os import environ, path
-
+import json
+from logging import Logger, getLogger
 from dotenv import dotenv_values
 
 
@@ -12,32 +13,55 @@ config: dict = {
     **environ
 }
 
+logger: Logger = getLogger(__file__)
+
 async def http_handler(request: web.Request):
     index_file_path = path.join(path.dirname(__file__), 'public', 'index.html')
     return web.FileResponse(index_file_path)
 
+ws_clients: list[web.WebSocketResponse] = []
+last_invert_data: str = '{}'
 
 async def websocket_handler(request):
+    global ws_clients
     ws = web.WebSocketResponse()
     await ws.prepare(request)
+    ws_clients.append(ws)
 
     async for msg in ws:
+        logger.debug("[WS Server] received message")
+        logger.debug(msg)
+        logger.debug(f"WS_CLIENTS count: {len(ws_clients)}")
         if msg.type == aiohttp.WSMsgType.TEXT:
-            if msg.data == "close":
-                await ws.close()
-            else:
-                await ws.send_str("some websocket message payload")
+            global last_invert_data
+            last_invert_data = msg.data
+            for ws_client in ws_clients:
+                if ws_client != ws:
+                    if not ws_client.closed:
+                        await ws_client.send_str(msg.data)
+                    else:
+                        ws_clients.remove(ws_client)
+        elif msg.type == aiohttp.WSMsgType.CLOSED:
+            ws_clients.remove(ws)
         elif msg.type == aiohttp.WSMsgType.ERROR:
-            print("ws connection closed with exception %s" % ws.exception())
+            ws_clients.remove(ws)
+            logger.error("WS connection closed with exception %s" % ws.exception())
 
     return ws
 
+
+def state(request: web.Request):
+    global last_invert_data
+    res = web.json_response(json.loads(last_invert_data), headers={
+        'Access-Control-Allow-Origin': 'http://localhost:5173'})
+    return res
 
 def create_runner():
     app = web.Application()
     app.add_routes([
         web.get("/",   http_handler),
         web.get("/ws", websocket_handler),
+        web.get("/state", state),
         web.static("/", path.join(path.dirname(__file__), "public"))
     ])
     return web.AppRunner(app)
@@ -45,7 +69,7 @@ def create_runner():
 
 async def start_server(host="127.0.0.1", port=1337):
     runner = create_runner()
-    print(f"Start server on {config["HOST"]}:{config["PORT"]}")
+    logger.info(f"Start server on {config["HOST"]}:{config["PORT"]}")
     await runner.setup()
     site = web.TCPSite(runner, host, port)
     await site.start()
@@ -59,6 +83,11 @@ def run_http_server():
 
 
 class WebViewer(threading.Thread):
+    def __init__(self, _logger: Logger):
+        super(WebViewer, self).__init__()
+        global logger
+        logger = _logger
+
     def run(self) -> None:
         run_http_server()
 
