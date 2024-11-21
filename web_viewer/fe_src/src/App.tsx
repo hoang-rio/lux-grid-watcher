@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
+import { IInverterData } from "./Intefaces";
+import SystemInformation from "./components/SystemInformation";
 
 const MAX_RECONNECT_COUNT = 3;
 
 function App() {
-  const [inverterData, setInverterData] = useState<{
-    [key: string]: string | number;
-  }>({});
+  const [inverterData, setInverterData] = useState<IInverterData>();
   const socketRef = useRef<WebSocket>();
   const selfCloseRef = useRef<boolean>(false);
   const reconnectCountRef = useRef<number>(0);
-  const [isSocketConnected, setIsSocketConnected] = useState<boolean>(false);
+  const [isSocketConnected, setIsSocketConnected] = useState<boolean>(true);
 
   const connectSocket = useCallback(() => {
     if (
@@ -27,7 +27,6 @@ function App() {
     // Connection opened
     socket.addEventListener("open", () => {
       reconnectCountRef.current = 0;
-      // socket.send(JSON.stringify({message: "Hello to server"}));
       console.log("[Socket] Connected to server");
       setIsSocketConnected(true);
     });
@@ -93,11 +92,15 @@ function App() {
       <h1 className={isSocketConnected ? "connected" : "disconected"}>
         {isSocketConnected ? "Connected to server" : "Disconnected from server"}
       </h1>
-      <h2 className="status">{inverterData.status_text}</h2>
-      <h3 className="time">{inverterData.deviceTime}</h3>
-      <div className="card">
-        <pre className="code">{JSON.stringify(inverterData, null, 2)}</pre>
-      </div>
+      {inverterData && (
+        <>
+          <SystemInformation inverterData={inverterData} />
+          <h2>Raw data</h2>
+          <div className="card">
+            <pre className="code">{JSON.stringify(inverterData, null, 2)}</pre>
+          </div>
+        </>
+      )}
     </>
   );
 }
