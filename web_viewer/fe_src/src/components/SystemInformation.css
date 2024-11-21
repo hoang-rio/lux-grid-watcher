@@ -1,5 +1,5 @@
 .system-information {
-    width: 1200px;
+    width: 900px;
 }
 .system-title {
     margin-bottom: 20px;
@@ -31,9 +31,10 @@
 .power {
     margin-top: 20px;
     margin-left: 20px;
+    font-size: 18px;
 }
 .power-title {
-    width: 60px;
+    width: 70px;
     display: inline-block;
 }
 .power-value {
