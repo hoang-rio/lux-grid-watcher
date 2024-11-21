@@ -62,6 +62,9 @@
 .system-status-icon.normal {
     background-color: #08b308;
 }
+.system-status-icon.offline {
+    background-color: #b6b6b6;
+}
 .battery-row {
     display: flex;
     flex-direction: row;

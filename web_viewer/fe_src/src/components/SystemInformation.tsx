@@ -2,8 +2,9 @@ import { IInverterData } from "../Intefaces";
 import "./SystemInformation.css";
 interface Props {
   inverterData: IInverterData;
+  isSocketConnected: boolean
 }
-function SystemInformation({ inverterData }: Props) {
+function SystemInformation({ inverterData, isSocketConnected }: Props) {
   return (
     <div className="card system-information">
       <div className="system-title">
@@ -50,16 +51,29 @@ function SystemInformation({ inverterData }: Props) {
         <div className="system-status" title={inverterData.status_text}>
           <div
             className={`system-status-icon ${
-              inverterData.status !== 0 ? "normal" : "fault"
+              !isSocketConnected
+                ? "offline"
+                : inverterData.status !== 0
+                ? "normal"
+                : "fault"
             }`}
           ></div>
-          <div>{inverterData.status !== 0 ? "Normal" : "Fault"}</div>
+          <div>
+            {!isSocketConnected
+              ? "Offline"
+              : inverterData.status !== 0
+              ? "Normal"
+              : "Fault"}
+          </div>
         </div>
         <div className="battery">
           <div className="battery-row">
             <div className="battery-texts">
               <div>
-                <strong>{inverterData.p_discharge || inverterData.p_charge}</strong> W
+                <strong>
+                  {inverterData.p_discharge || inverterData.p_charge}
+                </strong>{" "}
+                W
               </div>
               <div>
                 <strong>{inverterData.soc}</strong>%

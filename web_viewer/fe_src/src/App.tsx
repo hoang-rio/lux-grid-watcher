@@ -94,7 +94,7 @@ function App() {
       </h1>
       {inverterData && (
         <>
-          <SystemInformation inverterData={inverterData} />
+          <SystemInformation inverterData={inverterData} isSocketConnected={isSocketConnected} />
           <h2>Raw data</h2>
           <div className="card">
             <pre className="code">{JSON.stringify(inverterData, null, 2)}</pre>
