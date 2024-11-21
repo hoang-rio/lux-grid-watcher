@@ -73,9 +73,16 @@ button:focus-visible {
   white-space: pre-line;
   text-align: left;
 }
-.green {
-  color: rgb(15, 152, 15)
+.status {
+  color: #535bf2;
 }
-.red {
-  color: rgb(223, 34, 34);
+.time {
+  color: #f38212;
+  font-weight: bold;
+}
+.connected {
+  color: #01a907;
+}
+.disconected {
+  color: #dc2f26;
 }

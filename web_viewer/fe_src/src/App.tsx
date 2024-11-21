@@ -10,9 +10,13 @@ function App() {
   const socketRef = useRef<WebSocket>();
   const selfCloseRef = useRef<boolean>(false);
   const reconnectCountRef = useRef<number>(0);
+  const [isSocketConnected, setIsSocketConnected] = useState<boolean>(false);
 
   const connectSocket = useCallback(() => {
-    if (socketRef.current && (socketRef.current.CONNECTING || !socketRef.current.CLOSED)) {
+    if (
+      socketRef.current &&
+      (socketRef.current.CONNECTING || !socketRef.current.CLOSED)
+    ) {
       return;
     }
     console.log("[Socket] Connecting to socket server...");
@@ -25,6 +29,7 @@ function App() {
       reconnectCountRef.current = 0;
       // socket.send(JSON.stringify({message: "Hello to server"}));
       console.log("[Socket] Connected to server");
+      setIsSocketConnected(true);
     });
 
     // Listen for messages
@@ -33,6 +38,7 @@ function App() {
       setInverterData(jsonData);
     });
     socket.addEventListener("close", () => {
+      setIsSocketConnected(false);
       if (selfCloseRef.current || socketRef.current?.CONNECTING) {
         return;
       }
@@ -41,13 +47,16 @@ function App() {
         return;
       }
       reconnectCountRef.current++;
-      console.log("[Socket] connection closed. Reconnecting (%s)...", reconnectCountRef.current);
+      console.log(
+        "[Socket] connection closed. Reconnecting (%s)...",
+        reconnectCountRef.current
+      );
       connectSocket();
     });
     socket.addEventListener("error", (event) => {
       console.error("[Socket] socket error", event);
     });
-  }, [setInverterData]);
+  }, [setInverterData, setIsSocketConnected]);
 
   const closeSocket = useCallback(() => {
     selfCloseRef.current = true;
@@ -81,9 +90,11 @@ function App() {
 
   return (
     <>
-      <h1>Current working status</h1>
-      <h2 className="green">{inverterData.status_text}</h2>
-      <h3 className="red">{inverterData.deviceTime}</h3>
+      <h1 className={isSocketConnected ? "connected" : "disconected"}>
+        {isSocketConnected ? "Connected to server" : "Disconnected from server"}
+      </h1>
+      <h2 className="status">{inverterData.status_text}</h2>
+      <h3 className="time">{inverterData.deviceTime}</h3>
       <div className="card">
         <pre className="code">{JSON.stringify(inverterData, null, 2)}</pre>
       </div>
