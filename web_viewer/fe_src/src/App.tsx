@@ -89,16 +89,9 @@ function App() {
 
   return (
     <>
-      <h1 className={isSocketConnected ? "connected" : "disconected"}>
-        {isSocketConnected ? "Connected to server" : "Disconnected from server"}
-      </h1>
       {inverterData && (
         <>
-          <SystemInformation inverterData={inverterData} isSocketConnected={isSocketConnected} />
-          <h2>Raw data</h2>
-          <div className="card">
-            <pre className="code">{JSON.stringify(inverterData, null, 2)}</pre>
-          </div>
+          <SystemInformation inverterData={inverterData} isSocketConnected={isSocketConnected} onReconnect={connectSocket}/>
         </>
       )}
     </>

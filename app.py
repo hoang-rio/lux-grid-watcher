@@ -121,7 +121,8 @@ async def main():
         run_web_view = config["RUN_WEB_VIEWER"] == "True"
         if config["WORKING_MODE"] == DONGLE_MODE:
             if run_web_view:
-                WebViewer(logger).start()
+                webViewer = WebViewer(logger)
+                webViewer.start()
                 time.sleep(1)
                 ws_client = WebSocketClient(logger=logger, host=config["HOST"], port=int(config["PORT"]))
                 ws_client.start()
@@ -145,6 +146,16 @@ async def main():
                 time.sleep(int(config["SLEEP_TIME"]))
     except Exception as e:
         logger.exception("Got error when run main %s", e)
+        try:
+            if run_web_view:
+                webViewer.stop()
+                ws_client.stop()
+        except NameError as e:
+            logger.exception("web viewer or web socket did not initial %s", e)
+        except Exception as e:
+            logger.exception(
+                "Got error when stop web viewer or web socket %s", e)
         exit(1)
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())

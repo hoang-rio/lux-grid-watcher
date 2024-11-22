@@ -10,14 +10,21 @@
       "request": "launch",
       "program": "${file}",
       "cwd": "${fileDirname}",
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "autoReload": {
+        "enabled": true
+      }
     },
     {
       "name": "Python Debugger: App",
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceRoot}/app.py",
-      "console": "integratedTerminal"
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "autoReload": {
+        "enabled": true
+      }
     }
   ]
 }

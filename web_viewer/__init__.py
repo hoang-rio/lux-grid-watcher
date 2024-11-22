@@ -20,7 +20,7 @@ async def http_handler(request: web.Request):
     return web.FileResponse(index_file_path)
 
 ws_clients: list[web.WebSocketResponse] = []
-last_invert_data: str = '{}'
+last_inverter_data: str = '{}'
 
 async def websocket_handler(request):
     global ws_clients
@@ -33,8 +33,8 @@ async def websocket_handler(request):
         logger.debug(msg)
         logger.debug(f"WS_CLIENTS count: {len(ws_clients)}")
         if msg.type == aiohttp.WSMsgType.TEXT:
-            global last_invert_data
-            last_invert_data = msg.data
+            global last_inverter_data
+            last_inverter_data = msg.data
             for ws_client in ws_clients:
                 if ws_client != ws:
                     if not ws_client.closed:
@@ -51,8 +51,8 @@ async def websocket_handler(request):
 
 
 def state(request: web.Request):
-    global last_invert_data
-    res = web.json_response(json.loads(last_invert_data), headers={
+    global last_inverter_data
+    res = web.json_response(json.loads(last_inverter_data), headers={
         'Access-Control-Allow-Origin': 'http://localhost:5173'})
     return res
 
@@ -74,7 +74,9 @@ async def start_server(host="127.0.0.1", port=1337):
     site = web.TCPSite(runner, host, port)
     await site.start()
 
+loop: asyncio.AbstractEventLoop | None = None
 def run_http_server():
+    global loop
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loop.run_until_complete(start_server(
@@ -90,6 +92,12 @@ class WebViewer(threading.Thread):
 
     def run(self) -> None:
         run_http_server()
+    
+    def stop(self) -> None:
+        global loop
+        if loop is None:
+            return
+        loop.call_soon_threadsafe(loop.stop)
 
 
 if __name__ == "__main__":

@@ -20,6 +20,10 @@ class WebSocketClient(threading.Thread):
     def run(self) -> None:
         asyncio.run(self.connect())
 
+    async def stop(self) -> None:
+        if self.__ws is not None and not self.__ws.closed:
+            await self.__ws.close()
+
     async def send_json(self, data):
         if self.__ws is not None and not self.__ws.closed:
             try:

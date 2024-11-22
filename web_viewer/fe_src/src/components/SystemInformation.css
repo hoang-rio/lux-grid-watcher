@@ -1,5 +1,5 @@
 .system-information {
-    width: 900px;
+    width: 1100px;
 }
 .system-title {
     margin-bottom: 20px;
@@ -16,22 +16,26 @@
 .pv {
     display: flex;
     align-items: flex-start;
-    margin-left: 400px;
 }
-.pv .icon .arrow {
+.y-arrow {
     background-image: url('/assets/_arrow_down.gif');
     height: 100px;
     width: 20px;
     background-repeat: no-repeat;
-    margin-left: 45px;
 }
-.pv .icon .arrow.none {
+.y-arrow.none {
     background-image: none;
+}
+.y-arrow + .y-arrow {
+    margin-top: -24px;
 }
 .power {
     margin-top: 20px;
     margin-left: 20px;
     font-size: 18px;
+}
+.power-item {
+    white-space: nowrap;
 }
 .power-title {
     width: 70px;
@@ -43,15 +47,17 @@
     display: inline-block;
 }
 .system-status {
+    position: absolute;
+    right: 0;
+    top: 10px;
+}
+.system-status-display {
     display: flex;
     flex-direction: row;
     padding: 7px;
     background-color: #7b7b7b;
     border-radius: 7px;
     align-items: center;
-    position: absolute;
-    right: 0;
-    top: 10px;
 }
 .system-status-icon {
     width: 20px;
@@ -66,6 +72,9 @@
 .system-status-icon.offline {
     background-color: #b6b6b6;
 }
+.system-status-reconnect {
+    margin-left: 10px;
+}
 .battery-row {
     display: flex;
     flex-direction: row;
@@ -78,20 +87,65 @@
     line-height: 30px;
     width: 100px;
 }
-.battery-arrow {
+.x-arrow {
     background-image: url('/assets/_arrow_right.gif');
     height: 20px;
     min-width: 85px;
     background-repeat: no-repeat;
 }
-.battery-arrow.charge {
+.x-arrow.left {
     background-image: url('/assets/_arrow_left.gif');
 }
-.battery-arrow.none {
+.x-arrow.none {
     background: none;
 }
-.battery-arrow + .battery-arrow {
+.x-arrow + .x-arrow {
     margin-left: -9px;
+}
+.row {
+    display: flex;
+    flex-direction: row;
+}
+.align-center {
+    align-items: center;
+}
+.justify-center {
+    justify-content: center;
+}
+.justify-space-between {
+    justify-content: space-between;
+}
+.align-end {
+    align-items: flex-end;
+}
+.flex-1 {
+    flex: 1;
+}
+.flex-2 {
+    flex: 2;
+}
+.col {
+    display: flex;
+    flex-direction: column;
+}
+.description {
+    color: #d7d7d7;
+}
+.eps-texts {
+    margin-top: 130px;
+}
+.consumption .row {
+    margin-left: -14px;
+    margin-top: -60px;
+}
+.consumption-texts {
+    margin-top: 190px;
+}
+.consumption-icon img{
+    margin-top: -15px;
+}
+.hidden {
+    visibility: hidden;
 }
 @media (prefers-color-scheme: light) {
     .system-status {
