@@ -1,6 +1,6 @@
-from aiohttp import ClientSession, ClientWebSocketResponse
+from aiohttp.aiohttp import ClientSession, ClientWebSocketResponse
 import asyncio
-import aiohttp
+from aiohttp import aiohttp
 from logging import Logger
 import threading
 from json import dumps

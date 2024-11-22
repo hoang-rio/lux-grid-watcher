@@ -6,10 +6,11 @@ A python script allow watch Luxpower SNA inverter grid connect state
 * Update configuration in `.env` with your personal info
 
 ## Installation and run
+* Sync gitsubmodule with `git submodule init && git submodule update`
 * Python 3 required
 * Setup python venv with `python -m venv venv`
 * Active python venv `source venv/Scripts/activate` on git-bash Windows or `source venv/bin/active` on Unix/Linux
-* Install dependencies with `pip install -r requirements.txt`
+* Install dependencies with `pip install -r requirements.txt` or `./pip-binary-install.sh`
 * Run application with `python app.py`
 
 ## Notification app

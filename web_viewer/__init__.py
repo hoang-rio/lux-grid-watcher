@@ -1,7 +1,7 @@
 import asyncio
 import threading
-from aiohttp import web
-import aiohttp
+from aiohttp.aiohttp import web
+from aiohttp import aiohttp
 from os import environ, path
 import json
 from logging import Logger, getLogger
