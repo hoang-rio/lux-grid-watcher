@@ -121,18 +121,9 @@ class Dongle():
 
             "v_bat": Dongle.toInt(data[23:23 + 2]) / 10.0,  # V
             "soc": data[25],  # %
-            # 26 used for anything?
+            "soh": data[26],  # %
+            "internal_fault": Dongle.toInt(data[27:27 + 2]),
 
-            # 27 always been 0 so far
-            # 28 I've seen anything from 0 to 53, changes occasionally but
-            # not spotted a pattern yet.
-            "_unknown_i1_27": data[27],
-            "_unknown_i1_28": data[28],
-
-            # this might be useless if 27 and 28 are independent
-            "_unknown_i1_27_28": Dongle.toInt(data[27:27 + 2]),
-
-            # W
             "p_pv": Dongle.toInt(data[29:29 + 2]) + Dongle.toInt(data[31:31 + 2]) + Dongle.toInt(data[33:33 + 2]),
             "p_pv_1": Dongle.toInt(data[29:29 + 2]),  # W
             "p_pv_2": Dongle.toInt(data[31:31 + 2]),  # W
@@ -147,9 +138,8 @@ class Dongle():
             "p_inv": Dongle.toInt(data[47:47 + 2]),  # W
             "p_rec": Dongle.toInt(data[49:49 + 2]),  # W
 
-            # this seems to track with charge/discharge but at lower values.
-            # no idea what this means.
-            "_unknown_i1_51_52": Dongle.toInt(data[51:51 + 2]),  # W ?
+            # IinvRMS https://github.com/celsworth/lxp-bridge/blob/d4d2b14ed12330e62bde6bacc81bbfc4037295ee/src/lxp/packet.rs#L268-L269
+            "i_inv_rms": Dongle.toInt(data[51:51 + 2]),  # W ?
 
             "pf": Dongle.toInt(data[53:53 + 2]) / 1000.0,  # Hz
 
@@ -158,7 +148,8 @@ class Dongle():
             "v_eps_t": Dongle.toInt(data[59:59 + 2]) / 10.0,  # V
             "f_eps": Dongle.toInt(data[61:61 + 2]) / 100.0,  # Hz
 
-            # peps and seps in 63..66?
+            "p_eps": Dongle.toInt(data[63:63 + 2]),  # W
+            "s_eps": Dongle.toInt(data[65:65 + 2]),  # W
 
             "p_to_grid": Dongle.toInt(data[67:67 + 2]),  # W
             "p_to_user": Dongle.toInt(data[69:69 + 2]),  # W

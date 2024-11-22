@@ -6,9 +6,8 @@ export interface IInverterData {
   v_pv_3: number;
   v_bat: number;
   soc: number;
-  _unknown_i1_27: number;
-  _unknown_i1_28: number;
-  _unknown_i1_27_28: number;
+  soh: number;
+  internal_fault: number;
   p_pv: number;
   p_pv_1: number;
   p_pv_2: number;
@@ -27,6 +26,8 @@ export interface IInverterData {
   v_eps_s: number;
   v_eps_t: number;
   f_eps: number;
+  p_eps: number;
+  s_eps: number;
   p_to_grid: number;
   p_to_user: number;
   e_pv_day: number;

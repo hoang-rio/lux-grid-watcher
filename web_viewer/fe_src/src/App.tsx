@@ -28,7 +28,7 @@ function App() {
     socket.addEventListener("open", () => {
       reconnectCountRef.current = 0;
       console.log("[Socket] Connected to server");
-      document.title = "LuxPower web viewer";
+      document.title = import.meta.env.VITE_APP_TITLE;
       setIsSocketConnected(true);
     });
 
@@ -38,7 +38,7 @@ function App() {
       setInverterData(jsonData);
     });
     socket.addEventListener("close", () => {
-      document.title = "[Offline] LuxPower web viewer";
+      document.title = `[Offline] ${import.meta.env.VITE_APP_TITLE}`;
       setIsSocketConnected(false);
       if (selfCloseRef.current || socketRef.current?.CONNECTING) {
         return;

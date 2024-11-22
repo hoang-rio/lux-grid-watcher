@@ -191,7 +191,7 @@ function SystemInformation({ inverterData, isSocketConnected, onReconnect }: Pro
                 <div
                   className={`y-arrow ${
                     isSocketConnected
-                      ? inverterData.p_rec > 0
+                      ? inverterData.p_eps > 0
                         ? "down"
                         : "none"
                       : "none"
@@ -200,10 +200,10 @@ function SystemInformation({ inverterData, isSocketConnected, onReconnect }: Pro
                 <img src="/assets/icon_eps.png" />
               </div>
               <div className="eps-texts">
-                {inverterData.p_rec === 0 ? (
+                {inverterData.p_eps === 0 ? (
                   <strong className="eps-status">Standby</strong>
                 ) : (
-                  <GeneralValue value={inverterData.p_rec} unit=" W" />
+                  <GeneralValue value={inverterData.p_eps} unit=" W" />
                 )}
                 <div className="description">Backup Power(EPS)</div>
               </div>
