@@ -18,6 +18,11 @@ You can implement notification app for Android/iOS by your self and push Firebas
 
 I also developed an app for Android. If you need it feel free to contact me
 
+## Webviewer
+You can see LuxPower realtime webviewer in http://locahost:88 like image bellow. This webview is under development
+
+<center><img src="misc/screenshot.png" style="max-width: 800px"/></center>
+
 ## Third-party
 
 Thanks to [@celsworth](https://github.com/celsworth) by awesome project [celsworth/lxp-packet](https://github.com/celsworth/lxp-packet) *(been deleted)* and [celsworth/lxp-bridge](https://github.com/celsworth/lxp-bridge) (under MIT License)
