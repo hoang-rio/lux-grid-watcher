@@ -69,7 +69,7 @@ def create_runner():
 
 async def start_server(host="127.0.0.1", port=1337):
     runner = create_runner()
-    logger.info(f"Start server on {config["HOST"]}:{config["PORT"]}")
+    logger.info(f"Start server on {host}:{port}")
     await runner.setup()
     site = web.TCPSite(runner, host, port)
     await site.start()
