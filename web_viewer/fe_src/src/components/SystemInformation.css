@@ -75,6 +75,10 @@
 .system-status-reconnect {
     margin-left: 10px;
 }
+.general-value {
+    width: 100px;
+    white-space: nowrap;
+}
 .battery-row {
     display: flex;
     flex-direction: row;

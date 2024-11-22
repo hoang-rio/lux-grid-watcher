@@ -4,7 +4,7 @@ interface IProps {
 }
 function GeneralValue({ value, unit }: IProps) {
   return (
-    <div className="battery-value">
+    <div className="general-value">
       <strong>{value}</strong>
       {unit}
     </div>

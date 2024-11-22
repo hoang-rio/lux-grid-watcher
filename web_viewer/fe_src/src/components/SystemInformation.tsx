@@ -103,8 +103,9 @@ function SystemInformation({ inverterData, isSocketConnected, onReconnect }: Pro
                   isSocketConnected ? Math.round(inverterData.soc / 2 / 10) : 0
                 }_green.png`}
               />
-              {Array.from({ length: 2 }).map(() => (
+              {Array.from({ length: 2 }).map((_, index) => (
                 <div
+                  key={'batter-arrow-' + index}
                   className={`x-arrow ${
                     isSocketConnected
                       ? inverterData.p_discharge > 0
@@ -124,8 +125,9 @@ function SystemInformation({ inverterData, isSocketConnected, onReconnect }: Pro
           <div className="inverter flex-1">
             <div className="row align-center">
               <img src="/assets/inverter_off_grid_20231003.png" />
-              {Array.from({ length: 4 }).map(() => (
+              {Array.from({ length: 4 }).map((_, index) => (
                 <div
+                  key={'inverter-arrow-' + index}
                   className={`x-arrow ${
                     isSocketConnected
                       ? inverterData.p_inv > 0
@@ -139,8 +141,9 @@ function SystemInformation({ inverterData, isSocketConnected, onReconnect }: Pro
           </div>
           <div className="grid flex-1">
             <div className="row align-center">
-              {Array.from({ length: 2 }).map(() => (
+              {Array.from({ length: 2 }).map((_, index) => (
                 <div
+                  key={'grid-arrow-' + index}
                   className={`x-arrow ${
                     isSocketConnected
                       ? inverterData.p_to_grid > 0
@@ -209,8 +212,9 @@ function SystemInformation({ inverterData, isSocketConnected, onReconnect }: Pro
           <div className="consumption flex-1">
             <div className="row">
               <div className="col align-center consumption-icon">
-                {Array.from({ length: 2 }).map(() => (
+                {Array.from({ length: 2 }).map((_, index) => (
                   <div
+                    key={"comsumption-arrow-" + index}
                     className={`y-arrow ${
                       isSocketConnected
                         ? inverterData.p_inv > 0
