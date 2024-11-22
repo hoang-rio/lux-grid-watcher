@@ -151,7 +151,7 @@ async def main():
                 webViewer.stop()
                 ws_client.stop()
         except NameError as e:
-            logger.exception("web viewer or web socket did not initial %s", e)
+            pass
         except Exception as e:
             logger.exception(
                 "Got error when stop web viewer or web socket %s", e)
