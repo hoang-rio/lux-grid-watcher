@@ -28,6 +28,7 @@ function App() {
     socket.addEventListener("open", () => {
       reconnectCountRef.current = 0;
       console.log("[Socket] Connected to server");
+      document.title = "LuxPower web viewer";
       setIsSocketConnected(true);
     });
 
@@ -37,6 +38,7 @@ function App() {
       setInverterData(jsonData);
     });
     socket.addEventListener("close", () => {
+      document.title = "[Offline] LuxPower web viewer";
       setIsSocketConnected(false);
       if (selfCloseRef.current || socketRef.current?.CONNECTING) {
         return;
