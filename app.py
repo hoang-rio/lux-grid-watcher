@@ -9,8 +9,6 @@ from datetime import datetime
 from fcm import FCM
 import json
 from play_audio import PlayAudio
-from web_viewer import WebViewer
-from web_socket_client import WebSocketClient
 import asyncio
 
 DONGLE_MODE = "DONGLE"
@@ -121,9 +119,11 @@ async def main():
         run_web_view = config["RUN_WEB_VIEWER"] == "True"
         if config["WORKING_MODE"] == DONGLE_MODE:
             if run_web_view:
+                from web_viewer import WebViewer
                 webViewer = WebViewer(logger)
                 webViewer.start()
                 time.sleep(1)
+                from web_socket_client import WebSocketClient
                 ws_client = WebSocketClient(logger=logger, host=config["HOST"], port=int(config["PORT"]))
                 ws_client.start()
             dongle = dongle_handler.Dongle(logger, config)
@@ -131,7 +131,7 @@ async def main():
                 inverter_data = dongle.get_dongle_input()
                 if inverter_data is not None:
                     handle_grid_status(inverter_data, fcm_service)
-                    if ws_client is not None:
+                    if run_web_view:
                         await ws_client.send_json(inverter_data)
                 logger.info("Wating for %s second before next check",
                             config["SLEEP_TIME"])
