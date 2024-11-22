@@ -138,6 +138,9 @@
 .eps-texts {
     margin-top: 130px;
 }
+.eps-status {
+    font-size: 18px;
+}
 .consumption .row {
     margin-left: -14px;
     margin-top: -60px;
