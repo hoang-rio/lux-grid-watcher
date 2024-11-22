@@ -3,4 +3,4 @@ pychromecast
 python-dotenv
 google-auth
 typing_extensions
-aiohttp~=3.11.6
+aiohttp
