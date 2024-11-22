@@ -78,6 +78,7 @@
 .general-value {
     width: 100px;
     white-space: nowrap;
+    font-size: 18px;
 }
 .battery-row {
     display: flex;
@@ -86,8 +87,7 @@
     margin-top: 5px;
     margin-bottom: 5px;
 }
-.battery-texts {
-    font-size: 18px;
+.battery-texts, .grid-texts {
     line-height: 30px;
     width: 100px;
 }
