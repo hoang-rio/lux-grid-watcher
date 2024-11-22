@@ -91,11 +91,11 @@ function App() {
 
   return (
     <>
-      {inverterData && (
+      {inverterData ? (
         <>
           <SystemInformation inverterData={inverterData} isSocketConnected={isSocketConnected} onReconnect={connectSocket}/>
         </>
-      )}
+      ) : <div className="card server-offline">Server is offline. Reload page when you make sure that server is online</div>}
     </>
   );
 }
