@@ -152,7 +152,7 @@
     visibility: hidden;
 }
 @media (prefers-color-scheme: light) {
-    .system-status {
+    .system-status-display {
         background-color: #eee;
     }
 }
