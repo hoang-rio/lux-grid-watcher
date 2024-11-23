@@ -24,7 +24,7 @@ try:
                     device_exist = True
                     ret_data["is_success"] = False
                     ret_data["message"] = "Device already register"
-        elif not device_exist:
+        if not device_exist:
             with open(DEVICES_FILE, 'w') as fw:
                 devices_json.append(req_token)
                 fw.write(json.dumps(devices_json))
