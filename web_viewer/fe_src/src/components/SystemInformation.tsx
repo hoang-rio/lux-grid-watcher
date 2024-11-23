@@ -228,7 +228,7 @@ function SystemInformation({ inverterData, isSocketConnected, onReconnect }: Pro
               </div>
               <div className="consumption-texts">
                 <GeneralValue
-                  value={isSocketConnected ? inverterData.p_inv : 0}
+                  value={isSocketConnected ? inverterData.p_inv + inverterData.p_to_user : 0}
                   unit=" W"
                 />
                 <div className="description">Consumption Power</div>
