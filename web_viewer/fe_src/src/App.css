@@ -4,6 +4,46 @@
   padding: 2rem;
 }
 
+.row {
+  display: flex;
+  flex-direction: row;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-space-between {
+  justify-content: space-between;
+}
+
+.align-end {
+  align-items: flex-end;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.flex-2 {
+  flex: 2;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+}
+
+.description {
+  color: #d7d7d7;
+}
+.text-right {
+  text-align: right;
+}
 @keyframes logo-spin {
   from {
     transform: rotate(0deg);

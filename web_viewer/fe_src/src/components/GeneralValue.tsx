@@ -1,7 +1,9 @@
+import "./GeneralValue.css";
 interface IProps {
-  value: number;
+  value: number | string;
   unit: string;
 }
+
 function GeneralValue({ value, unit }: IProps) {
   return (
     <div className="general-value">

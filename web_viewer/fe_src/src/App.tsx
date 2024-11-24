@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
 import { IInverterData } from "./Intefaces";
 import SystemInformation from "./components/SystemInformation";
+import Summary from "./components/Summary";
 
 const MAX_RECONNECT_COUNT = 3;
 
@@ -93,6 +94,7 @@ function App() {
     <>
       {inverterData ? (
         <>
+          <Summary invertData={inverterData}/>
           <SystemInformation inverterData={inverterData} isSocketConnected={isSocketConnected} onReconnect={connectSocket}/>
         </>
       ) : <div className="card server-offline">Server is offline. Reload page when you make sure that server is online</div>}

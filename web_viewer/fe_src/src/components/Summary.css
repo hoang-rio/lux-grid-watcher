@@ -1,0 +1,32 @@
+.summary {
+    margin-bottom: 20px;
+    margin-left: -10px;
+    margin-right: -10px;
+    flex-wrap: wrap;
+}
+.summary-item {
+    background-color: #fff;
+    margin: 0 10px;
+}
+.summary-item-content {
+    padding: 10px;
+}
+.summary-item-content .col {
+    align-items: flex-end;
+}
+.summary-item-title {
+    padding: 5px 10px;
+    color: #fff;
+}
+.yield .summary-item-title {
+    background-color: #63BFE6;
+}
+.battery .summary-item-title {
+    background-color: rgb(240, 135, 160);
+}
+.feed .summary-item-title {
+    background-color: rgb(240, 156, 107);
+}
+.comsumption .summary-item-title {
+    background-color: #57C696;
+}
