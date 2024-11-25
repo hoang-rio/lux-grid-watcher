@@ -47,6 +47,7 @@
     .summary-item {
         height: 130px;
         margin: 5px;
+        flex-basis: 150px;
     }
     .summary-item-content img {
         width: 40px;
