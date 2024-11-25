@@ -1,57 +1,65 @@
 .system-information {
     max-width: 100%;
 }
+
 .system-title {
     margin-bottom: 20px;
 }
+
 .system-title-text {
     font-size: 20px;
     display: inline-block;
     margin-right: 20px;
     font-weight: bold;
 }
+
 .system-graph {
     position: relative;
-    width: 1100px;
 }
+
 .pv {
     display: flex;
     align-items: flex-start;
 }
+
 .y-arrow {
     background-image: url('/assets/_arrow_down.gif');
     height: 100px;
     width: 20px;
     background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center center;
 }
+
 .y-arrow.none {
     background-image: none;
 }
-.y-arrow + .y-arrow {
-    margin-top: -24px;
+
+.y-arrow+.y-arrow {
+    margin-top: -27px;
 }
+
 .power {
     margin-top: 20px;
     margin-left: 20px;
     font-size: 18px;
 }
+
 .power-item {
     white-space: nowrap;
 }
-.power-title {
-    width: 70px;
-    display: inline-block;
-}
+
 .power-value {
-    width: 90px;
     text-align: right;
-    display: inline-block;
+    padding-left: 10px;
 }
+
 .system-status {
     position: absolute;
     right: 0;
     top: 10px;
 }
+
 .system-status-display {
     display: flex;
     flex-direction: row;
@@ -60,6 +68,7 @@
     border-radius: 7px;
     align-items: center;
 }
+
 .system-status-icon {
     width: 20px;
     height: 20px;
@@ -67,15 +76,19 @@
     background-color: #ee3939;
     margin-right: 5px;
 }
+
 .system-status-icon.normal {
     background-color: #08b308;
 }
+
 .system-status-icon.offline {
     background-color: #b6b6b6;
 }
+
 .system-status-reconnect {
     margin-left: 10px;
 }
+
 .battery-row {
     display: flex;
     flex-direction: row;
@@ -83,47 +96,272 @@
     margin-top: 5px;
     margin-bottom: 5px;
 }
-.grid, .consumption {
-    margin-left: -9px;
+
+.grid {
+    position: relative;
+    left: -13px;
 }
-.battery-texts, .grid-texts {
+
+.consumption {
+    position: relative;
+    left: -40px;
+    top: -45px;
+}
+
+.eps {
+    position: relative;
+    top: 10px;
+}
+
+.battery-texts,
+.grid-texts {
     line-height: 30px;
-    width: 100px;
 }
+
 .x-arrow {
     background-image: url('/assets/_arrow_right.gif');
     height: 20px;
-    min-width: 85px;
+    width: 85px;
     background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center center;
 }
+
 .x-arrow.left {
     background-image: url('/assets/_arrow_left.gif');
 }
+
 .x-arrow.none {
     background: none;
 }
-.x-arrow + .x-arrow {
-    margin-left: -9px;
+
+.x-arrow+.x-arrow {
+    margin-left: -13px;
 }
+
 .eps-texts {
     margin-top: 130px;
 }
+
 .eps-status {
     font-size: 18px;
 }
-.consumption .row {
-    margin-left: -14px;
-    margin-top: -60px;
-}
+
 .consumption-texts {
     margin-top: 190px;
 }
-.consumption-icon img{
+
+.consumption-icon img {
     margin-top: -15px;
 }
+
 .hidden {
     visibility: hidden;
 }
+
+@media screen and (max-width: 1200px) {
+    .inverter .arrows .x-arrow:nth-child(4) {
+        display: none;
+    }
+
+    .consumption {
+        left: -63px;
+    }
+
+    .system-graph {
+        width: 1030px;
+    }
+}
+
+@media screen and (max-width: 1090px) {
+    .inverter .arrows .x-arrow:nth-child(3) {
+        display: none;
+    }
+
+    .battery .arrows .x-arrow:nth-child(2) {
+        display: none;
+    }
+
+    .grid .arrows .x-arrow:nth-child(2) {
+        display: none;
+    }
+
+    .system-graph {
+        width: 845px;
+        margin: auto;
+    }
+
+    .consumption {
+        left: -54px;
+    }
+}
+
+.show-small {
+    display: none;
+}
+
+@media screen and (max-width: 900px) {
+    .power {
+        font-size: 16px;
+        margin-left: 10px;
+    }
+
+    .pv img,
+    .battery img,
+    .inverter img,
+    .grid img,
+    .eps img,
+    .consumption img {
+        width: 88px;
+        height: auto;
+    }
+
+    .eps-texts {
+        margin-top: 120px;
+    }
+
+    .eps-texts .description,
+    .consumption-texts .description {
+        font-size: 14px;
+    }
+
+    .eps-status {
+        font-size: 16px;
+    }
+
+    .consumption-texts {
+        margin-top: 180px;
+    }
+
+    .x-arrow {
+        width: 70px;
+    }
+
+    .y-arrow {
+        height: 70px;
+    }
+
+    .inverter .arrows .x-arrow:nth-child(2) {
+        display: none;
+    }
+
+    .system-graph {
+        width: 500px;
+    }
+
+    .consumption {
+        left: -55px;
+        top: -60px;
+    }
+
+    .battery-type {
+        display: none;
+    }
+
+    .grid-texts,
+    .battery-texts,
+    .pv-texts,
+    .consumption-texts,
+    .grid-texts,
+    .eps-texts {
+        display: none;
+    }
+
+    .show-small {
+        display: unset;
+    }
+
+    .inverter {
+        height: 160px;
+        display: flex;
+        align-items: center;
+    }
+
+    .eps {
+        position: relative;
+        top: -30px;
+    }
+
+    .grid {
+        left: -24px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+
+    .pv img,
+    .battery img,
+    .inverter img,
+    .grid img,
+    .eps img,
+    .consumption img {
+        width: 60px;
+        height: auto;
+    }
+
+    .power {
+        margin-top: 46px;
+    }
+
+    .system-graph>.row:first-child .flex-1:nth-child(3) {
+        display: none
+    }
+
+    .x-arrow {
+        width: 54px;
+        height: 15px;
+    }
+
+    .y-arrow {
+        height: 54px;
+        width: 15px;
+    }
+
+    .system-status-display {
+        font-size: 14px;
+        padding: 3px;
+        border-radius: 3px;
+    }
+
+    .system-status-icon {
+        width: 15px;
+        height: 15px;
+    }
+
+    .system-graph {
+        width: 360px;
+    }
+
+    .consumption {
+        left: -36px;
+        top: -40px;
+    }
+
+
+    .battery>.row>.col,
+    .pv>.col,
+    .eps>.row>.col,
+    .grid>.col {
+        width: 55px;
+    }
+
+    .grid .arrows .x-arrow {
+        margin-left: 7px;
+    }
+
+    .inverter {
+        height: 123px;
+    }
+
+    .system-information {
+        padding: 5px;
+    }
+
+    .grid {
+        left: -23px;
+    }
+}
+
 @media (prefers-color-scheme: light) {
     .system-status-display {
         background-color: #eee;

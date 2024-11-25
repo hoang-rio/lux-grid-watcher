@@ -6,15 +6,17 @@ interface IProps {
 
 function PVPowerValue({ label, pValue, vValue }: IProps) {
   return (
-    <div className="power-item">
-      <span className="power-title">{label}</span>
-      <span className="power-value">
+    <div className="power-item row">
+      <div className="power-title flex-1">{label}</div>
+      <div className="power-value flex-1">
         <strong>{pValue}</strong> W
-      </span>
-      {vValue !== undefined && (
-        <span className="power-value">
+      </div>
+      {vValue !== undefined ? (
+        <div className="power-value flex-1">
           <strong>{vValue}</strong> V
-        </span>
+        </div>
+      ) : (
+        <span className="power-value flex-1"></span>
       )}
     </div>
   );

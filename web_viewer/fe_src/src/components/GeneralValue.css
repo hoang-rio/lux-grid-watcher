@@ -3,3 +3,16 @@
     white-space: nowrap;
     font-size: 18px;
 }
+@media screen and (max-width: 900px) {
+    .general-value {
+        font-size: 16px;
+        min-width: 0;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .general-value {
+        font-size: 14px;
+        min-width: 0;
+    }
+}

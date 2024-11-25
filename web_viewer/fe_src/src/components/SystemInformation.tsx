@@ -7,11 +7,13 @@ interface Props {
   isSocketConnected: boolean;
   onReconnect: () => void;
 }
-function SystemInformation({ inverterData, isSocketConnected, onReconnect }: Props) {
+function SystemInformation({
+  inverterData,
+  isSocketConnected,
+  onReconnect,
+}: Props) {
   const pConsumption =
-    inverterData.p_inv +
-    inverterData.p_to_user -
-    inverterData.p_rec;
+    inverterData.p_inv + inverterData.p_to_user - inverterData.p_rec;
   return (
     <div className="card system-information">
       <div className="system-title">
@@ -54,14 +56,21 @@ function SystemInformation({ inverterData, isSocketConnected, onReconnect }: Pro
           <div className="flex-1"></div>
           <div className="pv flex-1">
             <div className="icon col align-center">
-              <img src="/assets/icon_solor_yielding.png" />
+              <div className="col align-center">
+                <GeneralValue
+                  className="show-small"
+                  value={isSocketConnected ? inverterData.p_pv : 0}
+                  unit=" kWh"
+                />
+                <img src="/assets/icon_solor_yielding.png" />
+              </div>
               <div
                 className={`y-arrow ${
                   inverterData.p_pv == 0 || !isSocketConnected ? "none" : ""
                 }`}
               ></div>
             </div>
-            <div className="power">
+            <div className="pv-texts power flex-1">
               <PVPowerValue
                 label="PV1"
                 pValue={isSocketConnected ? inverterData.p_pv_1 : 0}
@@ -101,89 +110,142 @@ function SystemInformation({ inverterData, isSocketConnected, onReconnect }: Pro
                   unit=" Vdc"
                 />
               </div>
-              <img
-                className="battery-icon"
-                src={`/assets/icon_battery_${
-                  isSocketConnected ? Math.round(inverterData.soc / 2 / 10) : 0
-                }_green.png`}
-              />
-              {Array.from({ length: 2 }).map((_, index) => (
-                <div
-                  key={'batter-arrow-' + index}
-                  className={`x-arrow ${
+              <div className="col align-center">
+                <GeneralValue
+                  className="show-small"
+                  value={
                     isSocketConnected
-                      ? inverterData.p_discharge > 0
-                        ? "right"
-                        : inverterData.p_charge > 0
-                        ? "left"
+                      ? inverterData.p_discharge || inverterData.p_charge
+                      : 0
+                  }
+                  unit=" W"
+                />
+                <img
+                  className="battery-icon"
+                  src={`/assets/icon_battery_${
+                    isSocketConnected
+                      ? Math.round(inverterData.soc / 2 / 10)
+                      : 0
+                  }_green.png`}
+                />
+                <GeneralValue
+                  className="show-small"
+                  value={isSocketConnected ? inverterData.soc : 0}
+                  unit="%"
+                />
+                <GeneralValue
+                  className="show-small"
+                  value={isSocketConnected ? inverterData.v_bat : 0}
+                  unit=" Vdc"
+                />
+              </div>
+              <div className="arrows row">
+                {Array.from({ length: 2 }).map((_, index) => (
+                  <div
+                    key={"batter-arrow-" + index}
+                    className={`x-arrow ${
+                      isSocketConnected
+                        ? inverterData.p_discharge > 0
+                          ? "right"
+                          : inverterData.p_charge > 0
+                          ? "left"
+                          : "none"
                         : "none"
-                      : "none"
-                  }`}
-                ></div>
-              ))}
-            </div>
-            <div className="battery-type hidden">
-              Lead-acid battery: <strong>300</strong> Ah
+                    }`}
+                  ></div>
+                ))}
+              </div>
             </div>
           </div>
           <div className="inverter flex-1">
             <div className="row align-center">
               <img src="/assets/inverter_off_grid_20231003.png" />
-              {Array.from({ length: 4 }).map((_, index) => (
-                <div
-                  key={'inverter-arrow-' + index}
-                  className={`x-arrow ${
-                    isSocketConnected
-                      ? inverterData.p_inv > 0
-                        ? "right"
-                        : inverterData.p_rec > 0 ? "left" : "none"
-                      : "none"
-                  }`}
-                ></div>
-              ))}
+              <div className="flex-1 arrows row justify-flex-end">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div
+                    key={"inverter-arrow-" + index}
+                    className={`x-arrow ${
+                      isSocketConnected
+                        ? inverterData.p_inv > 0
+                          ? "right"
+                          : inverterData.p_rec > 0
+                          ? "left"
+                          : "none"
+                        : "none"
+                    }`}
+                  ></div>
+                ))}
+              </div>
             </div>
           </div>
-          <div className="grid flex-1">
-            <div className="row align-center">
+          <div className="grid flex-1 row align-center justify-flex-end">
+            <div className="row arrows">
               {Array.from({ length: 2 }).map((_, index) => (
                 <div
-                  key={'grid-arrow-' + index}
+                  key={"grid-arrow-" + index}
                   className={`x-arrow ${
                     isSocketConnected
                       ? inverterData.p_to_grid > 0
                         ? "right"
-                        : inverterData.p_to_user > 0
+                        : inverterData.p_to_user == 0
                         ? "left"
                         : "none"
                       : "none"
                   }`}
                 ></div>
               ))}
+            </div>
+            <div className="col align-center">
+              <GeneralValue
+                className="show-small"
+                value={
+                  isSocketConnected
+                    ? inverterData.p_to_user || inverterData.p_to_grid
+                    : 0
+                }
+                unit=" W"
+              />
               <img src="/assets/icon_grid.png" />
-              <div className="grid-texts">
-                <GeneralValue
-                  value={
-                    isSocketConnected
-                      ? inverterData.p_to_user || inverterData.p_to_grid
-                      : 0
-                  }
-                  unit=" W"
-                />
-                <GeneralValue
-                  value={
-                    isSocketConnected
-                      ? (inverterData.vacr ||
-                          inverterData.vacs ||
-                          inverterData.vact) / 10
-                      : 0
-                  }
-                  unit=" Vac"
-                />
-                <GeneralValue
-                  value={isSocketConnected ? inverterData.fac / 100 : 0}
-                  unit=" Hz"
-                />
-              </div>
+              <GeneralValue
+                className="show-small"
+                value={
+                  isSocketConnected
+                    ? (inverterData.vacr ||
+                        inverterData.vacs ||
+                        inverterData.vact) / 10
+                    : 0
+                }
+                unit=" Vac"
+              />
+              <GeneralValue
+                className="show-small"
+                value={isSocketConnected ? inverterData.fac / 100 : 0}
+                unit=" Hz"
+              />
+            </div>
+            <div className="grid-texts">
+              <GeneralValue
+                value={
+                  isSocketConnected
+                    ? inverterData.p_to_user || inverterData.p_to_grid
+                    : 0
+                }
+                unit=" W"
+              />
+              <GeneralValue
+                value={
+                  isSocketConnected
+                    ? (inverterData.vacr ||
+                        inverterData.vacs ||
+                        inverterData.vact) / 10
+                    : 0
+                }
+                unit=" Vac"
+              />
+              <GeneralValue
+                value={isSocketConnected ? inverterData.fac / 100 : 0}
+                unit=" Hz"
+              />
             </div>
           </div>
         </div>
@@ -202,6 +264,15 @@ function SystemInformation({ inverterData, isSocketConnected, onReconnect }: Pro
                   }`}
                 ></div>
                 <img src="/assets/icon_eps.png" />
+                {inverterData.p_eps === 0 ? (
+                  <strong className="show-small eps-status">Standby</strong>
+                ) : (
+                  <GeneralValue
+                    className="show-small"
+                    value={isSocketConnected ? inverterData.p_eps : 0}
+                    unit=" W"
+                  />
+                )}
               </div>
               <div className="eps-texts">
                 {inverterData.p_eps === 0 ? (
@@ -216,19 +287,26 @@ function SystemInformation({ inverterData, isSocketConnected, onReconnect }: Pro
           <div className="consumption flex-1">
             <div className="row">
               <div className="col align-center consumption-icon">
-                {Array.from({ length: 2 }).map((_, index) => (
-                  <div
-                    key={"comsumption-arrow-" + index}
-                    className={`y-arrow ${
-                      isSocketConnected
-                        ? pConsumption > 0
-                          ? "down"
+                <div className="arrows col">
+                  {Array.from({ length: 2 }).map((_, index) => (
+                    <div
+                      key={"comsumption-arrow-" + index}
+                      className={`y-arrow ${
+                        isSocketConnected
+                          ? pConsumption > 0
+                            ? "down"
+                            : "none"
                           : "none"
-                        : "none"
-                    }`}
-                  ></div>
-                ))}
+                      }`}
+                    ></div>
+                  ))}
+                </div>
                 <img src="/assets/icon_consumption.png" />
+                <GeneralValue
+                  className="show-small"
+                  value={isSocketConnected ? pConsumption : 0}
+                  unit=" W"
+                />
               </div>
               <div className="consumption-texts">
                 <GeneralValue

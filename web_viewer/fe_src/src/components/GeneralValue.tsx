@@ -2,11 +2,12 @@ import "./GeneralValue.css";
 interface IProps {
   value: number | string;
   unit: string;
+  className?: string;
 }
 
-function GeneralValue({ value, unit }: IProps) {
+function GeneralValue({ value, unit, className }: IProps) {
   return (
-    <div className="general-value">
+    <div className={`${className} general-value`}>
       <strong>{value}</strong>
       {unit}
     </div>
