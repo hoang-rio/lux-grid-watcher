@@ -29,7 +29,6 @@ function App() {
     socket.addEventListener("open", () => {
       reconnectCountRef.current = 0;
       console.log("[Socket] Connected to server");
-      document.title = import.meta.env.VITE_APP_TITLE;
       setIsSocketConnected(true);
     });
 
@@ -65,7 +64,7 @@ function App() {
     socketRef.current?.close();
   }, []);
 
-  useEffect(() => {
+  const fetchState = useCallback(() => {
     fetch(`${import.meta.env.VITE_API_BASE_URL}/state`)
       .then((res) => res.json())
       .then((json) => {
@@ -74,6 +73,10 @@ function App() {
       .catch((err) => {
         console.error("API get state error", err);
       });
+  }, [setInverterData]);
+
+  useEffect(() => {
+    fetchState();
     selfCloseRef.current = false;
     connectSocket();
     window.addEventListener("beforeunload", closeSocket);
@@ -84,11 +87,20 @@ function App() {
       ) {
         reconnectCountRef.current = 0;
         console.warn("[Socket] reconnect when window active again");
+        fetchState();
         connectSocket();
       }
     });
     return closeSocket;
-  }, [connectSocket, closeSocket]);
+  }, [connectSocket, closeSocket, fetchState]);
+
+  useEffect(() => {
+    if (!inverterData?.deviceTime) return;
+    const deviceTimeOnly = inverterData?.deviceTime?.split(" ")[1]
+    document.title = `[${deviceTimeOnly}] ${
+      import.meta.env.VITE_APP_TITLE
+    }`;
+  }, [inverterData]);
 
   return (
     <>
