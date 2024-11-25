@@ -60,7 +60,7 @@ function SystemInformation({
                 <GeneralValue
                   className="show-small"
                   value={isSocketConnected ? inverterData.p_pv : 0}
-                  unit=" kWh"
+                  unit=" W"
                 />
                 <img src="/assets/icon_solor_yielding.png" />
               </div>

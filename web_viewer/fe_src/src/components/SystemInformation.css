@@ -360,6 +360,10 @@
     .grid {
         left: -23px;
     }
+
+    .eps-status {
+        font-size: 14px;
+    }
 }
 
 @media (prefers-color-scheme: light) {
