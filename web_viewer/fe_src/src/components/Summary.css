@@ -1,12 +1,13 @@
 .summary {
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     margin-left: -10px;
     margin-right: -10px;
     flex-wrap: wrap;
+    max-width: calc(100% + 20px);
 }
 .summary-item {
-    background-color: #fff;
-    margin: 0 10px;
+    background-color: #5c5c5c;
+    margin: 10px;
 }
 .summary-item-content {
     padding: 10px;
@@ -29,4 +30,25 @@
 }
 .comsumption .summary-item-title {
     background-color: #57C696;
+}
+@media (prefers-color-scheme: light) {
+    .summary-item {
+        background-color: #fff;
+    }
+}
+@media screen and (max-width: 768px) {
+    .summary {
+        margin-bottom: 5px;
+        margin-left: -5px;
+        margin-right: -5px;
+        max-width: calc(100% + 10px);
+    }
+    .summary-item {
+        height: 150px;
+        margin: 5px;
+    }
+    .summary-item-content img {
+        width: 40px;
+        height: 40px;
+    }
 }
