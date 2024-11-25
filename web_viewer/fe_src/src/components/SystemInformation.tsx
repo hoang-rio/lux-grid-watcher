@@ -9,7 +9,11 @@ interface Props {
 }
 function SystemInformation({ inverterData, isSocketConnected, onReconnect }: Props) {
   const pAcCharge = inverterData.p_charge - inverterData.p_pv;
-  const pConsumption = inverterData.p_inv + inverterData.p_to_user - pAcCharge - inverterData.p_rec;
+  const pConsumption =
+    inverterData.p_inv +
+    inverterData.p_to_user -
+    inverterData.p_rec -
+    (pAcCharge > 0 ? inverterData.p_to_user - pAcCharge : 0);
   return (
     <div className="card system-information">
       <div className="system-title">
