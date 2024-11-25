@@ -110,7 +110,7 @@
 
 .eps {
     position: relative;
-    top: 10px;
+    top: 13px;
 }
 
 .battery-texts,
@@ -140,7 +140,7 @@
 }
 
 .eps-texts {
-    margin-top: 130px;
+    margin-top: 125px;
 }
 
 .eps-status {
@@ -148,7 +148,7 @@
 }
 
 .consumption-texts {
-    margin-top: 190px;
+    margin-top: 185px;
 }
 
 .consumption-icon img {
