@@ -83,6 +83,9 @@
     margin-top: 5px;
     margin-bottom: 5px;
 }
+.grid, .consumption {
+    margin-left: -9px;
+}
 .battery-texts, .grid-texts {
     line-height: 30px;
     width: 100px;
