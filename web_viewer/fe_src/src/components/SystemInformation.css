@@ -159,6 +159,10 @@
     visibility: hidden;
 }
 
+.show-small {
+    display: none;
+}
+
 @media screen and (max-width: 1200px) {
     .inverter .arrows .x-arrow:nth-child(4) {
         display: none;
@@ -194,10 +198,6 @@
     .consumption {
         left: -54px;
     }
-}
-
-.show-small {
-    display: none;
 }
 
 @media screen and (max-width: 900px) {
@@ -284,6 +284,10 @@
 
     .grid {
         left: -24px;
+    }
+
+    .system-title-text {
+        font-size: 16px;
     }
 }
 

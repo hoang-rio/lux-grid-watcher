@@ -96,21 +96,27 @@ function App() {
 
   useEffect(() => {
     if (!inverterData?.deviceTime) return;
-    const deviceTimeOnly = inverterData?.deviceTime?.split(" ")[1]
-    document.title = `[${deviceTimeOnly}] ${
-      import.meta.env.VITE_APP_TITLE
-    }`;
+    const deviceTimeOnly = inverterData?.deviceTime?.split(" ")[1];
+    document.title = `[${deviceTimeOnly}] ${import.meta.env.VITE_APP_TITLE}`;
   }, [inverterData?.deviceTime]);
 
+  if (inverterData) {
+    return (
+      <>
+        <Summary invertData={inverterData} />
+        <SystemInformation
+          inverterData={inverterData}
+          isSocketConnected={isSocketConnected}
+          onReconnect={connectSocket}
+        />
+      </>
+    );
+  }
+
   return (
-    <>
-      {inverterData ? (
-        <>
-          <Summary invertData={inverterData}/>
-          <SystemInformation inverterData={inverterData} isSocketConnected={isSocketConnected} onReconnect={connectSocket}/>
-        </>
-      ) : <div className="card server-offline">Server is offline. Reload page when you make sure that server is online</div>}
-    </>
+    <div className="card server-offline">
+      Server is offline. Reload page when you make sure that server is online
+    </div>
   );
 }
 

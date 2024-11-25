@@ -45,3 +45,8 @@ export interface IInverterData {
   v_bus_2: number;
   deviceTime: string;
 }
+
+export interface ICProps {
+  inverterData: IInverterData;
+  isSocketConnected: boolean;
+}
