@@ -100,7 +100,7 @@ function App() {
     document.title = `[${deviceTimeOnly}] ${
       import.meta.env.VITE_APP_TITLE
     }`;
-  }, [inverterData]);
+  }, [inverterData?.deviceTime]);
 
   return (
     <>
