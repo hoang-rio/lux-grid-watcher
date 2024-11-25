@@ -187,7 +187,7 @@ function SystemInformation({
                     isSocketConnected
                       ? inverterData.p_to_grid > 0
                         ? "right"
-                        : inverterData.p_to_user == 0
+                        : inverterData.p_to_user > 0
                         ? "left"
                         : "none"
                       : "none"
