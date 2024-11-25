@@ -41,7 +41,7 @@ function Summary({ invertData }: IProps) {
                 unit=" kWh"
               />
               <div className="description">
-                {isShowCharged ? "Charged today" : "Dischanged today"}
+                {isShowCharged ? "Charged today" : "Discharged today"}
               </div>
             </div>
           </div>
