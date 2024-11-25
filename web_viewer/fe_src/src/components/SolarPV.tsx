@@ -2,7 +2,7 @@ import { ICProps } from "../Intefaces";
 import GeneralValue from "./GeneralValue";
 import PVPowerValue from "./PVPowerValue";
 
-function PV({ inverterData, isSocketConnected }: ICProps) {
+function SolarPV({ inverterData, isSocketConnected }: ICProps) {
   return (
     <div className="pv flex-1">
       <div className="icon col align-center">
@@ -40,4 +40,4 @@ function PV({ inverterData, isSocketConnected }: ICProps) {
   );
 }
 
-export default PV;
+export default SolarPV;

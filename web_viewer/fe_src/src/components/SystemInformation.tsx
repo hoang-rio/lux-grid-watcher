@@ -1,6 +1,6 @@
 import { IInverterData } from "../Intefaces";
 import "./SystemInformation.css";
-import PV from "./PV";
+import SolarPV from "./SolarPV";
 import Battery from "./Battery";
 import Inverter from "./Inverter";
 import Grid from "./Grid";
@@ -56,7 +56,7 @@ function SystemInformation({
         </div>
         <div className="row">
           <div className="flex-1"></div>
-          <PV
+          <SolarPV
             inverterData={inverterData}
             isSocketConnected={isSocketConnected}
           />
