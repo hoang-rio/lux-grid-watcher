@@ -51,23 +51,25 @@ async def websocket_handler(request):
 
     return ws
 
+cors_header = {
+    'Access-Control-Allow-Origin': 'http://localhost:5173'}
 
 def state(_: web.Request):
     global last_inverter_data
-    res = web.json_response(json.loads(last_inverter_data), headers={
-        'Access-Control-Allow-Origin': 'http://localhost:5173'})
+    res = web.json_response(json.loads(
+        last_inverter_data), headers=cors_header)
     return res
 
 def daily_chart(_: web.Request):
     if "DB_NAME" not in config:
-        return web.json_response([])
+        return web.json_response([], headers=cors_header)
     global db_connection
     if db_connection is None:
        db_connection = sqlite3.connect(config["DB_NAME"])
     cursor = db_connection.cursor()
     daily_chart = cursor.execute(
         "SELECT * FROM daily_chart").fetchall()
-    res = web.json_response(daily_chart)
+    res = web.json_response(daily_chart, headers=cors_header)
     return res
 
 def create_runner():
@@ -76,7 +78,7 @@ def create_runner():
         web.get("/",   http_handler),
         web.get("/ws", websocket_handler),
         web.get("/state", state),
-        web.get("/daly-chart", daily_chart),
+        web.get("/daily-chart", daily_chart),
         web.static("/", path.join(path.dirname(__file__), "public"))
     ])
     return web.AppRunner(app)

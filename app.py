@@ -125,6 +125,7 @@ def insert_daily_chart(db_connection: sqlite3.Connection, inverter_data: dict):
             cursor.execute("DELETE FROM daily_chart WHERE datetime < ?", (inverter_data["deviceTime"],))
 
     item_id = device_time.strftime("%Y%m%d%H%M")
+    grid = inverter_data["p_to_user"] - inverter_data["p_to_grid"]
     consumption = inverter_data["p_inv"] + \
         inverter_data["p_to_user"] - \
         inverter_data["p_rec"]
@@ -133,7 +134,7 @@ def insert_daily_chart(db_connection: sqlite3.Connection, inverter_data: dict):
         "datetime": inverter_data["deviceTime"],
         "pv": inverter_data["p_pv"],
         "battery": inverter_data["p_discharge"] - inverter_data["p_charge"],
-        "grid": inverter_data["p_to_user"],
+        "grid": grid,
         "consumption": consumption,
         "soc": inverter_data["soc"],
     }

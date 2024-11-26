@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, lazy } from "react";
 import "./App.css";
 import { IInverterData } from "./Intefaces";
 import SystemInformation from "./components/SystemInformation";
 import Summary from "./components/Summary";
+const DailyChart = lazy(() => import("./components/DailyChart"));
 
 const MAX_RECONNECT_COUNT = 3;
 
@@ -109,6 +110,7 @@ function App() {
           isSocketConnected={isSocketConnected}
           onReconnect={connectSocket}
         />
+        <DailyChart />
       </>
     );
   }
