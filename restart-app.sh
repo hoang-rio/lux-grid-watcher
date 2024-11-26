@@ -4,5 +4,6 @@ if [ -z "$PID" ]; then
 else
     echo "Killing process $PID"
     kill $PID
+fi
 echo "Starting app.py..."
 nohup python app.py &

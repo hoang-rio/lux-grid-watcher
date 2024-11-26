@@ -50,7 +50,7 @@ async def websocket_handler(request):
     return ws
 
 
-def state(request: web.Request):
+def state():
     global last_inverter_data
     res = web.json_response(json.loads(last_inverter_data), headers={
         'Access-Control-Allow-Origin': 'http://localhost:5173'})
