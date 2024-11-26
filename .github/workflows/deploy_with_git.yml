@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.event.ref }}
+  cancel-in-progress: true
+
 env:
   SSH_KEY_FILE_DIR: .keys
   SSH_KEY_FILE_PATH: .keys/deploy_key.pem
