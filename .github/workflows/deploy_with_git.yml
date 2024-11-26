@@ -10,7 +10,7 @@ env:
   SSH_KEY_FILE_PATH: .keys/deploy_key.pem
 
 jobs:
-  deploy:
+  ssh_deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -31,6 +31,6 @@ jobs:
           if [[ $HAS_PYTHON_CHANGE == true ]]; then
               SSH_COMAND_DEPLOY="$SSH_COMAND_DEPLOY && kill $(ps | grep app.py | grep -v grep | awk '{print $2}') && nohup python app.py &"
           fi
-          ssh -i ${{env.SSH_KEY_FILE_PATH}} ${{secrets.SSH_DEPLOY_USER}}@${{secrets.SSH_DEPLOY_HOST}} "$SSH_COMAND_DEPLOY"
+          ssh -i -o StrictHostKeyChecking=no ${{env.SSH_KEY_FILE_PATH}} ${{secrets.SSH_DEPLOY_USER}}@${{secrets.SSH_DEPLOY_HOST}} "$SSH_COMAND_DEPLOY"
       - name: Clean deploy key file
         run: rm -rf ${{env.SSH_KEY_FILE_PATH}}
