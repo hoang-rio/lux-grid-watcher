@@ -1,4 +1,5 @@
 import asyncio
+import sqlite3
 import threading
 from aiohttp.aiohttp import web
 from aiohttp import aiohttp
@@ -14,8 +15,9 @@ config: dict = {
 }
 
 logger: Logger = getLogger(__file__)
+db_connection: sqlite3.Connection | None = None
 
-async def http_handler(request: web.Request):
+async def http_handler(_: web.Request):
     index_file_path = path.join(path.dirname(__file__), 'public', 'index.html')
     return web.FileResponse(index_file_path)
 
@@ -56,12 +58,25 @@ def state(_: web.Request):
         'Access-Control-Allow-Origin': 'http://localhost:5173'})
     return res
 
+def daily_chart(_: web.Request):
+    if "DB_NAME" not in config:
+        return web.json_response([])
+    global db_connection
+    if db_connection is None:
+       db_connection = sqlite3.connect(config["DB_NAME"])
+    cursor = db_connection.cursor()
+    daily_chart = cursor.execute(
+        "SELECT * FROM daily_chart").fetchall()
+    res = web.json_response(daily_chart)
+    return res
+
 def create_runner():
     app = web.Application()
     app.add_routes([
         web.get("/",   http_handler),
         web.get("/ws", websocket_handler),
         web.get("/state", state),
+        web.get("/daly-chart", daily_chart),
         web.static("/", path.join(path.dirname(__file__), "public"))
     ])
     return web.AppRunner(app)

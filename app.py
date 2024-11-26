@@ -1,3 +1,4 @@
+import sqlite3
 from dotenv import dotenv_values
 import logging.handlers
 import logging
@@ -111,6 +112,56 @@ def handle_grid_status(json_data: dict, fcm_service: FCM):
         logger.info("State did not change. Skip play notify audio")
 
 
+def insert_daily_chart(db_connection: sqlite3.Connection, inverter_data: dict):
+    cursor = db_connection.cursor()
+    device_time = datetime.strptime(inverter_data["deviceTime"],
+                                    "%Y-%m-%d %H:%M:%S")
+    sleep_time = int(config["SLEEP_TIME"])
+    if sleep_time < 60:
+        if device_time.hour == 0 and device_time.minute == 0 and device_time.second <= sleep_time:
+            cursor.execute("DELETE FROM daily_chart WHERE datetime < ?", (inverter_data["deviceTime"],))
+    elif sleep_time < 3600:
+        if device_time.hour == 0 and device_time.minute <= sleep_time / 60:
+            cursor.execute("DELETE FROM daily_chart WHERE datetime < ?", (inverter_data["deviceTime"],))
+
+    item_id = device_time.strftime("%Y%m%d%H%M")
+    consumption = inverter_data["p_inv"] + \
+        inverter_data["p_to_user"] - \
+        inverter_data["p_rec"]
+    daily_chart_item = {
+        "id": item_id,
+        "datetime": inverter_data["deviceTime"],
+        "pv": inverter_data["p_pv"],
+        "battery": inverter_data["p_discharge"] - inverter_data["p_charge"],
+        "grid": inverter_data["p_to_user"],
+        "consumption": consumption,
+        "soc": inverter_data["soc"],
+    }
+    is_exist = cursor.execute(
+        "SELECT id FROM daily_chart WHERE id = ?", (
+            item_id,)
+    ).fetchone()
+    if is_exist is None:
+        cursor.execute(
+            "INSERT INTO daily_chart (id, datetime, pv, battery, grid, consumption, soc) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (item_id, daily_chart_item["datetime"], daily_chart_item["pv"], daily_chart_item["battery"],
+                daily_chart_item["grid"], daily_chart_item["consumption"], daily_chart_item["soc"]),
+        )
+    else:
+        cursor.execute(
+            "UPDATE daily_chart SET datetime = ?, pv = ?, battery = ?, grid = ?, consumption = ?, soc = ? WHERE id = ?",
+            (
+                daily_chart_item["datetime"],
+                daily_chart_item["pv"],
+                daily_chart_item["battery"],
+                daily_chart_item["grid"],
+                daily_chart_item["consumption"],
+                daily_chart_item["soc"],
+                item_id)
+        )
+    cursor.close()
+    db_connection.commit()
+
 async def main():
     try:
         logger.info("Grid connect watch working on mode: %s",
@@ -119,6 +170,11 @@ async def main():
         run_web_view = config["RUN_WEB_VIEWER"] == "True"
         if config["WORKING_MODE"] == DONGLE_MODE:
             if run_web_view:
+                db_connection = sqlite3.connect(
+                    config["DB_NAME"]) if "DB_NAME" in config else None
+                if db_connection is not None:
+                    from migration import run_migration
+                    run_migration(db_connection, logger)
                 from web_viewer import WebViewer
                 webViewer = WebViewer(logger)
                 webViewer.start()
@@ -132,6 +188,8 @@ async def main():
                 if inverter_data is not None:
                     handle_grid_status(inverter_data, fcm_service)
                     if run_web_view:
+                        if db_connection is not None:
+                            insert_daily_chart(db_connection, inverter_data)
                         await ws_client.send_json(inverter_data)
                 logger.info("Wating for %s second before next check",
                             config["SLEEP_TIME"])
