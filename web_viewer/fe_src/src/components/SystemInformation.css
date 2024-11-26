@@ -250,8 +250,8 @@
     }
 
     .consumption {
+        top: -73px;
         left: -55px;
-        top: -60px;
     }
 
     .battery-type {
@@ -279,7 +279,7 @@
 
     .eps {
         position: relative;
-        top: -30px;
+        top: -25px;
     }
 
     .grid {
@@ -288,6 +288,10 @@
 
     .system-title-text {
         font-size: 16px;
+    }
+
+    .y-arrow + .y-arrow {
+        margin-top: -8px;
     }
 }
 
@@ -337,8 +341,8 @@
     }
 
     .consumption {
-        left: -36px;
-        top: -40px;
+        left: -38px;
+        top: -55px;
     }
 
 
@@ -365,8 +369,16 @@
         left: -23px;
     }
 
+    .eps {
+        top: -22px;
+    }
+
     .eps-status {
         font-size: 14px;
+    }
+
+    .y-arrow + .y-arrow {
+        margin-top: -6px;
     }
 }
 
