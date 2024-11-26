@@ -36,6 +36,7 @@ jobs:
           if [[ $HAS_PYTHON_CHANGE == true ]]; then
               SSH_DEPLOY_COMMAND="$SSH_DEPLOY_COMMAND && ./restart-app.sh"
           fi
+          echo $SSH_DEPLOY_COMMAND
           ssh -i ${{env.SSH_KEY_FILE_PATH}} -o StrictHostKeyChecking=no ${{secrets.SSH_DEPLOY_USER}}@${{secrets.SSH_DEPLOY_HOST}} "$SSH_DEPLOY_COMMAND"
       - name: Clean deploy key file
         run: rm -rf ${{env.SSH_KEY_FILE_PATH}}
