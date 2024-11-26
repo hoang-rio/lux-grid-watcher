@@ -34,7 +34,7 @@ jobs:
           fi
 
           if [[ $HAS_PYTHON_CHANGE == true ]]; then
-              SSH_COMAND_DEPLOY="$SSH_COMAND_DEPLOY && kill \\$(ps | grep app.py | grep -v grep | awk '{print \\$1}') && nohup python app.py &"
+              SSH_COMAND_DEPLOY="$SSH_COMAND_DEPLOY && kill \\$(ps | grep app.py | grep -v grep | awk '{print \$1}') && nohup python app.py &"
           fi
           echo "$SSH_COMAND_DEPLOY"
           ssh -i ${{env.SSH_KEY_FILE_PATH}} -o StrictHostKeyChecking=no ${{secrets.SSH_DEPLOY_USER}}@${{secrets.SSH_DEPLOY_HOST}} "$SSH_COMAND_DEPLOY"
