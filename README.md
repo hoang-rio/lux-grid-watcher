@@ -16,7 +16,7 @@ A python script allow watch Luxpower SNA inverter in realtime
 ## Notification app
 You can implement notification app for Android/iOS by your self and push Firebase Device ID to devices.json file to get notification when grid connect state change.
 
-I also developed an app for Android. If you need it feel free to contact me
+I also developed an app for Android/iOS. If you need it feel free to contact me
 
 ## Webviewer
 You can see LuxPower realtime webviewer in http://locahost:88 (This url can be change by modify variable in `.env` file) like image bellow. This webview is under development

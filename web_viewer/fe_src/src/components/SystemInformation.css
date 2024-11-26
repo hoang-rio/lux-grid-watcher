@@ -290,7 +290,7 @@
         font-size: 16px;
     }
 
-    .y-arrow + .y-arrow {
+    .y-arrow+.y-arrow {
         margin-top: -8px;
     }
 }
@@ -377,7 +377,7 @@
         font-size: 14px;
     }
 
-    .y-arrow + .y-arrow {
+    .y-arrow+.y-arrow {
         margin-top: -6px;
     }
 }
