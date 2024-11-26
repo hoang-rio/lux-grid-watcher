@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { IInverterData } from "../Intefaces";
 import GeneralValue from "./GeneralValue";
 import "./Summary.css";
@@ -104,4 +104,4 @@ function Summary({ invertData }: IProps) {
     </div>
   );
 }
-export default Summary;
+export default memo(Summary);

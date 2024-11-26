@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import "./DailyChart.css";
 import Chart from "react-apexcharts";
 
@@ -6,7 +6,7 @@ interface SeriesItem {
   x: number | string;
   y: never;
 }
-export default function DailyChart() {
+function DailyChart() {
   const [chartData, setChartData] = useState([]);
 
   const series = useMemo(() => {
@@ -60,7 +60,20 @@ export default function DailyChart() {
 
   return (
     <div className="card daily-chart">
-      <div className="daily-chart-title">Daily Chart</div>
+      <div className="row justify-space-between">
+        <div className="daily-chart-title">Daily Chart</div>
+        <div className="row">
+          <div>Auto update chart every: </div>
+          <select>
+            <option value={-1}>No auto update</option>
+            {Array.from({length: 5}).map((_, index) => {
+              const second = (index + 1) * 5;
+              return <option value={second}>{second} seconds</option>;
+            })}
+          </select>
+          <button onClick={() => fetchChart()}>Update now</button>
+        </div>
+      </div>
       <div className="daily-chart-content">
         <Chart
           type="line"
@@ -77,10 +90,10 @@ export default function DailyChart() {
                 : "light",
             },
             xaxis: {
-              type: 'datetime',
+              type: "datetime",
               labels: {
                 datetimeUTC: false,
-              }
+              },
             },
             yaxis: [
               { seriesName: "PV", title: { text: "W" } },
@@ -104,3 +117,5 @@ export default function DailyChart() {
     </div>
   );
 }
+
+export default memo(DailyChart);
