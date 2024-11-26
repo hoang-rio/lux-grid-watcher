@@ -293,6 +293,11 @@
     .y-arrow+.y-arrow {
         margin-top: -8px;
     }
+
+    .pv {
+        position: relative;
+        top: 20px;
+    }
 }
 
 @media screen and (max-width: 768px) {
