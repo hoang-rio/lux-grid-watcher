@@ -163,6 +163,11 @@
     display: none;
 }
 
+.system-graph {
+    width: 1103px;
+    margin: auto;
+}
+
 @media screen and (max-width: 1200px) {
     .inverter .arrows .x-arrow:nth-child(4) {
         display: none;

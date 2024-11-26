@@ -1,5 +1,5 @@
 #root {
-  max-width: calc(100% - 1rem);
+  width: calc(100% - 1rem);
   margin: 0 auto;
   padding: 0.5rem;
   overflow-x: hidden;
