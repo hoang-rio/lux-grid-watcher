@@ -39,7 +39,7 @@ jobs:
           fi
           cat ${{env.SSH_COMMAND_FILE}}
           chmod +x ${{env.SSH_COMMAND_FILE}}
-          ssh -i ${{env.SSH_KEY_FILE_PATH}} -o StrictHostKeyChecking=no ${{secrets.SSH_DEPLOY_USER}}@${{secrets.SSH_DEPLOY_HOST}} "${{env.SSH_COMMAND_FILE}}"
+          ssh -i ${{env.SSH_KEY_FILE_PATH}} -o StrictHostKeyChecking=no ${{secrets.SSH_DEPLOY_USER}}@${{secrets.SSH_DEPLOY_HOST}} ${{env.SSH_COMMAND_FILE}}
           rm -rf ${{env.SSH_COMMAND_FILE}}
       - name: Clean deploy key file
         run: rm -rf ${{env.SSH_KEY_FILE_PATH}}
