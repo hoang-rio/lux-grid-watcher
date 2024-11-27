@@ -195,7 +195,7 @@ def insert_daly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
     ).fetchone()
     if is_exist is None:
         cursor.execute(
-            "INSERT INTO daily_chart (id, date, pv, battery_charged, battery_discharged, grid_import, grid_export, consumption) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO daily_chart (id, year, month, date, pv, battery_charged, battery_discharged, grid_import, grid_export, consumption) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (item_id, daily_chart_item["year"], daily_chart_item["month"], daily_chart_item["date"], daily_chart_item["pv"], daily_chart_item["battery_charged"],
                 daily_chart_item["battery_discharged"], daily_chart_item["grid_import"], daily_chart_item["grid_export"],
                 daily_chart_item["consumption"]),
