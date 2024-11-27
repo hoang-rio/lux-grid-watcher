@@ -112,24 +112,26 @@ def handle_grid_status(json_data: dict, fcm_service: FCM):
         logger.info("State did not change. Skip play notify audio")
 
 
-def insert_daily_chart(db_connection: sqlite3.Connection, inverter_data: dict):
+def insert_hourly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
     cursor = db_connection.cursor()
     device_time = datetime.strptime(inverter_data["deviceTime"],
                                     "%Y-%m-%d %H:%M:%S")
     sleep_time = int(config["SLEEP_TIME"])
     if sleep_time < 60:
         if device_time.hour == 0 and device_time.minute == 0 and device_time.second <= sleep_time:
-            cursor.execute("DELETE FROM daily_chart WHERE datetime < ?", (inverter_data["deviceTime"],))
+            cursor.execute(
+                "DELETE FROM hourly_chart WHERE datetime < ?", (inverter_data["deviceTime"],))
     elif sleep_time < 3600:
         if device_time.hour == 0 and device_time.minute <= sleep_time / 60:
-            cursor.execute("DELETE FROM daily_chart WHERE datetime < ?", (inverter_data["deviceTime"],))
+            cursor.execute(
+                "DELETE FROM hourly_chart WHERE datetime < ?", (inverter_data["deviceTime"],))
 
     item_id = device_time.strftime("%Y%m%d%H%M")
     grid = inverter_data["p_to_user"] - inverter_data["p_to_grid"]
     consumption = inverter_data["p_inv"] + \
         inverter_data["p_to_user"] - \
         inverter_data["p_rec"]
-    daily_chart_item = {
+    hourly_chart_item = {
         "id": item_id,
         "datetime": inverter_data["deviceTime"],
         "pv": inverter_data["p_pv"],
@@ -139,29 +141,83 @@ def insert_daily_chart(db_connection: sqlite3.Connection, inverter_data: dict):
         "soc": inverter_data["soc"],
     }
     is_exist = cursor.execute(
-        "SELECT id FROM daily_chart WHERE id = ?", (
+        "SELECT id FROM hourly_chart WHERE id = ?", (
             item_id,)
     ).fetchone()
     if is_exist is None:
         cursor.execute(
-            "INSERT INTO daily_chart (id, datetime, pv, battery, grid, consumption, soc) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (item_id, daily_chart_item["datetime"], daily_chart_item["pv"], daily_chart_item["battery"],
-                daily_chart_item["grid"], daily_chart_item["consumption"], daily_chart_item["soc"]),
+            "INSERT INTO hourly_chart (id, datetime, pv, battery, grid, consumption, soc) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (item_id, hourly_chart_item["datetime"], hourly_chart_item["pv"], hourly_chart_item["battery"],
+                hourly_chart_item["grid"], hourly_chart_item["consumption"], hourly_chart_item["soc"]),
         )
     else:
         cursor.execute(
-            "UPDATE daily_chart SET datetime = ?, pv = ?, battery = ?, grid = ?, consumption = ?, soc = ? WHERE id = ?",
+            "UPDATE hourly_chart SET datetime = ?, pv = ?, battery = ?, grid = ?, consumption = ?, soc = ? WHERE id = ?",
             (
-                daily_chart_item["datetime"],
-                daily_chart_item["pv"],
-                daily_chart_item["battery"],
-                daily_chart_item["grid"],
-                daily_chart_item["consumption"],
-                daily_chart_item["soc"],
+                hourly_chart_item["datetime"],
+                hourly_chart_item["pv"],
+                hourly_chart_item["battery"],
+                hourly_chart_item["grid"],
+                hourly_chart_item["consumption"],
+                hourly_chart_item["soc"],
                 item_id)
         )
     cursor.close()
     db_connection.commit()
+    return [item_id, hourly_chart_item["datetime"], hourly_chart_item["pv"], hourly_chart_item["battery"], hourly_chart_item["grid"], hourly_chart_item["consumption"], hourly_chart_item["soc"]]
+
+
+def insert_daly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
+    cursor = db_connection.cursor()
+    device_time = datetime.strptime(inverter_data["deviceTime"],
+                                    "%Y-%m-%d %H:%M:%S")
+    item_id = device_time.strftime("%Y%m%d")
+    consumption = (
+        inverter_data["e_inv_day"] +
+        inverter_data["e_to_user_day"] +
+        inverter_data["e_eps_day"] -
+        inverter_data["e_rec_day"]
+    )
+    daily_chart_item = {
+        "id": item_id,
+        "year": device_time.year,
+        "month": device_time.month,
+        "date": device_time.strftime("%Y-%m-%d"),
+        "pv": inverter_data["e_pv_day"],
+        "battery_charged": inverter_data["e_chg_day"],
+        "battery_discharged": inverter_data["e_dischg_day"],
+        "grid_import": inverter_data["e_to_user_day"],
+        "grid_export": inverter_data["e_to_grid_day"],
+        "consumption": round(consumption, 1),
+    }
+    is_exist = cursor.execute(
+        "SELECT id FROM daily_chart WHERE id = ?", (item_id,)
+    ).fetchone()
+    if is_exist is None:
+        cursor.execute(
+            "INSERT INTO daily_chart (id, date, pv, battery_charged, battery_discharged, grid_import, grid_export, consumption) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (item_id, daily_chart_item["year"], daily_chart_item["month"], daily_chart_item["date"], daily_chart_item["pv"], daily_chart_item["battery_charged"],
+                daily_chart_item["battery_discharged"], daily_chart_item["grid_import"], daily_chart_item["grid_export"],
+                daily_chart_item["consumption"]),
+        )
+    else:
+        cursor.execute(
+            "UPDATE daily_chart SET year = ?, month = ?, date = ?, pv = ?, battery_charged = ?, battery_discharged = ?, grid_import = ?, grid_export = ?, consumption = ? WHERE id = ?",
+            (
+                daily_chart_item["year"],
+                daily_chart_item["month"],
+                daily_chart_item["date"],
+                daily_chart_item["pv"],
+                daily_chart_item["battery_charged"],
+                daily_chart_item["battery_discharged"],
+                daily_chart_item["grid_import"],
+                daily_chart_item["grid_export"],
+                daily_chart_item["consumption"],
+                item_id)
+        )
+    cursor.close()
+    db_connection.commit()
+
 
 async def main():
     try:
@@ -181,7 +237,8 @@ async def main():
                 webViewer.start()
                 time.sleep(1)
                 from web_socket_client import WebSocketClient
-                ws_client = WebSocketClient(logger=logger, host=config["HOST"], port=int(config["PORT"]))
+                ws_client = WebSocketClient(
+                    logger=logger, host=config["HOST"], port=int(config["PORT"]))
                 ws_client.start()
             dongle = dongle_handler.Dongle(logger, config)
             while True:
@@ -190,8 +247,12 @@ async def main():
                     handle_grid_status(inverter_data, fcm_service)
                     if run_web_view:
                         if db_connection is not None:
-                            insert_daily_chart(db_connection, inverter_data)
-                        await ws_client.send_json(inverter_data)
+                            hourly_chart_item = insert_hourly_chart(db_connection, inverter_data)
+                            insert_daly_chart(db_connection, inverter_data)
+                        await ws_client.send_json({
+                            "inverter_data": inverter_data,
+                            "hourly_chart_item": hourly_chart_item
+                        })
                 logger.info("Wating for %s second before next check",
                             config["SLEEP_TIME"])
                 time.sleep(int(config["SLEEP_TIME"]))

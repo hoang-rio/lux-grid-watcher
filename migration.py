@@ -14,7 +14,8 @@ logging.basicConfig(
 
 MIGRATIONS_SQL = [
     "CREATE TABLE IF NOT EXISTS migration (id INTEGER PRIMARY KEY, applied_at TEXT)",
-    "CREATE TABLE IF NOT EXISTS daily_chart (id VARCHAR PRIMARY KEY, datetime TEXT, pv INTEGER, battery INTEGER, grid INTEGER, consumption INTEGER, soc INTERGER)",
+    "CREATE TABLE IF NOT EXISTS hourly_chart (id VARCHAR PRIMARY KEY, datetime TEXT, pv INTEGER, battery INTEGER, grid INTEGER, consumption INTEGER, soc INTERGER)",
+    "CREATE TABLE IF NOT EXISTS daily_chart (id VARCHAR PRIMARY KEY, year INTEGER, month INTEGER, date TEXT, pv INTEGER, battery_charged INTEGER, battery_discharged INTEGER, grid_import INTEGER, grid_export INTEGER, consumption INTEGER)",
 ]
 def execute_migration_sql(id: int, sql: str, cursor: sqlite3.Cursor) -> None:
     global logger
@@ -66,7 +67,6 @@ def run_migration(db_connection: sqlite3.Connection | None = None, _logger: logg
                 execute_migration_sql(id, sql, cursor)
             conn.commit()
     cursor.close()
-    conn.close()
 
 if __name__ == '__main__':
     run_migration()

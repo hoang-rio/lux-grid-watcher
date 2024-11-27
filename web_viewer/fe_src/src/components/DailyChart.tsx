@@ -1,116 +1,141 @@
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import "./DailyChart.css";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Chart from "react-apexcharts";
+import "./DailyChart.css";
+import { IClassNameProps, SeriesItem } from "../Intefaces";
 
-interface SeriesItem {
-  x: number | string;
-  y: never;
-}
-function DailyChart() {
+
+function DailyChart({ className }: IClassNameProps) {
   const [chartData, setChartData] = useState([]);
-
+  const [isDark, setIsDark] = useState(false);
+  const isFetchingRef = useRef<boolean>(false);
   const series = useMemo(() => {
-    const pvSeries: SeriesItem[] = [];
-    const batterySeries: SeriesItem[] = [];
-    const gridSeries: SeriesItem[] = [];
+    const solarSeries: SeriesItem[] = [];
+    const batteryChargedSeries: SeriesItem[] = [];
+    const batterDischargedSeries: SeriesItem[] = [];
+    const gridImportSeries: SeriesItem[] = [];
+    const gridExportSeries: SeriesItem[] = [];
     const consumptionSeries: SeriesItem[] = [];
-    const socSeries: SeriesItem[] = [];
 
     chartData.forEach((item) => {
-      const time = new Date(item[1]).getTime();
-      pvSeries.push({ x: time, y: item[2] });
-      batterySeries.push({ x: time, y: item[3] });
-      gridSeries.push({ x: time, y: item[4] });
-      consumptionSeries.push({ x: time, y: item[5] });
-      socSeries.push({ x: time, y: item[6] });
+      const time = new Date(item[3]).getTime();
+      solarSeries.push({ x: time, y: item[4] });
+      batteryChargedSeries.push({ x: time, y: item[5] });
+      batterDischargedSeries.push({ x: time, y: item[6] });
+      gridImportSeries.push({ x: time, y: item[7] });
+      gridExportSeries.push({ x: time, y: item[8] });
+      consumptionSeries.push({ x: time, y: item[9] });
     });
     return [
       {
-        name: "PV",
-        data: pvSeries,
+        name: "Solar production",
+        data: solarSeries,
       },
       {
-        name: "Battery",
-        data: batterySeries,
+        name: "Battery discharged",
+        data: batterDischargedSeries,
       },
       {
-        name: "Grid",
-        data: gridSeries,
+        name: "Battery charged",
+        data: batteryChargedSeries,
       },
       {
-        name: "Consumption",
+        name: "Export to grid",
+        data: gridExportSeries,
+      },
+      {
+        name: "Import to user",
+        data: gridImportSeries,
+      },
+      {
+        name: "Comsumption",
         data: consumptionSeries,
-      },
-      {
-        name: "SOC",
-        data: socSeries,
       },
     ];
   }, [chartData]);
 
   const fetchChart = useCallback(async () => {
+    if (isFetchingRef.current) {
+      return;
+    }
+    isFetchingRef.current = true;
     const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/daily-chart`);
     const json = await res.json();
     setChartData(json);
+    isFetchingRef.current = false;
   }, [setChartData]);
 
   useEffect(() => {
     fetchChart();
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        console.log("Fetch hourly chart when visiblity change");
+        fetchChart();
+      }
+    });
   }, [fetchChart]);
 
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+
+    if (mq.matches) {
+      setIsDark(true);
+    }
+
+    // This callback will fire if the perferred color scheme changes without a reload
+    mq.addEventListener("change", (evt) => setIsDark(evt.matches));
+  }, []);
+
   return (
-    <div className="card daily-chart">
+    <div className={`card daily-chart ${className || ""}`}>
       <div className="row justify-space-between">
         <div className="daily-chart-title">Daily Chart</div>
         <div className="row">
-          <div>Auto update chart every: </div>
-          <select>
-            <option value={-1}>No auto update</option>
-            {Array.from({length: 5}).map((_, index) => {
-              const second = (index + 1) * 5;
-              return <option value={second}>{second} seconds</option>;
-            })}
-          </select>
-          <button onClick={() => fetchChart()}>Update now</button>
+          <button onClick={() => fetchChart()}>Update</button>
         </div>
       </div>
       <div className="daily-chart-content">
         <Chart
-          type="line"
+          type="bar"
           series={series}
           options={{
             chart: {
               toolbar: {
                 show: false,
               },
+              height: 300,
             },
+            colors: [
+              "rgb(112, 173, 70)",
+              "rgb(90, 155, 213)",
+              "rgb(64, 38, 198)",
+              "rgb(246, 104, 103)",
+              "rgb(153, 107, 31)",
+              "rgb(255, 164, 97)",
+            ],
             theme: {
-              mode: window.matchMedia("(prefers-color-scheme: dark)").matches
-                ? "dark"
-                : "light",
+              mode: isDark ? "dark" : "light",
+            },
+            dataLabels: {
+              enabled: false,
             },
             xaxis: {
               type: "datetime",
               labels: {
                 datetimeUTC: false,
+                format: "dd/MM/yyyy",
               },
             },
-            yaxis: [
-              { seriesName: "PV", title: { text: "W" } },
-              { seriesName: "PV", show: false },
-              { seriesName: "PV", show: false },
-              { seriesName: "PV", show: false },
-              {
-                seriesName: "SOC",
-                opposite: true,
-                tickAmount: 10,
-                min: 0,
-                max: 100,
-                title: {
-                  text: "SOC (%)",
+            tooltip: {
+              x: {
+                format: "dd/MM/yyyy",
+              },
+              y: {
+                formatter(val) {
+                  return `${val} kWh`;
                 },
               },
-            ],
+            },
+            yaxis: [{ seriesName: "Solar production", title: { text: "kWh" } }],
           }}
         />
       </div>

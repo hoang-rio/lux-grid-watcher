@@ -46,14 +46,12 @@
 .description {
   color: #d7d7d7;
 }
+
 .text-right {
   text-align: right;
 }
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+
+.chart {
+  display: flex;
+  flex-wrap: wrap;
 }

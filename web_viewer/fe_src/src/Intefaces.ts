@@ -50,3 +50,16 @@ export interface ICProps {
   inverterData: IInverterData;
   isSocketConnected: boolean;
 }
+
+export interface SeriesItem {
+  x: number | string;
+  y: never;
+}
+
+export interface IClassNameProps {
+  className?: string;
+}
+
+export interface IUpdateChart {
+  updateItem: (hourlyItem: never[]) => void;
+}

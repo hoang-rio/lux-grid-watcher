@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState, lazy } from "react";
 import "./App.css";
-import { IInverterData } from "./Intefaces";
-import SystemInformation from "./components/SystemInformation";
-import Summary from "./components/Summary";
+import { IUpdateChart, IInverterData } from "./Intefaces";
+
+const SystemInformation = lazy(() => import("./components/SystemInformation"));
+const Summary = lazy(() => import("./components/Summary"));
+const HourlyChart = lazy(() => import("./components/HourlyChart"));
 const DailyChart = lazy(() => import("./components/DailyChart"));
 
 const MAX_RECONNECT_COUNT = 3;
@@ -13,6 +15,7 @@ function App() {
   const selfCloseRef = useRef<boolean>(false);
   const reconnectCountRef = useRef<number>(0);
   const [isSocketConnected, setIsSocketConnected] = useState<boolean>(true);
+  const hourlyCharfRef = useRef<IUpdateChart>(null);
 
   const connectSocket = useCallback(() => {
     if (
@@ -36,7 +39,8 @@ function App() {
     // Listen for messages
     socket.addEventListener("message", (event) => {
       const jsonData = JSON.parse(event.data);
-      setInverterData(jsonData);
+      setInverterData(jsonData.inverter_data);
+      hourlyCharfRef.current?.updateItem(jsonData.hourly_chart_item);
     });
     socket.addEventListener("close", () => {
       document.title = `[Offline] ${import.meta.env.VITE_APP_TITLE}`;
@@ -110,7 +114,10 @@ function App() {
           isSocketConnected={isSocketConnected}
           onReconnect={connectSocket}
         />
-        <DailyChart />
+        <div className="row chart">
+          <HourlyChart ref={hourlyCharfRef} className="flex-1" />
+          <DailyChart className="flex-1" />
+        </div>
       </>
     );
   }
