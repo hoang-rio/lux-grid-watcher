@@ -13,6 +13,8 @@ import "./HourlyChart.css";
 import Chart from "react-apexcharts";
 import { IClassNameProps, IUpdateChart, SeriesItem } from "../Intefaces";
 
+const BATTERY_SERIE_NAME = "Battery";
+
 const HourlyChart = forwardRef(({ className }: IClassNameProps, ref: ForwardedRef<IUpdateChart>) => {
   const [chartData, setChartData] = useState<never[][]>([]);
   const [isDark, setIsDark] = useState(false);
@@ -39,7 +41,7 @@ const HourlyChart = forwardRef(({ className }: IClassNameProps, ref: ForwardedRe
         data: pvSeries,
       },
       {
-        name: "Battery",
+        name: BATTERY_SERIE_NAME,
         data: batterySeries,
       },
       {
@@ -169,8 +171,22 @@ const HourlyChart = forwardRef(({ className }: IClassNameProps, ref: ForwardedRe
                   if (opts.seriesIndex === 4) {
                     return `${val}%`;
                   }
-                  return `${val} W`;
+                  return `${Math.abs(val)} W`;
                 },
+                title: {
+                  formatter(seriesName, opts) {
+                    console.log(opts);
+                      if (seriesName === BATTERY_SERIE_NAME) {
+                        const batteryValue =
+                          opts.series[1][opts.dataPointIndex];
+                        if (batteryValue < 0) {
+                          return `${seriesName} charge:`;
+                        }
+                        return `${seriesName} discharge:`;
+                      }
+                      return `${seriesName}:`;
+                  },
+                }
               },
             },
           }}
