@@ -9,3 +9,7 @@
 .hourly-chart-content {
     margin-top: 10px;
 }
+
+.hourly-chart-buttons button+button {
+    margin-left: 10px;
+}
