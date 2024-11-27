@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 import sqlite3
 import threading
 from aiohttp.aiohttp import web
@@ -17,12 +18,14 @@ config: dict = {
 logger: Logger = getLogger(__file__)
 db_connection: sqlite3.Connection | None = None
 
+
 async def http_handler(_: web.Request):
     index_file_path = path.join(path.dirname(__file__), 'public', 'index.html')
     return web.FileResponse(index_file_path)
 
 ws_clients: list[web.WebSocketResponse] = []
 last_inverter_data: str = '{}'
+
 
 async def websocket_handler(request):
     global ws_clients
@@ -47,18 +50,21 @@ async def websocket_handler(request):
             ws_clients.remove(ws)
         elif msg.type == aiohttp.WSMsgType.ERROR:
             ws_clients.remove(ws)
-            logger.error("WS connection closed with exception %s" % ws.exception())
+            logger.error("WS connection closed with exception %s" %
+                         ws.exception())
 
     return ws
 
 VITE_CORS_HEADER = {
     'Access-Control-Allow-Origin': 'http://localhost:5173'}
 
+
 def state(_: web.Request):
     global last_inverter_data
     res = web.json_response(json.loads(
         last_inverter_data)["inverter_data"], headers=VITE_CORS_HEADER)
     return res
+
 
 def hourly_chart(_: web.Request):
     if "DB_NAME" not in config:
@@ -72,6 +78,7 @@ def hourly_chart(_: web.Request):
     res = web.json_response(hourly_chart, headers=VITE_CORS_HEADER)
     return res
 
+
 def daily_chart(_: web.Request):
     if "DB_NAME" not in config:
         return web.json_response([], headers=VITE_CORS_HEADER)
@@ -79,10 +86,14 @@ def daily_chart(_: web.Request):
     if db_connection is None:
        db_connection = sqlite3.connect(config["DB_NAME"])
     cursor = db_connection.cursor()
+    now = datetime.now()
     daily_chart = cursor.execute(
-        "SELECT * FROM daily_chart").fetchall()
+        "SELECT * FROM daily_chart WHERE year = ? AND month = ?",
+        (now.year, now.month)
+    ).fetchall()
     res = web.json_response(daily_chart, headers=VITE_CORS_HEADER)
     return res
+
 
 def create_runner():
     app = web.Application()
@@ -105,6 +116,8 @@ async def start_server(host="127.0.0.1", port=1337):
     await site.start()
 
 loop: asyncio.AbstractEventLoop | None = None
+
+
 def run_http_server():
     global loop
     loop = asyncio.new_event_loop()
@@ -122,7 +135,7 @@ class WebViewer(threading.Thread):
 
     def run(self) -> None:
         run_http_server()
-    
+
     def stop(self) -> None:
         global loop
         if loop is None:
