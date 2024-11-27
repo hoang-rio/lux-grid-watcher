@@ -72,14 +72,17 @@ const HourlyChart = forwardRef(({ className }: IClassNameProps, ref: ForwardedRe
 
   useImperativeHandle(ref, (): IUpdateChart => ({
     updateItem(hourlyItem) {
-      console.log(hourlyItem)
       const lastItem = chartData[chartData.length - 1];
-      if (lastItem[0] === hourlyItem[0]) {
-        chartData.splice(chartData.length -1, 1, hourlyItem);
-      } else {
-        chartData.push(hourlyItem);
+      if (JSON.stringify(lastItem) === JSON.stringify(hourlyItem)) {
+        return;
       }
-      setChartData(chartData);
+      const newChartData = [...chartData];
+      if (lastItem[0] === hourlyItem[0]) {
+        newChartData.splice(chartData.length - 1, 1, hourlyItem);
+      } else {
+        newChartData.push(hourlyItem);
+      }
+      setChartData(newChartData);
     },
   }));
 
