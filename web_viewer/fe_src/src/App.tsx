@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, lazy } from "react";
 import "./App.css";
 import { IUpdateChart, IInverterData } from "./Intefaces";
+import Footer from "./components/Footer";
 
 const SystemInformation = lazy(() => import("./components/SystemInformation"));
 const Summary = lazy(() => import("./components/Summary"));
@@ -16,6 +17,8 @@ function App() {
   const reconnectCountRef = useRef<number>(0);
   const [isSocketConnected, setIsSocketConnected] = useState<boolean>(true);
   const hourlyCharfRef = useRef<IUpdateChart>(null);
+  const [isInitState, setIsInitState] = useState(true);
+  const isFetchingRef = useRef(false);
 
   const connectSocket = useCallback(() => {
     if (
@@ -69,16 +72,21 @@ function App() {
     socketRef.current?.close();
   }, []);
 
-  const fetchState = useCallback(() => {
-    fetch(`${import.meta.env.VITE_API_BASE_URL}/state`)
-      .then((res) => res.json())
-      .then((json) => {
-        setInverterData(json);
-      })
-      .catch((err) => {
-        console.error("API get state error", err);
-      });
-  }, [setInverterData]);
+  const fetchState = useCallback(async () => {
+    try {
+      if (isFetchingRef.current) {
+        return;
+      }
+      isFetchingRef.current = true;
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/state`);
+      const json = await res.json();
+      setInverterData(json);
+      setIsInitState(false);
+    } catch (err) {
+      console.error("API get state error", err);
+    }
+    isFetchingRef.current = false;
+  }, [setInverterData, setIsInitState]);
 
   useEffect(() => {
     fetchState();
@@ -105,6 +113,17 @@ function App() {
     document.title = `[${deviceTimeOnly}] ${import.meta.env.VITE_APP_TITLE}`;
   }, [inverterData?.deviceTime]);
 
+  if (isInitState) {
+    return (
+      <>
+        <div className="d-flex card loading align-center justify-center flex-1">
+          Loading....
+        </div>
+        <Footer />
+      </>
+    );
+  }
+
   if (inverterData) {
     return (
       <>
@@ -115,17 +134,21 @@ function App() {
           onReconnect={connectSocket}
         />
         <div className="row chart">
-          <HourlyChart ref={hourlyCharfRef} className="flex-1" />
-          <DailyChart className="flex-1" />
+          <HourlyChart ref={hourlyCharfRef} className="flex-1 chart-item" />
+          <DailyChart className="flex-1 chart-item" />
         </div>
+        <Footer />
       </>
     );
   }
 
   return (
-    <div className="card server-offline">
-      Server is offline. Reload page when you make sure that server is online
-    </div>
+    <>
+      <div className="d-flex card server-offline align-center justify-center flex-1">
+        Server is offline. Reload page when you make sure that server is online
+      </div>
+      <Footer />
+    </>
   );
 }
 

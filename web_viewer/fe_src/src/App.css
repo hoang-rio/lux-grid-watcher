@@ -3,6 +3,8 @@
   margin: 0 auto;
   padding: 0.5rem;
   overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .row {
@@ -54,4 +56,25 @@
 .chart {
   display: flex;
   flex-wrap: wrap;
+}
+
+.chart-item {
+  flex-basis: 300px;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.footer {
+  margin-top: 10px;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.server-offline, .loading {
+  height: 300px;
+  font-size: 22px;
 }
