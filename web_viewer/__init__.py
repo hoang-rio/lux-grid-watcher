@@ -51,37 +51,37 @@ async def websocket_handler(request):
 
     return ws
 
-cors_header = {
+VITE_CORS_HEADER = {
     'Access-Control-Allow-Origin': 'http://localhost:5173'}
 
 def state(_: web.Request):
     global last_inverter_data
     res = web.json_response(json.loads(
-        last_inverter_data)["inverter_data"], headers=cors_header)
+        last_inverter_data)["inverter_data"], headers=VITE_CORS_HEADER)
     return res
 
 def hourly_chart(_: web.Request):
     if "DB_NAME" not in config:
-        return web.json_response([], headers=cors_header)
+        return web.json_response([], headers=VITE_CORS_HEADER)
     global db_connection
     if db_connection is None:
        db_connection = sqlite3.connect(config["DB_NAME"])
     cursor = db_connection.cursor()
     hourly_chart = cursor.execute(
         "SELECT * FROM hourly_chart").fetchall()
-    res = web.json_response(hourly_chart, headers=cors_header)
+    res = web.json_response(hourly_chart, headers=VITE_CORS_HEADER)
     return res
 
 def daily_chart(_: web.Request):
     if "DB_NAME" not in config:
-        return web.json_response([], headers=cors_header)
+        return web.json_response([], headers=VITE_CORS_HEADER)
     global db_connection
     if db_connection is None:
        db_connection = sqlite3.connect(config["DB_NAME"])
     cursor = db_connection.cursor()
     daily_chart = cursor.execute(
         "SELECT * FROM daily_chart").fetchall()
-    res = web.json_response(daily_chart, headers=cors_header)
+    res = web.json_response(daily_chart, headers=VITE_CORS_HEADER)
     return res
 
 def create_runner():
