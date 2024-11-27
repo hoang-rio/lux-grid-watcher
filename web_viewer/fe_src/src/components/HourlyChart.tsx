@@ -96,14 +96,19 @@ const HourlyChart = forwardRef(
       })
     );
 
+    const onVisibilityChange = useCallback(() => {
+       if (!document.hidden && isAutoUpdate) {
+         fetchChart();
+       }
+    }, [fetchChart, isAutoUpdate]);
+
     useEffect(() => {
       fetchChart();
-      document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) {
-          fetchChart();
-        }
-      });
-    }, [fetchChart, ref]);
+      document.addEventListener("visibilitychange", onVisibilityChange);
+      return () => {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      }
+    }, [fetchChart, isAutoUpdate, onVisibilityChange]);
 
     useEffect(() => {
       const mq = window.matchMedia("(prefers-color-scheme: dark)");

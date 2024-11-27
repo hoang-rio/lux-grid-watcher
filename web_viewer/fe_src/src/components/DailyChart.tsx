@@ -68,7 +68,6 @@ function DailyChart({ className }: IClassNameProps) {
     fetchChart();
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) {
-        console.log("Fetch hourly chart when visiblity change");
         fetchChart();
       }
     });
