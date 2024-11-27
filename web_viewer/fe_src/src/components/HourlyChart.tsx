@@ -20,7 +20,7 @@ const HourlyChart = forwardRef(
     const [chartData, setChartData] = useState<never[][]>([]);
     const [isDark, setIsDark] = useState(false);
     const isFetchingRef = useRef<boolean>(false);
-    const [isAutoUpdate, setIsAutoUpdate] = useState(false);
+    const [isAutoUpdate, setIsAutoUpdate] = useState(true);
 
     const series = useMemo(() => {
       const pvSeries: SeriesItem[] = [];
