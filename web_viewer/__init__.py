@@ -73,8 +73,9 @@ def hourly_chart(_: web.Request):
     if db_connection is None:
        db_connection = sqlite3.connect(config["DB_NAME"])
     cursor = db_connection.cursor()
+    start_of_day = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     hourly_chart = cursor.execute(
-        "SELECT * FROM hourly_chart").fetchall()
+        "SELECT * FROM hourly_chart WHERE datetime >= ?", (start_of_day.strftime("%Y-%m-%d %H:%M:%S"),)).fetchall()
     res = web.json_response(hourly_chart, headers=VITE_CORS_HEADER)
     return res
 
