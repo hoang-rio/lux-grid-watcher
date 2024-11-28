@@ -3,7 +3,6 @@ import Chart from "react-apexcharts";
 import "./DailyChart.css";
 import { IClassNameProps, SeriesItem } from "../Intefaces";
 
-
 function DailyChart({ className }: IClassNameProps) {
   const [chartData, setChartData] = useState([]);
   const [isDark, setIsDark] = useState(false);
@@ -85,58 +84,66 @@ function DailyChart({ className }: IClassNameProps) {
   }, []);
 
   return (
-    <div className={`card daily-chart ${className || ""}`}>
+    <div className={`card daily-chart col flex-1 ${className || ""}`}>
       <div className="row justify-space-between">
         <div className="daily-chart-title">Daily Chart</div>
         <div className="row">
           <button onClick={() => fetchChart()}>Update</button>
         </div>
       </div>
-      <div className="daily-chart-content">
-        <Chart
-          type="bar"
-          series={series}
-          options={{
-            chart: {
-              toolbar: {
-                show: false,
+      <div className="daily-chart-content col flex-1">
+        {chartData.length ? (
+          <Chart
+            type="bar"
+            series={series}
+            options={{
+              chart: {
+                toolbar: {
+                  show: false,
+                },
+                height: 300,
               },
-              height: 300,
-            },
-            colors: [
-              "rgb(112, 173, 70)",
-              "rgb(90, 155, 213)",
-              "rgb(64, 38, 198)",
-              "rgb(246, 104, 103)",
-              "rgb(153, 107, 31)",
-              "rgb(255, 164, 97)",
-            ],
-            theme: {
-              mode: isDark ? "dark" : "light",
-            },
-            dataLabels: {
-              enabled: false,
-            },
-            xaxis: {
-              type: "datetime",
-              labels: {
-                datetimeUTC: false,
-                format: "dd/MM/yyyy",
+              colors: [
+                "rgb(112, 173, 70)",
+                "rgb(90, 155, 213)",
+                "rgb(64, 38, 198)",
+                "rgb(246, 104, 103)",
+                "rgb(153, 107, 31)",
+                "rgb(255, 164, 97)",
+              ],
+              theme: {
+                mode: isDark ? "dark" : "light",
               },
-            },
-            tooltip: {
-              x: {
-                format: "dd/MM/yyyy",
+              dataLabels: {
+                enabled: false,
               },
-              y: {
-                formatter(val) {
-                  return `${val} kWh`;
+              xaxis: {
+                type: "datetime",
+                labels: {
+                  datetimeUTC: false,
+                  format: "dd/MM/yyyy",
                 },
               },
-            },
-            yaxis: [{ seriesName: "Solar production", title: { text: "kWh" } }],
-          }}
-        />
+              tooltip: {
+                x: {
+                  format: "dd/MM/yyyy",
+                },
+                y: {
+                  formatter(val) {
+                    return `${val} kWh`;
+                  },
+                },
+              },
+              yaxis: [
+                { seriesName: "Solar production", title: { text: "kWh" } },
+              ],
+            }}
+          />
+        ) : (
+          <div className="col flex-1 justify-center align-center">
+            Loadding...
+          </div>
+        )}
       </div>
     </div>
   );

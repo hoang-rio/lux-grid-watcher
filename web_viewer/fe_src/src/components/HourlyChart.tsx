@@ -129,7 +129,7 @@ const HourlyChart = forwardRef(
     }, [isAutoUpdate, fetchChart]);
 
     return (
-      <div className={`card hourly-chart ${className || ""}`}>
+      <div className={`card hourly-chart col ${className || ""}`}>
         <div className="row justify-space-between">
           <div className="hourly-chart-title">Hourly Chart</div>
           <div className="row hourly-chart-buttons">
@@ -141,80 +141,86 @@ const HourlyChart = forwardRef(
             </button>
           </div>
         </div>
-        <div className="hourly-chart-content">
-          <Chart
-            type="line"
-            series={series}
-            options={{
-              chart: {
-                toolbar: {
-                  show: false,
+        <div className="hourly-chart-content col flex-1">
+          {chartData.length ? (
+            <Chart
+              type="line"
+              series={series}
+              options={{
+                chart: {
+                  toolbar: {
+                    show: false,
+                  },
+                  height: 300,
                 },
-                height: 300,
-              },
-              colors: [
-                "rgb(112, 173, 70)",
-                "rgb(90, 155, 213)",
-                "rgb(246, 104, 103)",
-                "rgb(255, 164, 97)",
-                "rgb(128, 0, 128)",
-              ],
-              stroke: {
-                width: 3,
-              },
-              theme: {
-                mode: isDark ? "dark" : "light",
-              },
-              xaxis: {
-                type: "datetime",
-                labels: {
-                  datetimeUTC: false,
+                colors: [
+                  "rgb(112, 173, 70)",
+                  "rgb(90, 155, 213)",
+                  "rgb(246, 104, 103)",
+                  "rgb(255, 164, 97)",
+                  "rgb(128, 0, 128)",
+                ],
+                stroke: {
+                  width: 3,
                 },
-              },
-              yaxis: [
-                { seriesName: "PV", title: { text: "Power (W)" } },
-                { seriesName: "PV", show: false },
-                { seriesName: "PV", show: false },
-                { seriesName: "PV", show: false },
-                {
-                  seriesName: "SOC",
-                  opposite: true,
-                  tickAmount: 10,
-                  min: 0,
-                  max: 100,
-                  title: {
-                    text: "SOC (%)",
+                theme: {
+                  mode: isDark ? "dark" : "light",
+                },
+                xaxis: {
+                  type: "datetime",
+                  labels: {
+                    datetimeUTC: false,
                   },
                 },
-              ],
-              tooltip: {
-                x: {
-                  format: "HH:mm:ss",
-                },
-                y: {
-                  formatter(val, opts) {
-                    if (opts.seriesIndex === 4) {
-                      return `${val}%`;
-                    }
-                    return `${Math.abs(val)} W`;
+                yaxis: [
+                  { seriesName: "PV", title: { text: "Power (W)" } },
+                  { seriesName: "PV", show: false },
+                  { seriesName: "PV", show: false },
+                  { seriesName: "PV", show: false },
+                  {
+                    seriesName: "SOC",
+                    opposite: true,
+                    tickAmount: 10,
+                    min: 0,
+                    max: 100,
+                    title: {
+                      text: "SOC (%)",
+                    },
                   },
-                  title: {
-                    formatter(seriesName, opts) {
-                      if (seriesName === BATTERY_SERIE_NAME) {
-                        const batteryValue =
-                          opts.series[1][opts.dataPointIndex];
-                        if (batteryValue < 0) {
-                          return `${seriesName} charge:`;
-                        }
-                        return `${seriesName} discharge:`;
+                ],
+                tooltip: {
+                  x: {
+                    format: "HH:mm:ss",
+                  },
+                  y: {
+                    formatter(val, opts) {
+                      if (opts.seriesIndex === 4) {
+                        return `${val}%`;
                       }
-                      return `${seriesName}:`;
+                      return `${Math.abs(val)} W`;
+                    },
+                    title: {
+                      formatter(seriesName, opts) {
+                        if (seriesName === BATTERY_SERIE_NAME) {
+                          const batteryValue =
+                            opts.series[1][opts.dataPointIndex];
+                          if (batteryValue < 0) {
+                            return `${seriesName} charge:`;
+                          }
+                          return `${seriesName} discharge:`;
+                        }
+                        return `${seriesName}:`;
+                      },
                     },
                   },
                 },
-              },
-            }}
-          />
+              }}
+            />
+          ) : (
+            <div className="flex-1 align-center justify-center col">
+              Loadding...
+            </div>
+          )}
         </div>
       </div>
     );

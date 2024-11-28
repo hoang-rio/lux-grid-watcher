@@ -27,14 +27,17 @@ jobs:
           chmod 600 ${{env.SSH_KEY_FILE_PATH}}
       - name: Deploy with git
         run: |
-          SSH_DEPLOY_COMMAND="cd ${{secrets.SSH_DEPLOY_PATH}} && git pull"
+          SSH_DEPLOY_COMMAND="cd ${{secrets.SSH_DEPLOY_PATH}} && git pull && git submodule update"
           HAS_PYTHON_CHANGE=true
           GIT_CHANGED_FILE=$(git show --name-only)
-          if [[ $(echo $GIT_CHANGED_FILE | grep "\.py") == "" ]]; then
+          if [[ $(echo $GIT_CHANGED_FILE | grep "\.py") == "" && $(echo $GIT_CHANGED_FILE | grep "\.sh") == "" ]]; then
               HAS_PYTHON_CHANGE=false
           fi
 
           if [[ $HAS_PYTHON_CHANGE == true ]]; then
+              if [[ $(echo $GIT_CHANGED_FILE | grep "requirements.txt") != "" ]]; then
+                  SSH_DEPLOY_COMMAND="$SSH_DEPLOY_COMMAND && ./pip-install-binary.sh"
+              fi
               SSH_DEPLOY_COMMAND="$SSH_DEPLOY_COMMAND && ./restart-app.sh"
           fi
           echo $SSH_DEPLOY_COMMAND
