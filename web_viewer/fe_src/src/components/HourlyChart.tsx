@@ -13,6 +13,7 @@ import "./HourlyChart.css";
 import Chart from "react-apexcharts";
 import { IClassNameProps, IUpdateChart, SeriesItem } from "../Intefaces";
 
+const SOLAR_PV_SERIE_NAME = "Solar PV";
 const BATTERY_SERIE_NAME = "Battery";
 const GRID_SERIE_NAME = "Grid";
 
@@ -40,7 +41,7 @@ const HourlyChart = forwardRef(
       });
       return [
         {
-          name: "Solar PV",
+          name: SOLAR_PV_SERIE_NAME,
           data: pvSeries,
         },
         {
@@ -180,14 +181,17 @@ const HourlyChart = forwardRef(
                   min: startOfDay.getTime(),
                   labels: {
                     datetimeUTC: false,
-                    format: "HH:mm"
+                    format: "HH:mm",
                   },
                 },
                 yaxis: [
-                  { seriesName: "PV", title: { text: "Power (W)" } },
-                  { seriesName: "PV", show: false },
-                  { seriesName: "PV", show: false },
-                  { seriesName: "PV", show: false },
+                  {
+                    seriesName: SOLAR_PV_SERIE_NAME,
+                    title: { text: "Power (W)" },
+                  },
+                  { seriesName: SOLAR_PV_SERIE_NAME, show: false },
+                  { seriesName: SOLAR_PV_SERIE_NAME, show: false },
+                  { seriesName: SOLAR_PV_SERIE_NAME, show: false },
                   {
                     seriesName: "SOC",
                     opposite: true,
@@ -221,7 +225,7 @@ const HourlyChart = forwardRef(
                           return `${seriesName} discharge:`;
                         }
                         if (seriesName === GRID_SERIE_NAME) {
-                          return 'Import Grid Power:'
+                          return "Import Grid Power:";
                         }
                         return `${seriesName}:`;
                       },
