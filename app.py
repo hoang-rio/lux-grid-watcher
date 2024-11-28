@@ -116,15 +116,16 @@ def insert_hourly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
     cursor = db_connection.cursor()
     device_time = datetime.strptime(inverter_data["deviceTime"],
                                     "%Y-%m-%d %H:%M:%S")
+    start_of_day = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     sleep_time = int(config["SLEEP_TIME"])
     if sleep_time < 60:
         if device_time.hour == 0 and device_time.minute == 0 and device_time.second <= sleep_time:
             cursor.execute(
-                "DELETE FROM hourly_chart WHERE datetime < ?", (inverter_data["deviceTime"],))
+                "DELETE FROM hourly_chart WHERE datetime < ?", (start_of_day.strftime("%Y-%m-%d %H:%M:%S"),))
     elif sleep_time < 3600:
         if device_time.hour == 0 and device_time.minute <= sleep_time / 60:
             cursor.execute(
-                "DELETE FROM hourly_chart WHERE datetime < ?", (inverter_data["deviceTime"],))
+                "DELETE FROM hourly_chart WHERE datetime < ?", (start_of_day.strftime("%Y-%m-%d %H:%M:%S"),))
 
     item_id = device_time.strftime("%Y%m%d%H%M")
     grid = inverter_data["p_to_user"] - inverter_data["p_to_grid"]
