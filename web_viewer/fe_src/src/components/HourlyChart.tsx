@@ -14,6 +14,7 @@ import Chart from "react-apexcharts";
 import { IClassNameProps, IUpdateChart, SeriesItem } from "../Intefaces";
 
 const BATTERY_SERIE_NAME = "Battery";
+const GRID_SERIE_NAME = "Grid";
 
 const HourlyChart = forwardRef(
   ({ className }: IClassNameProps, ref: ForwardedRef<IUpdateChart>) => {
@@ -39,7 +40,7 @@ const HourlyChart = forwardRef(
       });
       return [
         {
-          name: "PV",
+          name: "Solar PV",
           data: pvSeries,
         },
         {
@@ -47,7 +48,7 @@ const HourlyChart = forwardRef(
           data: batterySeries,
         },
         {
-          name: "Grid",
+          name: GRID_SERIE_NAME,
           data: gridSeries,
         },
         {
@@ -218,6 +219,9 @@ const HourlyChart = forwardRef(
                             return `${seriesName} charge:`;
                           }
                           return `${seriesName} discharge:`;
+                        }
+                        if (seriesName === GRID_SERIE_NAME) {
+                          return 'Import Grid Power:'
                         }
                         return `${seriesName}:`;
                       },
