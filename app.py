@@ -191,7 +191,7 @@ def insert_daly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
         "consumption": round(consumption, 1),
     }
     is_exist = cursor.execute(
-        "SELECT id FROM daily_chart WHERE id = ?", (item_id,)
+        "SELECT id, consumption FROM daily_chart WHERE id = ?", (item_id,)
     ).fetchone()
     if is_exist is None:
         cursor.execute(
@@ -201,20 +201,22 @@ def insert_daly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
                 daily_chart_item["consumption"]),
         )
     else:
-        cursor.execute(
-            "UPDATE daily_chart SET year = ?, month = ?, date = ?, pv = ?, battery_charged = ?, battery_discharged = ?, grid_import = ?, grid_export = ?, consumption = ? WHERE id = ?",
-            (
-                daily_chart_item["year"],
-                daily_chart_item["month"],
-                daily_chart_item["date"],
-                daily_chart_item["pv"],
-                daily_chart_item["battery_charged"],
-                daily_chart_item["battery_discharged"],
-                daily_chart_item["grid_import"],
-                daily_chart_item["grid_export"],
-                daily_chart_item["consumption"],
-                item_id)
-        )
+        _, current_consumption = is_exist
+        if consumption >= current_consumption:
+            cursor.execute(
+                "UPDATE daily_chart SET year = ?, month = ?, date = ?, pv = ?, battery_charged = ?, battery_discharged = ?, grid_import = ?, grid_export = ?, consumption = ? WHERE id = ?",
+                (
+                    daily_chart_item["year"],
+                    daily_chart_item["month"],
+                    daily_chart_item["date"],
+                    daily_chart_item["pv"],
+                    daily_chart_item["battery_charged"],
+                    daily_chart_item["battery_discharged"],
+                    daily_chart_item["grid_import"],
+                    daily_chart_item["grid_export"],
+                    daily_chart_item["consumption"],
+                    item_id)
+            )
     cursor.close()
     db_connection.commit()
 
