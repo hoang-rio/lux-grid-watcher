@@ -128,6 +128,14 @@ const HourlyChart = forwardRef(
       setIsAutoUpdate(!isAutoUpdate);
     }, [isAutoUpdate, fetchChart]);
 
+    const startOfDay = useMemo(() => {
+      const now = new Date();
+      now.setHours(0);
+      now.setMinutes(0);
+      now.setSeconds(0);
+      return now;
+    }, []);
+
     return (
       <div className={`card hourly-chart col ${className || ""}`}>
         <div className="row justify-space-between">
@@ -168,8 +176,10 @@ const HourlyChart = forwardRef(
                 },
                 xaxis: {
                   type: "datetime",
+                  min: startOfDay.getTime(),
                   labels: {
                     datetimeUTC: false,
+                    format: "HH:mm"
                   },
                 },
                 yaxis: [
