@@ -169,9 +169,12 @@ def insert_hourly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
 
 
 def insert_daly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
-    cursor = db_connection.cursor()
     device_time = datetime.strptime(inverter_data["deviceTime"],
                                     "%Y-%m-%d %H:%M:%S")
+    if device_time.hour == 0 and device_time.minute == 0:
+        # Igore daily data in first minute of the day
+        return
+    cursor = db_connection.cursor()
     item_id = device_time.strftime("%Y%m%d")
     consumption = (
         inverter_data["e_inv_day"] +
@@ -203,10 +206,7 @@ def insert_daly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
                 daily_chart_item["consumption"], daily_chart_item["updated"]),
         )
     else:
-        logger.warning("Daily chart info", daily_chart_item, device_time)
-        _, current_consumption = is_exist
-        if consumption >= current_consumption:
-            cursor.execute(
+        cursor.execute(
                 "UPDATE daily_chart SET year = ?, month = ?, date = ?, pv = ?, battery_charged = ?, battery_discharged = ?, grid_import = ?, grid_export = ?, consumption = ?, updated =? WHERE id = ?",
                 (
                     daily_chart_item["year"],
