@@ -190,22 +190,24 @@ def insert_daly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
         "grid_import": inverter_data["e_to_user_day"],
         "grid_export": inverter_data["e_to_grid_day"],
         "consumption": round(consumption, 1),
+        "updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
     is_exist = cursor.execute(
         "SELECT id, consumption FROM daily_chart WHERE id = ?", (item_id,)
     ).fetchone()
     if is_exist is None:
         cursor.execute(
-            "INSERT INTO daily_chart (id, year, month, date, pv, battery_charged, battery_discharged, grid_import, grid_export, consumption) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO daily_chart (id, year, month, date, pv, battery_charged, battery_discharged, grid_import, grid_export, consumption, updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (item_id, daily_chart_item["year"], daily_chart_item["month"], daily_chart_item["date"], daily_chart_item["pv"], daily_chart_item["battery_charged"],
                 daily_chart_item["battery_discharged"], daily_chart_item["grid_import"], daily_chart_item["grid_export"],
-                daily_chart_item["consumption"]),
+                daily_chart_item["consumption"], daily_chart_item["updated"]),
         )
     else:
+        logger.warning("Daily chart info", daily_chart_item, device_time)
         _, current_consumption = is_exist
         if consumption >= current_consumption:
             cursor.execute(
-                "UPDATE daily_chart SET year = ?, month = ?, date = ?, pv = ?, battery_charged = ?, battery_discharged = ?, grid_import = ?, grid_export = ?, consumption = ? WHERE id = ?",
+                "UPDATE daily_chart SET year = ?, month = ?, date = ?, pv = ?, battery_charged = ?, battery_discharged = ?, grid_import = ?, grid_export = ?, consumption = ?, updated =? WHERE id = ?",
                 (
                     daily_chart_item["year"],
                     daily_chart_item["month"],
@@ -216,6 +218,7 @@ def insert_daly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
                     daily_chart_item["grid_import"],
                     daily_chart_item["grid_export"],
                     daily_chart_item["consumption"],
+                    daily_chart_item["updated"],
                     item_id)
             )
     cursor.close()
