@@ -94,14 +94,13 @@ function App() {
     connectSocket();
     window.addEventListener("beforeunload", closeSocket);
     document.addEventListener("visibilitychange", () => {
-      if (
-        !document.hidden &&
-        reconnectCountRef.current >= MAX_RECONNECT_COUNT
-      ) {
-        reconnectCountRef.current = 0;
-        console.warn("[Socket] reconnect when window active again");
+      if (!document.hidden) {
         fetchState();
-        connectSocket();
+        if (reconnectCountRef.current >= MAX_RECONNECT_COUNT) {
+          reconnectCountRef.current = 0;
+          console.warn("[Socket] reconnect when window active again");
+          connectSocket();
+        }
       }
     });
     return closeSocket;
