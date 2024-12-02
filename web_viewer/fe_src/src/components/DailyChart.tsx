@@ -136,6 +136,11 @@ function DailyChart({ className }: IClassNameProps) {
               },
               yaxis: [
                 { seriesName: "Solar production", title: { text: "kWh" } },
+                { seriesName: "Solar production", show: false },
+                { seriesName: "Solar production", show: false },
+                { seriesName: "Solar production", show: false },
+                { seriesName: "Solar production", show: false },
+                { seriesName: "Solar production", show: false },
               ],
             }}
           />
