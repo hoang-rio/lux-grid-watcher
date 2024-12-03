@@ -3,6 +3,8 @@ import Chart from "react-apexcharts";
 import "./DailyChart.css";
 import { IClassNameProps, SeriesItem } from "../Intefaces";
 
+const SOLAR_PV_SERIE_NAME = "Solar production";
+
 function DailyChart({ className }: IClassNameProps) {
   const [chartData, setChartData] = useState([]);
   const [isDark, setIsDark] = useState(false);
@@ -26,7 +28,7 @@ function DailyChart({ className }: IClassNameProps) {
     });
     return [
       {
-        name: "Solar production",
+        name: SOLAR_PV_SERIE_NAME,
         data: solarSeries,
       },
       {
@@ -135,12 +137,12 @@ function DailyChart({ className }: IClassNameProps) {
                 },
               },
               yaxis: [
-                { seriesName: "Solar production", title: { text: "kWh" } },
-                { seriesName: "Solar production", show: false },
-                { seriesName: "Solar production", show: false },
-                { seriesName: "Solar production", show: false },
-                { seriesName: "Solar production", show: false },
-                { seriesName: "Solar production", show: false },
+                { seriesName: SOLAR_PV_SERIE_NAME, title: { text: "kWh" } },
+                { seriesName: SOLAR_PV_SERIE_NAME, show: false },
+                { seriesName: SOLAR_PV_SERIE_NAME, show: false },
+                { seriesName: SOLAR_PV_SERIE_NAME, show: false },
+                { seriesName: SOLAR_PV_SERIE_NAME, show: false },
+                { seriesName: SOLAR_PV_SERIE_NAME, show: false },
               ],
             }}
           />
