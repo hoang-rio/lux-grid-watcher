@@ -45,7 +45,7 @@ function Summary({ invertData }: IProps) {
               <div className="description">Yield today</div>
               {total && (
                 <>
-                  <GeneralValue value={total.pv} unit=" kWh" />
+                  <GeneralValue value={total.pv.toFixed(1)} unit=" kWh" />
                   <div className="description">Total Yield</div>
                 </>
               )}
