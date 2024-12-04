@@ -216,7 +216,7 @@
     }
 
     .pv img,
-    .battery img,
+    .system-graph .battery img,
     .inverter img,
     .grid img,
     .eps img,
@@ -312,7 +312,7 @@
 @media screen and (max-width: 768px) {
 
     .pv img,
-    .battery img,
+    .system-graph .battery img,
     .inverter img,
     .grid img,
     .eps img,
