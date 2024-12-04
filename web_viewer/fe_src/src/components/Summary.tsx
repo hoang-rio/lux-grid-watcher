@@ -29,9 +29,19 @@ function Summary({ invertData }: IProps) {
     }
   }, []);
 
+  const onVisibilityChange = useCallback(() => {
+    if (!document.hidden) {
+      fetchTotal();
+    }
+  }, [fetchTotal]);
+
   useEffect(() => {
     fetchTotal();
-  }, [fetchTotal]);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [fetchTotal, onVisibilityChange]);
 
   return (
     <div className="summary row">
