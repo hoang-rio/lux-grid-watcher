@@ -1,5 +1,6 @@
 .hourly-chart {
     margin-top: 10px;
+    min-height: 300px;
 }
 
 .hourly-chart-title {

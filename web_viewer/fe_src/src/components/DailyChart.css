@@ -1,5 +1,6 @@
 .daily-chart {
     margin-top: 10px;
+    min-height: 300px;
 }
 
 .daily-chart-title {

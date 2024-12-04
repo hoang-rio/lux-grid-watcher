@@ -97,7 +97,7 @@ function DailyChart({ className }: IClassNameProps) {
         {chartData.length ? (
           <Chart
             type="bar"
-            series={series}
+            series={series.reverse()}
             options={{
               chart: {
                 toolbar: {
@@ -112,12 +112,12 @@ function DailyChart({ className }: IClassNameProps) {
                 "rgb(246, 104, 103)",
                 "rgb(153, 107, 31)",
                 "rgb(255, 164, 97)",
-              ],
+              ].reverse(),
               theme: {
                 mode: isDark ? "dark" : "light",
               },
               dataLabels: {
-                enabled: false,
+                enabled: true,
               },
               xaxis: {
                 type: "datetime",
