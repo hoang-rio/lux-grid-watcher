@@ -1,5 +1,5 @@
-import { memo, useState } from "react";
-import { IInverterData } from "../Intefaces";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { IInverterData, ITotal } from "../Intefaces";
 import GeneralValue from "./GeneralValue";
 import "./Summary.css";
 
@@ -9,6 +9,30 @@ interface IProps {
 function Summary({ invertData }: IProps) {
   const [isShowCharged, setIsShowCharnged] = useState(false);
   const [isShowFeed, setIsShowFeed] = useState(false);
+  const isFetchingRef = useRef(false);
+  const [total, setTotal] = useState<ITotal>();
+
+  const fetchTotal = useCallback(async () => {
+    if (isFetchingRef.current) {
+      return;
+    }
+    try {
+      console.log("Fetching total...");
+      isFetchingRef.current = true;
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/total`);
+      const json = await res.json();
+      setTotal(json);
+    } catch (err) {
+      console.error("Fetch total error", err);
+    } finally {
+      isFetchingRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTotal();
+  }, [fetchTotal]);
+
   return (
     <div className="summary row">
       <div className="yield summary-item flex-1">
@@ -19,6 +43,12 @@ function Summary({ invertData }: IProps) {
             <div className="yield-texts text-right">
               <GeneralValue value={invertData.e_pv_day} unit=" kWh" />
               <div className="description">Yield today</div>
+              {total && (
+                <>
+                  <GeneralValue value={total.pv} unit=" kWh" />
+                  <div className="description">Total Yield</div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -43,6 +73,20 @@ function Summary({ invertData }: IProps) {
               <div className="description">
                 {isShowCharged ? "Charged today" : "Discharged today"}
               </div>
+              {total && (
+                <>
+                  <GeneralValue
+                    value={(isShowCharged
+                      ? total.battery_charged
+                      : total.battery_discharged
+                    ).toFixed(1)}
+                    unit=" kWh"
+                  />
+                  <div className="description">
+                    Total {isShowCharged ? "Charged" : "Discharged"}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -76,6 +120,20 @@ function Summary({ invertData }: IProps) {
                 <div className="description">
                   {isShowFeed ? "Today Export" : "Today Import"}
                 </div>
+                {total && (
+                  <>
+                    <GeneralValue
+                      value={(isShowFeed
+                        ? total.grid_export
+                        : total.grid_import
+                      ).toFixed(1)}
+                      unit=" kWh"
+                    />
+                    <div className="description">
+                      Total {isShowFeed ? "Export" : "Import"}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -97,6 +155,15 @@ function Summary({ invertData }: IProps) {
                 unit=" kWh"
               />
               <div className="description">Today Comsumption</div>
+              {total && (
+                <>
+                  <GeneralValue
+                    value={total.consumption.toFixed(1)}
+                    unit=" kWh"
+                  />
+                  <div className="description">Total Comsumption</div>
+                </>
+              )}
             </div>
           </div>
         </div>

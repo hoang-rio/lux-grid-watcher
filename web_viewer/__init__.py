@@ -80,6 +80,26 @@ def hourly_chart(_: web.Request):
     return res
 
 
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
+
+def total(_: web.Request):
+    if "DB_NAME" not in config:
+        return web.json_response({}, headers=VITE_CORS_HEADER)
+    global db_connection
+    if db_connection is None:
+       db_connection = sqlite3.connect(config["DB_NAME"])
+    cursor = db_connection.cursor()
+    cursor.row_factory = dict_factory
+    total = cursor.execute(
+        "SELECT SUM(pv) as pv, SUM(battery_charged) as battery_charged, SUM(battery_discharged) as battery_discharged, SUM(grid_import) as grid_import, SUM(grid_export) as grid_export, SUM(consumption) as consumption FROM daily_chart").fetchone()
+    res = web.json_response(total, headers=VITE_CORS_HEADER)
+    return res
+
+
 def daily_chart(_: web.Request):
     if "DB_NAME" not in config:
         return web.json_response([], headers=VITE_CORS_HEADER)
@@ -104,6 +124,7 @@ def create_runner():
         web.get("/state", state),
         web.get("/hourly-chart", hourly_chart),
         web.get("/daily-chart", daily_chart),
+        web.get("/total", total),
         web.static("/", path.join(path.dirname(__file__), "public"))
     ])
     return web.AppRunner(app)

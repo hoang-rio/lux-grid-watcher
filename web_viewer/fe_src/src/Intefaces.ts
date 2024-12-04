@@ -63,3 +63,12 @@ export interface IClassNameProps {
 export interface IUpdateChart {
   updateItem: (hourlyItem: never[]) => void;
 }
+
+export interface ITotal {
+  pv: number;
+  battery_charged: number;
+  battery_discharged: number;
+  grid_import: number;
+  grid_export: number;
+  consumption: number;
+}
