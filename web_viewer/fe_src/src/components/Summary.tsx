@@ -164,14 +164,14 @@ function Summary({ invertData }: IProps) {
                 ).toFixed(1)}
                 unit=" kWh"
               />
-              <div className="description">Today Comsumption</div>
+              <div className="description">Today Used</div>
               {total && (
                 <>
                   <GeneralValue
                     value={total.consumption.toFixed(1)}
                     unit=" kWh"
                   />
-                  <div className="description">Total Comsumption</div>
+                  <div className="description">Total Used</div>
                 </>
               )}
             </div>

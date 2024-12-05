@@ -143,7 +143,7 @@ function DailyChart({ className }: IClassNameProps) {
                 { seriesName: SOLAR_PV_SERIE_NAME, show: false },
                 { seriesName: SOLAR_PV_SERIE_NAME, show: false },
                 { seriesName: SOLAR_PV_SERIE_NAME, show: false },
-              ],
+              ].reverse(),
             }}
           />
         ) : (
