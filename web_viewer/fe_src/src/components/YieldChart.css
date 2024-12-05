@@ -19,7 +19,7 @@
 }
 
 .yield-chart .chart {
-    width: 110px;
+    max-width: 110px;
 }
 
 @media screen and (max-width: 768px) {
