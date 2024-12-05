@@ -115,6 +115,34 @@ def daily_chart(_: web.Request):
     res = web.json_response(daily_chart, headers=VITE_CORS_HEADER)
     return res
 
+def monthly_chart(_: web.Request):
+    if "DB_NAME" not in config:
+        return web.json_response([], headers=VITE_CORS_HEADER)
+    global db_connection
+    if db_connection is None:
+       db_connection = sqlite3.connect(config["DB_NAME"])
+    cursor = db_connection.cursor()
+    now = datetime.now()
+    monthly_chart = cursor.execute(
+        "SELECT id, id, month || '/' || year as month, SUM(pv), SUM(battery_charged), SUM(battery_discharged), SUM(grid_import), SUM(grid_export), SUM(consumption) FROM daily_chart WHERE year = ? GROUP BY month",
+        (now.year,)
+    ).fetchall()
+    res = web.json_response(monthly_chart, headers=VITE_CORS_HEADER)
+    return res
+
+def yearly_chart(_: web.Request):
+    if "DB_NAME" not in config:
+        return web.json_response([], headers=VITE_CORS_HEADER)
+    global db_connection
+    if db_connection is None:
+       db_connection = sqlite3.connect(config["DB_NAME"])
+    cursor = db_connection.cursor()
+    yearly_chart = cursor.execute(
+        "SELECT id, id, year, SUM(pv), SUM(battery_charged), SUM(battery_discharged), SUM(grid_import), SUM(grid_export), SUM(consumption) FROM daily_chart GROUP BY year"
+    ).fetchall()
+    res = web.json_response(yearly_chart, headers=VITE_CORS_HEADER)
+    return res
+
 
 def create_runner():
     app = web.Application()
@@ -124,6 +152,8 @@ def create_runner():
         web.get("/state", state),
         web.get("/hourly-chart", hourly_chart),
         web.get("/daily-chart", daily_chart),
+        web.get("/monthly-chart", monthly_chart),
+        web.get("/yearly-chart", yearly_chart),
         web.get("/total", total),
         web.static("/", path.join(path.dirname(__file__), "public"))
     ])
