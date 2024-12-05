@@ -1,0 +1,33 @@
+.yield-chart {
+    flex-wrap: nowrap;
+}
+
+.yield-chart .texts {
+    white-space: nowrap;
+}
+
+.yield-chart-load {
+    color: #FF718F;
+}
+
+.yield-chart-charge {
+    color: #5CC9A0;
+}
+
+.yield-chart-export {
+    color: #F2A474;
+}
+
+.yield-chart .chart {
+    width: 110px;
+}
+
+@media screen and (max-width: 768px) {
+    .yield-chart .chart {
+        display: none;
+    }
+
+    .yield-chart .texts {
+        font-size: 14px;
+    }
+}

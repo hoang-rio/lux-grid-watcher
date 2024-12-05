@@ -16,10 +16,6 @@
     padding: 10px;
 }
 
-.summary-item-content .col {
-    align-items: flex-end;
-}
-
 .summary-item-title {
     padding: 5px 10px;
     color: #fff;

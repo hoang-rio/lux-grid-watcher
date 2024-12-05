@@ -2,15 +2,39 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { IInverterData, ITotal } from "../Intefaces";
 import GeneralValue from "./GeneralValue";
 import "./Summary.css";
+import DisplayYield from "./DisplayYield";
+import YieldChart from "./YieldChart";
 
 interface IProps {
   invertData: IInverterData;
+}
+enum YieldDisplay {
+  YEILD,
+  CHART_TODAY,
+  CHART_TOTAL,
 }
 function Summary({ invertData }: IProps) {
   const [isShowCharged, setIsShowCharnged] = useState(false);
   const [isShowFeed, setIsShowFeed] = useState(false);
   const isFetchingRef = useRef(false);
   const [total, setTotal] = useState<ITotal>();
+  const [yieldDisplay, setYieldDisplay] = useState<YieldDisplay>(
+    YieldDisplay.YEILD
+  );
+
+  const switchYieldDisplay = useCallback(() => {
+    switch (yieldDisplay) {
+      case YieldDisplay.YEILD:
+        setYieldDisplay(YieldDisplay.CHART_TODAY);
+        break;
+      case YieldDisplay.CHART_TODAY:
+        setYieldDisplay(YieldDisplay.CHART_TOTAL);
+        break;
+      default:
+        setYieldDisplay(YieldDisplay.YEILD);
+        break;
+    }
+  }, [yieldDisplay]);
 
   const fetchTotal = useCallback(async () => {
     if (isFetchingRef.current) {
@@ -45,22 +69,28 @@ function Summary({ invertData }: IProps) {
 
   return (
     <div className="summary row">
-      <div className="yield summary-item flex-1">
+      <div className="yield summary-item flex-1 col" onClick={switchYieldDisplay}>
         <div className="summary-item-title">Solar Yield</div>
-        <div className="summary-item-content">
-          <div className="row justify-space-between">
-            <img src="/assets/icon_consumption.png" />
-            <div className="yield-texts text-right">
-              <GeneralValue value={invertData.e_pv_day} unit=" kWh" />
-              <div className="description">Yield today</div>
-              {total && (
-                <>
-                  <GeneralValue value={total.pv.toFixed(1)} unit=" kWh" />
-                  <div className="description">Total Yield</div>
-                </>
-              )}
-            </div>
-          </div>
+        <div className="summary-item-content col flex-1">
+          {yieldDisplay === YieldDisplay.YEILD && (
+            <DisplayYield total={total} ePVDay={invertData.e_pv_day} />
+          )}
+          {yieldDisplay === YieldDisplay.CHART_TODAY && (
+            <YieldChart
+              label="Today"
+              totalYield={invertData.e_pv_day}
+              charge={invertData.e_chg_day}
+              gridExport={invertData.e_to_grid_day}
+            />
+          )}
+          {yieldDisplay === YieldDisplay.CHART_TOTAL && (
+            <YieldChart
+              label="Total"
+              totalYield={total?.pv || 0}
+              charge={total?.battery_charged || 0}
+              gridExport={total?.grid_export || 0}
+            />
+          )}
         </div>
       </div>
       <div

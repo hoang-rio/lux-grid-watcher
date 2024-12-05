@@ -12,6 +12,24 @@
   flex-direction: row;
 }
 
+
+.flex-1 {
+  flex: 1;
+}
+
+.flex-2 {
+  flex: 2;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+}
+
+.align-start {
+  align-items: flex-start;
+}
+
 .align-center {
   align-items: center;
 }
@@ -30,19 +48,6 @@
 
 .justify-flex-end {
   justify-content: flex-end;
-}
-
-.flex-1 {
-  flex: 1;
-}
-
-.flex-2 {
-  flex: 2;
-}
-
-.col {
-  display: flex;
-  flex-direction: column;
 }
 
 .description {
