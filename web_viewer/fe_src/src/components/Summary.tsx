@@ -69,7 +69,10 @@ function Summary({ invertData }: IProps) {
 
   return (
     <div className="summary row">
-      <div className="yield summary-item flex-1 col" onClick={switchYieldDisplay}>
+      <div
+        className="yield summary-item flex-1 col"
+        onClick={switchYieldDisplay}
+      >
         <div className="summary-item-title">Solar Yield</div>
         <div className="summary-item-content col flex-1">
           {yieldDisplay === YieldDisplay.YEILD && (
@@ -101,9 +104,9 @@ function Summary({ invertData }: IProps) {
           {isShowCharged ? "Battery Charged" : "Battery Discharge"}
         </div>
         <div className="summary-item-content">
-          <div className="row justify-space-between">
+          <div className="row justify-space-between align-center">
             <img src="/assets/icon_battery_discharging.png" />
-            <div className="text-right">
+            <div className="summary-item-content-texts">
               <GeneralValue
                 value={
                   isShowCharged ? invertData.e_chg_day : invertData.e_dischg_day
@@ -139,7 +142,7 @@ function Summary({ invertData }: IProps) {
           {isShowFeed ? "Feed-in Energy" : "Import"}
         </div>
         <div className="summary-item-content">
-          <div className="row justify-space-between">
+          <div className="row justify-space-between align-center">
             <img
               src={
                 isShowFeed
@@ -147,7 +150,7 @@ function Summary({ invertData }: IProps) {
                   : "/assets/icon_import.png"
               }
             />
-            <div className="feed-texts text-right">
+            <div className="feed-texts summary-item-content-texts">
               <div className="col">
                 <GeneralValue
                   value={
@@ -182,9 +185,9 @@ function Summary({ invertData }: IProps) {
       <div className="comsumption summary-item flex-1">
         <div className="summary-item-title ">Comsumption</div>
         <div className="summary-item-content">
-          <div className="row justify-space-between">
+          <div className="row justify-space-between align-center">
             <img src="/assets/icon_consumption.png" />
-            <div className="feed-texts text-right">
+            <div className="feed-texts summary-item-content-texts">
               <GeneralValue
                 value={(
                   invertData.e_inv_day +

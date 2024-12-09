@@ -8,9 +8,9 @@ interface IProps {
 }
 function DisplayYield({ total, ePVDay }: IProps) {
   return (
-    <div className="row justify-space-between">
-      <img src="/assets/icon_consumption.png" />
-      <div className="yield-texts text-right">
+    <div className="row justify-space-between align-center">
+      <img src="/assets/icon_solor_yielding.png" />
+      <div className="yield-texts summary-item-content-texts ">
         <GeneralValue value={ePVDay} unit=" kWh" />
         <div className="description">Yield today</div>
         {total && (
