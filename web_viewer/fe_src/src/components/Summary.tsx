@@ -4,6 +4,7 @@ import GeneralValue from "./GeneralValue";
 import "./Summary.css";
 import DisplayYield from "./DisplayYield";
 import YieldChart from "./YieldChart";
+import { fixedIfNeed } from "./utils";
 
 interface IProps {
   invertData: IInverterData;
@@ -119,10 +120,10 @@ function Summary({ invertData }: IProps) {
               {total && (
                 <>
                   <GeneralValue
-                    value={(isShowCharged
+                    value={fixedIfNeed(isShowCharged
                       ? total.battery_charged
                       : total.battery_discharged
-                    ).toFixed(1)}
+                    )}
                     unit=" kWh"
                   />
                   <div className="description">
@@ -166,10 +167,10 @@ function Summary({ invertData }: IProps) {
                 {total && (
                   <>
                     <GeneralValue
-                      value={(isShowFeed
+                      value={fixedIfNeed(isShowFeed
                         ? total.grid_export
                         : total.grid_import
-                      ).toFixed(1)}
+                      )}
                       unit=" kWh"
                     />
                     <div className="description">
@@ -201,7 +202,7 @@ function Summary({ invertData }: IProps) {
               {total && (
                 <>
                   <GeneralValue
-                    value={total.consumption.toFixed(1)}
+                    value={fixedIfNeed(total.consumption)}
                     unit=" kWh"
                   />
                   <div className="description">Total Used</div>

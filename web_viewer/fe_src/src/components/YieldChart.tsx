@@ -2,9 +2,7 @@ import { memo, useEffect, useState } from "react";
 import "./YieldChart.css";
 
 import Chart from "react-apexcharts";
-const fixDisplay = (num: number) => {
-    return Math.round(num * 10) / 10;
-}
+import { roundTo } from "./utils";
 
 interface IProps {
   label: "Today" | "Total";
@@ -14,10 +12,18 @@ interface IProps {
 }
 function YieldChart({ totalYield, charge, gridExport, label }: IProps) {
   const [isDark, setIsDark] = useState(false);
-  const load = totalYield - charge - gridExport;
-  const loadPercent = ((load / totalYield) * 100).toFixed(1);
-  const chargePercent = ((charge / totalYield) * 100).toFixed(1);
-  const exportPercent = ((gridExport / totalYield) * 100).toFixed(1);
+  let load, loadPercent, chargePercent, exportPercent;
+  if (!totalYield) {
+    load = 0;
+    loadPercent = 0;
+    chargePercent = 0;
+    exportPercent = 0;
+  } else {
+    load = totalYield - charge - gridExport;
+    loadPercent = ((load / totalYield) * 100).toFixed(1);
+    chargePercent = ((charge / totalYield) * 100).toFixed(1);
+    exportPercent = ((gridExport / totalYield) * 100).toFixed(1);
+  }
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
 
@@ -42,7 +48,7 @@ function YieldChart({ totalYield, charge, gridExport, label }: IProps) {
         </div>
         <div className="yield-chart-total">
           <strong>
-            {label} {fixDisplay(totalYield)} kWh
+            {label} {roundTo(totalYield)} kWh
           </strong>
         </div>
       </div>
@@ -50,14 +56,14 @@ function YieldChart({ totalYield, charge, gridExport, label }: IProps) {
         <Chart
           type="pie"
           series={[
-            fixDisplay(load),
-            fixDisplay(charge),
-            fixDisplay(gridExport),
+            roundTo(load),
+            roundTo(charge),
+            roundTo(gridExport),
           ]}
           options={{
             chart: {
               width: 100,
-              type: "pie"
+              type: "pie",
             },
             colors: ["#FF718F", "#5CC9A0", "#F2A474"],
             theme: {
