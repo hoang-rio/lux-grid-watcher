@@ -2,7 +2,7 @@ import { memo, useEffect, useState } from "react";
 import "./YieldChart.css";
 
 import Chart from "react-apexcharts";
-import { roundTo } from "./utils";
+import { fixedIfNeed, roundTo } from "./utils";
 
 interface IProps {
   label: "Today" | "Total";
@@ -20,9 +20,9 @@ function YieldChart({ totalYield, charge, gridExport, label }: IProps) {
     exportPercent = 0;
   } else {
     load = totalYield - charge - gridExport;
-    loadPercent = ((load / totalYield) * 100).toFixed(1);
-    chargePercent = ((charge / totalYield) * 100).toFixed(1);
-    exportPercent = ((gridExport / totalYield) * 100).toFixed(1);
+    loadPercent = fixedIfNeed((load / totalYield) * 100);
+    chargePercent = fixedIfNeed((charge / totalYield) * 100);
+    exportPercent = fixedIfNeed((gridExport / totalYield) * 100);
   }
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
