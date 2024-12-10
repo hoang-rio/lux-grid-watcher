@@ -30,7 +30,7 @@ jobs:
           SSH_DEPLOY_COMMAND="cd ${{secrets.SSH_DEPLOY_PATH}} && git pull && git submodule update"
           HAS_PYTHON_CHANGE=true
           GIT_CHANGED_FILE=$(git show --name-only)
-          if [[ $(echo $GIT_CHANGED_FILE | grep "\.py") == "" && $(echo $GIT_CHANGED_FILE | grep "\.sh") == "" ]]; then
+          if [[ $(echo $GIT_CHANGED_FILE | grep "\.py") == "" && $(echo $GIT_CHANGED_FILE | grep "\.sh") == "" && $(echo $GIT_CHANGED_FILE | grep "aiohttp") == "" ]]; then
               HAS_PYTHON_CHANGE=false
           fi
 

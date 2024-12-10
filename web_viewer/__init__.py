@@ -86,6 +86,7 @@ def dict_factory(cursor, row):
         d[col[0]] = row[idx]
     return d
 
+
 def total(_: web.Request):
     if "DB_NAME" not in config:
         return web.json_response({}, headers=VITE_CORS_HEADER)
@@ -115,6 +116,7 @@ def daily_chart(_: web.Request):
     res = web.json_response(daily_chart, headers=VITE_CORS_HEADER)
     return res
 
+
 def monthly_chart(_: web.Request):
     if "DB_NAME" not in config:
         return web.json_response([], headers=VITE_CORS_HEADER)
@@ -129,6 +131,7 @@ def monthly_chart(_: web.Request):
     ).fetchall()
     res = web.json_response(monthly_chart, headers=VITE_CORS_HEADER)
     return res
+
 
 def yearly_chart(_: web.Request):
     if "DB_NAME" not in config:
