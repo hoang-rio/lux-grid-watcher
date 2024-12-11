@@ -104,6 +104,9 @@ function DailyChart({ className }: IClassNameProps) {
                   show: false,
                 },
                 height: 300,
+                zoom: {
+                  allowMouseWheelZoom: false,
+                },
               },
               colors: [
                 "rgb(112, 173, 70)",
@@ -117,7 +120,7 @@ function DailyChart({ className }: IClassNameProps) {
                 mode: isDark ? "dark" : "light",
               },
               dataLabels: {
-                enabled: true,
+                enabled: false,
               },
               xaxis: {
                 type: "datetime",
@@ -137,7 +140,7 @@ function DailyChart({ className }: IClassNameProps) {
                 },
               },
               yaxis: [
-                { seriesName: SOLAR_PV_SERIE_NAME, title: { text: "kWh" } },
+                { seriesName: SOLAR_PV_SERIE_NAME, title: { text: "Energy (kWh)" } },
                 { seriesName: SOLAR_PV_SERIE_NAME, show: false },
                 { seriesName: SOLAR_PV_SERIE_NAME, show: false },
                 { seriesName: SOLAR_PV_SERIE_NAME, show: false },

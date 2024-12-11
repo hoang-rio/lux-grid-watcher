@@ -162,6 +162,9 @@ const HourlyChart = forwardRef(
                     show: false,
                   },
                   height: 300,
+                  zoom: {
+                    enabled: false,
+                  }
                 },
                 colors: [
                   "rgb(112, 173, 70)",
