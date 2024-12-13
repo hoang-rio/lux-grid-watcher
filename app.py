@@ -141,11 +141,13 @@ def insert_hourly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
         "consumption": consumption,
         "soc": inverter_data["soc"],
     }
-    is_exist = cursor.execute(
-        "SELECT id FROM hourly_chart WHERE id = ?", (
+    from web_viewer import dict_factory
+    cursor.row_factory = dict_factory
+    exist_item = cursor.execute(
+        "SELECT * FROM hourly_chart WHERE id = ?", (
             item_id,)
     ).fetchone()
-    if is_exist is None:
+    if exist_item is None:
         cursor.execute(
             "INSERT INTO hourly_chart (id, datetime, pv, battery, grid, consumption, soc) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (item_id, hourly_chart_item["datetime"], hourly_chart_item["pv"], hourly_chart_item["battery"],
@@ -156,11 +158,11 @@ def insert_hourly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
             "UPDATE hourly_chart SET datetime = ?, pv = ?, battery = ?, grid = ?, consumption = ?, soc = ? WHERE id = ?",
             (
                 hourly_chart_item["datetime"],
-                hourly_chart_item["pv"],
-                hourly_chart_item["battery"],
-                hourly_chart_item["grid"],
-                hourly_chart_item["consumption"],
-                hourly_chart_item["soc"],
+                (hourly_chart_item["pv"] + exist_item["pv"]) / 2,
+                (hourly_chart_item["battery"] + exist_item["battery"]) / 2,
+                (hourly_chart_item["grid"] + exist_item["grid"]) / 2,
+                (hourly_chart_item["consumption"] + exist_item["consumption"]) / 2,
+                (hourly_chart_item["soc"] + exist_item["soc"]) / 2,
                 item_id)
         )
     cursor.close()
