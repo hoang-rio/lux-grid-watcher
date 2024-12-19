@@ -12,6 +12,7 @@ import {
 import "./HourlyChart.css";
 import Chart from "react-apexcharts";
 import { IClassNameProps, IUpdateChart, SeriesItem } from "../Intefaces";
+import Loading from "./Loading";
 
 const SOLAR_PV_SERIE_NAME = "Solar PV";
 const BATTERY_SERIE_NAME = "Battery";
@@ -237,11 +238,7 @@ const HourlyChart = forwardRef(
                 },
               }}
             />
-          ) : (
-            <div className="flex-1 align-center justify-center col">
-              Loadding...
-            </div>
-          )}
+          ) : <Loading />}
         </div>
       </div>
     );

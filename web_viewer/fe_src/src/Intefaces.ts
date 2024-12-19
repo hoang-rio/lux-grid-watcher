@@ -53,7 +53,7 @@ export interface ICProps {
 
 export interface SeriesItem {
   x: number | string;
-  y: never;
+  y: never | number;
 }
 
 export interface IClassNameProps {
@@ -71,4 +71,8 @@ export interface ITotal {
   grid_import: number;
   grid_export: number;
   consumption: number;
+}
+
+export interface IFetchChart {
+  fetchChart: () => void;
 }

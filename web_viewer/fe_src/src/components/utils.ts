@@ -5,7 +5,7 @@ export function fixedIfNeed(num: number, fixedNumber = 1) {
   return num;
 }
 
-export const roundTo = (num: number, fixedNumber = 1) => {
+export const roundTo = (num: number, fixedNumber = 1): number => {
   const numToFixed = Math.pow(10, fixedNumber);
   return Math.round(num * numToFixed) / numToFixed;
 };

@@ -16,7 +16,7 @@ import { roundTo } from "./utils";
 
 const SOLAR_PV_SERIE_NAME = "Solar production";
 
-const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
+const MonthlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
   const [chartData, setChartData] = useState([]);
   const [isDark, setIsDark] = useState(false);
   const isFetchingRef = useRef<boolean>(false);
@@ -29,7 +29,7 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
     const consumptionSeries: SeriesItem[] = [];
 
     chartData.forEach((item) => {
-      const time = new Date(item[3]).getTime();
+      const time = item[3];
       solarSeries.push({ x: time, y: roundTo(item[4]) });
       batteryChargedSeries.push({ x: time, y: roundTo(item[5]) });
       batterDischargedSeries.push({ x: time, y: roundTo(item[6]) });
@@ -70,7 +70,9 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
       return;
     }
     isFetchingRef.current = true;
-    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/daily-chart`);
+    const res = await fetch(
+      `${import.meta.env.VITE_API_BASE_URL}/monthly-chart`
+    );
     const json = await res.json();
     setChartData(json);
     isFetchingRef.current = false;
@@ -133,11 +135,7 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
             enabled: false,
           },
           xaxis: {
-            type: "datetime",
-            labels: {
-              datetimeUTC: false,
-              format: "dd/MM/yyyy",
-            },
+            type: "category",
           },
           tooltip: {
             x: {
@@ -166,6 +164,6 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
   return <Loading />;
 });
 
-DailyChart.displayName = "DailyChart";
+MonthlyChart.displayName = "MonthlyChart";
 
-export default memo(DailyChart);
+export default memo(MonthlyChart);

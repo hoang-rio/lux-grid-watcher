@@ -2,11 +2,12 @@ import { useCallback, useEffect, useRef, useState, lazy } from "react";
 import "./App.css";
 import { IUpdateChart, IInverterData } from "./Intefaces";
 import Footer from "./components/Footer";
+import Loading from "./components/Loading";
 
 const SystemInformation = lazy(() => import("./components/SystemInformation"));
 const Summary = lazy(() => import("./components/Summary"));
 const HourlyChart = lazy(() => import("./components/HourlyChart"));
-const DailyChart = lazy(() => import("./components/DailyChart"));
+const EnergyChart = lazy(() => import("./components/EnergyChart"));
 
 const MAX_RECONNECT_COUNT = 3;
 
@@ -16,7 +17,7 @@ function App() {
   const selfCloseRef = useRef<boolean>(false);
   const reconnectCountRef = useRef<number>(0);
   const [isSocketConnected, setIsSocketConnected] = useState<boolean>(true);
-  const hourlyCharfRef = useRef<IUpdateChart>(null);
+  const hourlyChartfRef = useRef<IUpdateChart>(null);
   const [isInitState, setIsInitState] = useState(true);
   const isFetchingRef = useRef(false);
 
@@ -43,7 +44,7 @@ function App() {
     socket.addEventListener("message", (event) => {
       const jsonData = JSON.parse(event.data);
       setInverterData(jsonData.inverter_data);
-      hourlyCharfRef.current?.updateItem(jsonData.hourly_chart_item);
+      hourlyChartfRef.current?.updateItem(jsonData.hourly_chart_item);
     });
     socket.addEventListener("close", () => {
       document.title = `[Offline] ${import.meta.env.VITE_APP_TITLE}`;
@@ -116,7 +117,7 @@ function App() {
     return (
       <>
         <div className="d-flex card loading align-center justify-center flex-1">
-          Loading....
+          <Loading />
         </div>
         <Footer />
       </>
@@ -133,8 +134,8 @@ function App() {
           onReconnect={connectSocket}
         />
         <div className="row chart">
-          <HourlyChart ref={hourlyCharfRef} className="flex-1 chart-item" />
-          <DailyChart className="flex-1 chart-item" />
+          <HourlyChart ref={hourlyChartfRef} className="flex-1 chart-item" />
+          <EnergyChart className="flex-1 chart-item" />
         </div>
         <Footer />
       </>

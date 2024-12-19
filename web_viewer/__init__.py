@@ -126,7 +126,7 @@ def monthly_chart(_: web.Request):
     cursor = db_connection.cursor()
     now = datetime.now()
     monthly_chart = cursor.execute(
-        "SELECT id, id, month || '/' || year as month, SUM(pv), SUM(battery_charged), SUM(battery_discharged), SUM(grid_import), SUM(grid_export), SUM(consumption) FROM daily_chart WHERE year = ? GROUP BY month",
+        "SELECT id, id, id, month || '/' || year as month, SUM(pv), SUM(battery_charged), SUM(battery_discharged), SUM(grid_import), SUM(grid_export), SUM(consumption) FROM daily_chart WHERE year = ? GROUP BY month",
         (now.year,)
     ).fetchall()
     res = web.json_response(monthly_chart, headers=VITE_CORS_HEADER)
@@ -141,7 +141,7 @@ def yearly_chart(_: web.Request):
        db_connection = sqlite3.connect(config["DB_NAME"])
     cursor = db_connection.cursor()
     yearly_chart = cursor.execute(
-        "SELECT id, id, year, SUM(pv), SUM(battery_charged), SUM(battery_discharged), SUM(grid_import), SUM(grid_export), SUM(consumption) FROM daily_chart GROUP BY year"
+        "SELECT id, id, id, year, SUM(pv), SUM(battery_charged), SUM(battery_discharged), SUM(grid_import), SUM(grid_export), SUM(consumption) FROM daily_chart GROUP BY year"
     ).fetchall()
     res = web.json_response(yearly_chart, headers=VITE_CORS_HEADER)
     return res
