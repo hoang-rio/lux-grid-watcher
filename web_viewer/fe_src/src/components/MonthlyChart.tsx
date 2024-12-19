@@ -85,14 +85,18 @@ const MonthlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
     })
   );
 
+  const onVisiblityChange = useCallback(() => {
+    if (!document.hidden) {
+      fetchChart();
+    }
+  }, [fetchChart]);
+
   useEffect(() => {
     fetchChart();
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) {
-        fetchChart();
-      }
-    });
-  }, [fetchChart]);
+    document.addEventListener("visibilitychange", onVisiblityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", onVisiblityChange);
+  }, [fetchChart, onVisiblityChange]);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
