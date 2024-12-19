@@ -107,7 +107,7 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
     return (
       <Chart
         type="bar"
-        series={series}
+        series={series.reverse()}
         options={{
           chart: {
             toolbar: {
@@ -125,7 +125,7 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
             "rgb(246, 104, 103)",
             "rgb(153, 107, 31)",
             "rgb(255, 164, 97)",
-          ],
+          ].reverse(),
           theme: {
             mode: isDark ? "dark" : "light",
           },
@@ -159,7 +159,7 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
             { seriesName: SOLAR_PV_SERIE_NAME, show: false },
             { seriesName: SOLAR_PV_SERIE_NAME, show: false },
             { seriesName: SOLAR_PV_SERIE_NAME, show: false },
-          ],
+          ].reverse(),
         }}
       />
     );
