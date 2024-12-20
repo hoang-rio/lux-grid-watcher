@@ -156,13 +156,13 @@ const HourlyChart = forwardRef(
           {chartData.length ? (
             <Chart
               type="line"
+              height={300}
               series={series}
               options={{
                 chart: {
                   toolbar: {
                     show: false,
                   },
-                  height: 300,
                   zoom: {
                     enabled: false,
                   }
