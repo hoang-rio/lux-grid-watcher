@@ -156,7 +156,7 @@ const HourlyChart = forwardRef(
           {chartData.length ? (
             <Chart
               type="line"
-              height={300}
+              height={400}
               series={series}
               options={{
                 chart: {

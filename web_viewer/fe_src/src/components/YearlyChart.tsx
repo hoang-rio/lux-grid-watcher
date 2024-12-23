@@ -113,7 +113,7 @@ const YearlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
     return (
       <Chart
         type="bar"
-        height={300}
+        height={400}
         series={series}
         options={{
           chart: {
