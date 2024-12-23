@@ -128,7 +128,7 @@ def insert_hourly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
                 "DELETE FROM hourly_chart WHERE datetime < ?", (start_of_day.strftime("%Y-%m-%d %H:%M:%S"),))
 
     item_id = device_time.strftime("%Y%m%d%H%M")
-    grid = inverter_data["p_to_user"] - inverter_data["p_to_grid"]
+    grid = inverter_data["p_to_grid"] - inverter_data["p_to_user"]
     consumption = inverter_data["p_inv"] + \
         inverter_data["p_to_user"] - \
         inverter_data["p_rec"]

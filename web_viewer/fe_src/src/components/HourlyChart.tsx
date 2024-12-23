@@ -165,7 +165,7 @@ const HourlyChart = forwardRef(
                   },
                   zoom: {
                     enabled: false,
-                  }
+                  },
                 },
                 colors: [
                   "rgb(112, 173, 70)",
@@ -223,13 +223,23 @@ const HourlyChart = forwardRef(
                         if (seriesName === BATTERY_SERIE_NAME) {
                           const batteryValue =
                             opts.series[1][opts.dataPointIndex];
-                          if (batteryValue < 0) {
-                            return `${seriesName} charge:`;
+                          if (batteryValue === 0) {
+                            return `${seriesName}:`;
                           }
-                          return `${seriesName} discharge:`;
+                          if (batteryValue < 0) {
+                            return `${seriesName} Charging:`;
+                          }
+                          return `${seriesName} Discharging:`;
                         }
                         if (seriesName === GRID_SERIE_NAME) {
-                          return "Import Grid Power:";
+                          const gridValue = opts.series[2][opts.dataPointIndex];
+                          if (gridValue === 0) {
+                            return `${seriesName}:`;
+                          }
+                          if (gridValue < 0) {
+                            return "Import Grid Power:";
+                          }
+                          return "Export Grid Power:";
                         }
                         return `${seriesName}:`;
                       },
@@ -238,7 +248,9 @@ const HourlyChart = forwardRef(
                 },
               }}
             />
-          ) : <Loading />}
+          ) : (
+            <Loading />
+          )}
         </div>
       </div>
     );
