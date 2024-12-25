@@ -60,8 +60,7 @@ function YieldChart({ totalYield, charge, gridExport, label }: IProps) {
             roundTo(charge),
             roundTo(gridExport),
           ]}
-          height={100}
-          width={100}
+          width={110}
           options={{
             colors: ["#FF718F", "#5CC9A0", "#F2A474"],
             theme: {
