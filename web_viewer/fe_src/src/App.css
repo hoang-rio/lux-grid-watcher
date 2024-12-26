@@ -65,6 +65,8 @@
 
 .chart-item {
   flex-basis: 300px;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .text-center {

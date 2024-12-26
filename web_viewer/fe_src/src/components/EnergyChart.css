@@ -1,6 +1,6 @@
 .energy-chart {
     margin-top: 10px;
-    min-height: 300px;
+    height: 480px;
 }
 
 .energy-chart-title {
@@ -21,4 +21,10 @@
 
 .chart-select button.active {
     background-color: #51ad77;
+}
+
+@media screen and (max-width: 768px) {
+    .energy-chart {
+        height: 460px;
+    }
 }
