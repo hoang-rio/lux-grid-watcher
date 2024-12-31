@@ -139,7 +139,7 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
             type: "datetime",
             labels: {
               datetimeUTC: false,
-              format: "dd/MM/yyyy",
+              format: "dd",
             },
           },
           tooltip: {
