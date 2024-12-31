@@ -89,21 +89,6 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
     }
   }, [fetchChart]);
 
-  const startOfMonth = useMemo(() => {
-    const date = new Date();
-    date.setDate(1);
-    date.setHours(0, 0, 0, 0);
-    return date;
-  }, []);
-
-  const endOfMonth = useMemo(() => {
-    const date = new Date();
-    date.setMonth(date.getMonth() + 1);
-    date.setDate(0);
-    date.setHours(23, 59, 59, 999);
-    return date;
-  }, []);
-
   useEffect(() => {
     fetchChart();
     document.addEventListener("visibilitychange", onVisiblityChange);
@@ -152,8 +137,6 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
           },
           xaxis: {
             type: "datetime",
-            min: startOfMonth.getTime(),
-            max: endOfMonth.getTime(),
             labels: {
               datetimeUTC: false,
               format: "dd",
