@@ -181,3 +181,25 @@ class FCM():
                 self.__fcm_threads.append(t)
                 t.start()
             self.__post_send_notify(devices)
+
+    def warning_notify(self):
+        self.__fcm_threads = []
+        devices = self.__get_devices()
+        if len(devices) == 0:
+            self.__logger.info("WARN: No device to notify")
+        else:
+            self.__logger.info(
+                f"WARN: Start send notifcation to {len(devices)} devices"
+            )
+            for device in devices:
+                t = FCMThread(
+                    self.__logger,
+                    self.__config,
+                    "Cảnh báo: Tiêu thụ điện bất thường",
+                    "Tiêu thụ điện bất thường, vui lòng kiếm tra xem vòi nước đã khoá chưa.",
+                    device,
+                    True
+                )
+                self.__fcm_threads.append(t)
+                t.start()
+            self.__post_send_notify(devices)

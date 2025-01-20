@@ -13,10 +13,14 @@ from play_audio import PlayAudio
 import asyncio
 
 DONGLE_MODE = "DONGLE"
+ABNORMAL_USAGE_COUNT = 45
+ABNORMAL_MIN_POWER = 900
+ABNORMAL_MAX_POWER = 1100
 
 AUDIO_SLEEP_MAP = {
     "has-grid.mp3": 6,
     "lost-grid.mp3": 9,
+    "warning.mp3": 6,
 }
 
 config: dict = {
@@ -57,6 +61,31 @@ def play_audio(audio_file: str, repeat=3):
         audio_file=audio_file, repeat=repeat, sleep=AUDIO_SLEEP_MAP[audio_file], config=config, logger=logger)
     play_audio_thread.start()
 
+
+def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
+    now = datetime.now()
+    # now = now.replace(minute=0, second=0, hour=6)
+    if now.minute == 0 and now.second < 10:
+        cursor = db_connection.cursor()
+        last_2_hour = now.replace(hour=now.hour - 2)
+        previous_2_hour_chart_data = cursor.execute(
+            "SELECT * FROM hourly_chart WHERE datetime >= ? AND datetime < ?",
+            (last_2_hour.strftime("%Y-%m-%d %H:%M:%S"), now.strftime("%Y-%m-%d %H:%M:%S"))
+        ).fetchall()
+        unnormnal_count = 0
+        for item in previous_2_hour_chart_data:
+            if item[5] > ABNORMAL_MIN_POWER and item[5] < ABNORMAL_MAX_POWER:
+                unnormnal_count += 1
+        if unnormnal_count > ABNORMAL_USAGE_COUNT:
+            logger.warning(
+                "_________Unnormal usage detected from %s to %s with %s times_________",
+                last_2_hour.strftime("%Y-%m-%d %H:%M:%S"),
+                now.strftime("%Y-%m-%d %H:%M:%S"),
+                unnormnal_count
+            )
+            cursor.close()
+            fcm_service.warning_notify()
+            play_audio("warning.mp3", 5)
 
 def handle_grid_status(json_data: dict, fcm_service: FCM):
     # is_grid_connected = True
@@ -257,6 +286,7 @@ async def main():
                         if db_connection is not None:
                             hourly_chart_item = insert_hourly_chart(db_connection, inverter_data)
                             insert_daly_chart(db_connection, inverter_data)
+                            dectect_abnormal_usage(db_connection, fcm_service)
                         await ws_client.send_json({
                             "inverter_data": inverter_data,
                             "hourly_chart_item": hourly_chart_item
