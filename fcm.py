@@ -196,7 +196,7 @@ class FCM():
                     self.__logger,
                     self.__config,
                     "Cảnh báo: Tiêu thụ điện bất thường",
-                    "Tiêu thụ điện bất thường, vui lòng kiếm tra xem vòi nước đã khoá chưa.",
+                    "Tiêu thụ điện bất thường, vui lòng kiểm tra xem vòi nước đã khoá chưa.",
                     device,
                     True
                 )
