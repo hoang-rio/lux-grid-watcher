@@ -72,20 +72,27 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
             "SELECT * FROM hourly_chart WHERE datetime >= ? AND datetime < ?",
             (last_2_hour.strftime("%Y-%m-%d %H:%M:%S"), now.strftime("%Y-%m-%d %H:%M:%S"))
         ).fetchall()
-        unnormnal_count = 0
+        abnormnal_count = 0
         for item in previous_2_hour_chart_data:
             if item[5] > ABNORMAL_MIN_POWER and item[5] < ABNORMAL_MAX_POWER:
-                unnormnal_count += 1
-        if unnormnal_count > ABNORMAL_USAGE_COUNT:
+                abnormnal_count += 1
+        if abnormnal_count > ABNORMAL_USAGE_COUNT:
             logger.warning(
-                "_________Unnormal usage detected from %s to %s with %s times_________",
+                "_________Abnormal usage detected from %s to %s with %s times_________",
                 last_2_hour.strftime("%Y-%m-%d %H:%M:%S"),
                 now.strftime("%Y-%m-%d %H:%M:%S"),
-                unnormnal_count
+                abnormnal_count
             )
             cursor.close()
             fcm_service.warning_notify()
             play_audio("warning.mp3", 5)
+        else:
+            logger.info(
+                "_________No abnormal usage detected from %s to %s with %s times_________",
+                last_2_hour.strftime("%Y-%m-%d %H:%M:%S"),
+                now.strftime("%Y-%m-%d %H:%M:%S"),
+                abnormnal_count
+            )
 
 def handle_grid_status(json_data: dict, fcm_service: FCM):
     # is_grid_connected = True
