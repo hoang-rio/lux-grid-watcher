@@ -68,14 +68,10 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
     if now.minute == 0 and now.second < 10:
         cursor = db_connection.cursor()
         last_2_hour = now.replace(hour=now.hour - 2)
-        previous_2_hour_chart_data = cursor.execute(
-            "SELECT * FROM hourly_chart WHERE datetime >= ? AND datetime < ?",
-            (last_2_hour.strftime("%Y-%m-%d %H:%M:%S"), now.strftime("%Y-%m-%d %H:%M:%S"))
-        ).fetchall()
-        abnormnal_count = 0
-        for item in previous_2_hour_chart_data:
-            if item[5] > ABNORMAL_MIN_POWER and item[5] < ABNORMAL_MAX_POWER:
-                abnormnal_count += 1
+        abnormnal_count = cursor.execute(
+            "SELECT COUNT(*) FROM hourly_chart WHERE datetime >= ? AND datetime < ? AND consumption > ? AND consumption < ?",
+            (last_2_hour.strftime("%Y-%m-%d %H:%M:%S"), now.strftime("%Y-%m-%d %H:%M:%S"), ABNORMAL_MIN_POWER, ABNORMAL_MAX_POWER)
+        ).fetchone()[0]
         if abnormnal_count > ABNORMAL_USAGE_COUNT:
             logger.warning(
                 "_________Abnormal usage detected from %s to %s with %s times_________",
@@ -83,7 +79,6 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
                 now.strftime("%Y-%m-%d %H:%M:%S"),
                 abnormnal_count
             )
-            cursor.close()
             fcm_service.warning_notify()
             play_audio("warning.mp3", 5)
         else:
@@ -93,6 +88,7 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
                 now.strftime("%Y-%m-%d %H:%M:%S"),
                 abnormnal_count
             )
+        cursor.close()
 
 def handle_grid_status(json_data: dict, fcm_service: FCM):
     # is_grid_connected = True
