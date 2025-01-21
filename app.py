@@ -6,7 +6,7 @@ import time
 from os import path, environ
 import dongle_handler
 import http_handler
-from datetime import datetime
+from datetime import datetime, timedelta
 from fcm import FCM
 import json
 from play_audio import PlayAudio
@@ -67,7 +67,7 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
     # now = now.replace(minute=0, second=0, hour=6)
     if now.minute == 0 and now.second < 10:
         cursor = db_connection.cursor()
-        last_2_hour = now.replace(hour=now.hour - 2)
+        last_2_hour = now - timedelta(hours=2)
         abnormnal_count = cursor.execute(
             "SELECT COUNT(*) FROM hourly_chart WHERE datetime >= ? AND datetime < ? AND consumption > ? AND consumption < ?",
             (last_2_hour.strftime("%Y-%m-%d %H:%M:%S"), now.strftime("%Y-%m-%d %H:%M:%S"), ABNORMAL_MIN_POWER, ABNORMAL_MAX_POWER)
