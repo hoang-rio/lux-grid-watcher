@@ -14,6 +14,7 @@ import asyncio
 
 DONGLE_MODE = "DONGLE"
 ABNORMAL_USAGE_COUNT = 45
+ABNORMAL_LOWER_MIN_USAGE_COUNT = 5
 ABNORMAL_MIN_POWER = 900
 ABNORMAL_MAX_POWER = 1100
 
@@ -72,21 +73,28 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
             "SELECT COUNT(*) FROM hourly_chart WHERE datetime >= ? AND datetime < ? AND consumption > ? AND consumption < ?",
             (last_2_hour.strftime("%Y-%m-%d %H:%M:%S"), now.strftime("%Y-%m-%d %H:%M:%S"), ABNORMAL_MIN_POWER, ABNORMAL_MAX_POWER)
         ).fetchone()[0]
-        if abnormnal_count > ABNORMAL_USAGE_COUNT:
+        abnormnal_count_lower = cursor.execute(
+            "SELECT COUNT(*) FROM hourly_chart WHERE datetime >= ? AND datetime < ? AND consumption < ?",
+            (last_2_hour.strftime("%Y-%m-%d %H:%M:%S"),
+             now.strftime("%Y-%m-%d %H:%M:%S"), ABNORMAL_MIN_POWER)
+        ).fetchone()[0]
+        if abnormnal_count > ABNORMAL_USAGE_COUNT and abnormnal_count_lower > ABNORMAL_LOWER_MIN_USAGE_COUNT:
             logger.warning(
-                "_________Abnormal usage detected from %s to %s with %s times_________",
+                "_________Abnormal usage detected from %s to %s with %s abnormal times and %s normal times_________",
                 last_2_hour.strftime("%Y-%m-%d %H:%M:%S"),
                 now.strftime("%Y-%m-%d %H:%M:%S"),
-                abnormnal_count
+                abnormnal_count,
+                abnormnal_count_lower
             )
             fcm_service.warning_notify()
             play_audio("warning.mp3", 5)
         else:
             logger.info(
-                "_________No abnormal usage detected from %s to %s with %s times_________",
+                "_________No abnormal usage detected from %s to %s with %s abnormal times and %s normal times_________",
                 last_2_hour.strftime("%Y-%m-%d %H:%M:%S"),
                 now.strftime("%Y-%m-%d %H:%M:%S"),
-                abnormnal_count
+                abnormnal_count,
+                abnormnal_count_lower
             )
         cursor.close()
 
