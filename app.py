@@ -17,6 +17,7 @@ ABNORMAL_USAGE_COUNT = 45
 ABNORMAL_LOWER_MIN_USAGE_COUNT = 5
 ABNORMAL_MIN_POWER = 900
 ABNORMAL_MAX_POWER = 1100
+ABNORMAL_SKIP_CHECK_HOURS = 2
 
 AUDIO_SLEEP_MAP = {
     "has-grid.mp3": 6,
@@ -62,11 +63,16 @@ def play_audio(audio_file: str, repeat=3):
         audio_file=audio_file, repeat=repeat, sleep=AUDIO_SLEEP_MAP[audio_file], config=config, logger=logger)
     play_audio_thread.start()
 
-
+# Number of hours to skip check when detect abnormal usage
+abnormal_skip_check_count = 0
 def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
     now = datetime.now()
     # now = now.replace(minute=0, second=0, hour=6)
     if now.minute == 0 and now.second < 10:
+        global abnormal_skip_check_count
+        if abnormal_skip_check_count > 0:
+            abnormal_skip_check_count = abnormal_skip_check_count - 1
+            return
         cursor = db_connection.cursor()
         last_2_hour = now - timedelta(hours=2)
         abnormnal_count = cursor.execute(
@@ -88,6 +94,8 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
             )
             fcm_service.warning_notify()
             play_audio("warning.mp3", 5)
+            # Skip next ABNORMAL_SKIP_CHECK_HOURS hours when detect abnormal usage
+            abnormal_skip_check_count = ABNORMAL_SKIP_CHECK_HOURS
         else:
             logger.info(
                 "_________No abnormal usage detected from %s to %s with %s abnormal times and %s normal times_________",
