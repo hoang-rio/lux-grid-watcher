@@ -14,7 +14,7 @@ import asyncio
 
 DONGLE_MODE = "DONGLE"
 ABNORMAL_USAGE_COUNT = 45
-ABNORMAL_LOWER_MIN_USAGE_COUNT = 5
+NORMAL_MIN_USAGE_COUNT = 10
 ABNORMAL_MIN_POWER = 900
 ABNORMAL_MAX_POWER = 1100
 ABNORMAL_SKIP_CHECK_HOURS = 2
@@ -84,7 +84,7 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
             (last_2_hour.strftime("%Y-%m-%d %H:%M:%S"),
              now.strftime("%Y-%m-%d %H:%M:%S"), ABNORMAL_MIN_POWER)
         ).fetchone()[0]
-        if abnormnal_count > ABNORMAL_USAGE_COUNT and abnormnal_count_lower > ABNORMAL_LOWER_MIN_USAGE_COUNT:
+        if abnormnal_count > ABNORMAL_USAGE_COUNT and abnormnal_count_lower > NORMAL_MIN_USAGE_COUNT and abnormnal_count_lower < abnormnal_count:
             logger.warning(
                 "_________Abnormal usage detected from %s to %s with %s abnormal times and %s normal times_________",
                 last_2_hour.strftime("%Y-%m-%d %H:%M:%S"),
