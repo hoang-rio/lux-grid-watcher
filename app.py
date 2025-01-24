@@ -69,7 +69,7 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
     now = datetime.now()
     # now = now.replace(minute=0, second=0, hour=6)
     sleep_time = int(config["SLEEP_TIME"])
-    if now.minute == 0 and ((sleep_time < 60 and now.second <= sleep_time) or (sleep_time >= 60 and now.minute <= sleep_time / 60)):
+    if (sleep_time >= 60 and now.minute <= sleep_time / 60) or (now.minute == 0 and now.second <= sleep_time):
         global abnormal_skip_check_count
         if abnormal_skip_check_count > 0:
             abnormal_skip_check_count = abnormal_skip_check_count - 1
