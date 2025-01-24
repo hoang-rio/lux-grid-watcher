@@ -1,7 +1,18 @@
+import { useMemo } from "react";
 import { ICProps } from "../Intefaces";
 import GeneralValue from "./GeneralValue";
 
 export default function Grid({ inverterData, isSocketConnected }: ICProps) {
+  const vac = useMemo(() => {
+    if (isSocketConnected) {
+      const vac = (inverterData.vacr || inverterData.vacs || inverterData.vact) / 10;
+      if (vac > 300) {
+        return 0;
+      }
+      return vac;
+    }
+    return 0;
+  }, [inverterData.vacr, inverterData.vacs, inverterData.vact, isSocketConnected]);
   return (
     <div className="grid flex-1 row align-center justify-flex-end">
       <div className="row arrows">
@@ -57,12 +68,7 @@ export default function Grid({ inverterData, isSocketConnected }: ICProps) {
           unit=" W"
         />
         <GeneralValue
-          value={
-            isSocketConnected
-              ? (inverterData.vacr || inverterData.vacs || inverterData.vact) /
-                10
-              : 0
-          }
+          value={vac}
           unit=" Vac"
         />
         <GeneralValue
