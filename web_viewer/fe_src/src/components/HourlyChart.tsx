@@ -24,6 +24,7 @@ const HourlyChart = forwardRef(
     const [isDark, setIsDark] = useState(false);
     const isFetchingRef = useRef<boolean>(false);
     const [isAutoUpdate, setIsAutoUpdate] = useState(true);
+    const updateChartOnClickRef = useRef(false);
 
     const series = useMemo(() => {
       const pvSeries: SeriesItem[] = [];
@@ -101,17 +102,26 @@ const HourlyChart = forwardRef(
 
     const onVisibilityChange = useCallback(() => {
        if (!document.hidden && isAutoUpdate) {
-         fetchChart();
+          updateChartOnClickRef.current = true;
        }
-    }, [fetchChart, isAutoUpdate]);
+    }, [isAutoUpdate]);
+
+    const onDocumentClick = useCallback(() => {
+      if (updateChartOnClickRef.current) {
+        fetchChart();
+        updateChartOnClickRef.current = false;
+      }
+    }, [fetchChart]);
 
     useEffect(() => {
       fetchChart();
       document.addEventListener("visibilitychange", onVisibilityChange);
+      document.addEventListener("click", onDocumentClick);
       return () => {
         document.removeEventListener("visibilitychange", onVisibilityChange);
+        document.removeEventListener("click", onDocumentClick);
       }
-    }, [fetchChart, isAutoUpdate, onVisibilityChange]);
+    }, [fetchChart, isAutoUpdate, onDocumentClick, onVisibilityChange]);
 
     useEffect(() => {
       const mq = window.matchMedia("(prefers-color-scheme: dark)");
