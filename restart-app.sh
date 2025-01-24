@@ -1,9 +1,8 @@
-echo "Stopping app.py..."
 PID=$(ps | grep app.py | grep -v grep | awk '{print $1}')
 if [ -z "$PID" ]; then
-    echo "No process to kill"
+    echo "app.py is not running."
 else
-    echo "Killing process $PID"
+    echo "Stopping app.py with process id $PID..."
     kill $PID
 fi
 echo "Starting app.py..."
