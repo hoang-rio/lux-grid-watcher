@@ -308,7 +308,10 @@ async def main():
                         if db_connection is not None:
                             hourly_chart_item = insert_hourly_chart(db_connection, inverter_data)
                             insert_daly_chart(db_connection, inverter_data)
-                            dectect_abnormal_usage(db_connection, fcm_service)
+                            if ABNORMAL_SKIP_CHECK_HOURS> -1: # Skip check if ABNORMAL_SKIP_CHECK_HOURS is -1
+                                dectect_abnormal_usage(db_connection, fcm_service)
+                            else:
+                                logger.info("Skip abnormal usage check")
                         await ws_client.send_json({
                             "inverter_data": inverter_data,
                             "hourly_chart_item": hourly_chart_item
