@@ -13,11 +13,6 @@ from play_audio import PlayAudio
 import asyncio
 
 DONGLE_MODE = "DONGLE"
-ABNORMAL_USAGE_COUNT = 45
-NORMAL_MIN_USAGE_COUNT = 10
-ABNORMAL_MIN_POWER = 900
-ABNORMAL_MAX_POWER = 1100
-ABNORMAL_SKIP_CHECK_HOURS = 2
 
 AUDIO_SLEEP_MAP = {
     "has-grid.mp3": 6,
@@ -29,6 +24,13 @@ config: dict = {
     **dotenv_values(".env"),
     **environ
 }
+
+ABNORMAL_SKIP_CHECK_HOURS = int(
+    config["ABNORMAL_SKIP_CHECK_HOURS"]) if "ABNORMAL_SKIP_CHECK_HOURS" in config else 3
+ABNORMAL_USAGE_COUNT = 23 * ABNORMAL_SKIP_CHECK_HOURS
+NORMAL_MIN_USAGE_COUNT = 5 * ABNORMAL_SKIP_CHECK_HOURS
+ABNORMAL_MIN_POWER = 900
+ABNORMAL_MAX_POWER = 1100
 log_level = logging.DEBUG if config["IS_DEBUG"] == 'True' else logging.INFO
 
 logger = logging.getLogger(__file__)
@@ -75,20 +77,20 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
             abnormal_skip_check_count = abnormal_skip_check_count - 1
             return
         cursor = db_connection.cursor()
-        last_2_hour = now - timedelta(hours=2)
+        abnormal_check_start_time = now - timedelta(hours=ABNORMAL_SKIP_CHECK_HOURS)
         abnormnal_count = cursor.execute(
             "SELECT COUNT(*) FROM hourly_chart WHERE datetime >= ? AND datetime < ? AND consumption > ? AND consumption < ?",
-            (last_2_hour.strftime("%Y-%m-%d %H:%M:%S"), now.strftime("%Y-%m-%d %H:%M:%S"), ABNORMAL_MIN_POWER, ABNORMAL_MAX_POWER)
+            (abnormal_check_start_time.strftime("%Y-%m-%d %H:%M:%S"), now.strftime("%Y-%m-%d %H:%M:%S"), ABNORMAL_MIN_POWER, ABNORMAL_MAX_POWER)
         ).fetchone()[0]
         abnormnal_count_lower = cursor.execute(
             "SELECT COUNT(*) FROM hourly_chart WHERE datetime >= ? AND datetime < ? AND consumption < ?",
-            (last_2_hour.strftime("%Y-%m-%d %H:%M:%S"),
+            (abnormal_check_start_time.strftime("%Y-%m-%d %H:%M:%S"),
              now.strftime("%Y-%m-%d %H:%M:%S"), ABNORMAL_MIN_POWER)
         ).fetchone()[0]
         if abnormnal_count > ABNORMAL_USAGE_COUNT and abnormnal_count_lower > NORMAL_MIN_USAGE_COUNT and abnormnal_count_lower < abnormnal_count:
             logger.warning(
                 "_________Abnormal usage detected from %s to %s with %s abnormal times and %s normal times_________",
-                last_2_hour.strftime("%Y-%m-%d %H:%M:%S"),
+                abnormal_check_start_time.strftime("%Y-%m-%d %H:%M:%S"),
                 now.strftime("%Y-%m-%d %H:%M:%S"),
                 abnormnal_count,
                 abnormnal_count_lower
@@ -100,7 +102,7 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
         else:
             logger.info(
                 "_________No abnormal usage detected from %s to %s with %s abnormal times and %s normal times_________",
-                last_2_hour.strftime("%Y-%m-%d %H:%M:%S"),
+                abnormal_check_start_time.strftime("%Y-%m-%d %H:%M:%S"),
                 now.strftime("%Y-%m-%d %H:%M:%S"),
                 abnormnal_count,
                 abnormnal_count_lower
