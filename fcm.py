@@ -11,6 +11,7 @@ SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"]
 
 CHANNEL_ON_GRID = "111"
 CHANNEL_OFF_GRID = "222"
+CHANNEL_WARN = "333"
 
 
 class FCMThread(Thread):
@@ -20,9 +21,11 @@ class FCMThread(Thread):
     __body: str
     __device: str
     __is_grid_connected: bool
+    __channel_id: str
+    __sound: str
     valid_device: bool = True
 
-    def __init__(self, logger: logging.Logger, config: dict, title: str, body: str, device: str, is_grid_connected: bool):
+    def __init__(self, logger: logging.Logger, config: dict, title: str, body: str, device: str, is_grid_connected: bool, channel_id: str = CHANNEL_ON_GRID):
         super(FCMThread, self).__init__()
         self.__config = config
         self.__logger = logger
@@ -30,6 +33,8 @@ class FCMThread(Thread):
         self.__body = body
         self.__device = device
         self.__is_grid_connected = is_grid_connected
+        self.__channel_id = channel_id
+        self.__sound = "warning" if channel_id == CHANNEL_WARN else "has_grid" if is_grid_connected else "lost_grid"
 
     def _get_access_token(self):
         """Retrieve a valid access token that can be used to authorize requests.
@@ -62,26 +67,27 @@ class FCMThread(Thread):
                     "data": {
                         "title": title,
                         "body": body,
-                        "is_grid_connected": "1" if is_grid_connected else "0"
+                        "is_grid_connected": "1" if is_grid_connected else "0",
+                        "is_warning": "1" if self.__channel_id == CHANNEL_WARN else "0"
                     },
                     "android": {
                         "priority": "HIGH",
                         "direct_boot_ok": True,
                         "notification": {
-                            "channel_id": CHANNEL_ON_GRID if is_grid_connected else CHANNEL_OFF_GRID,
+                            "channel_id": self.__channel_id,
                             "notification_priority": "PRIORITY_MAX",
                             "visibility": "PUBLIC",
                             "default_sound": False,
                             "default_vibrate_timings": False,
                             "vibrate_timings": ["0.1s", "1s", "0.1s", "1s", "0.1s"],
                             "default_light_settings": True,
-                            "sound": "has_grid.mp3" if is_grid_connected else "lost_grid.mp3"
+                            "sound": f"{self.__sound}.mp3"
                         },
                     },
                     "apns": {
                         "payload": {
                             "aps": {
-                                "sound": "has_grid.aiff" if is_grid_connected else "lost_grid.aiff",
+                                "sound": f"{self.__sound}.aiff",
                                 "badge": 0
                             }
                         },
@@ -155,7 +161,9 @@ class FCM():
                     "Đã có điện lưới.",
                     "Nhà đã có điện lưới có thể sử dụng điện không giới hạn.",
                     device,
-                    True)
+                    True,
+                    CHANNEL_ON_GRID
+                    )
                 self.__fcm_threads.append(t)
                 t.start()
             self.__post_send_notify(devices)
@@ -176,7 +184,8 @@ class FCM():
                     "Mất điện lưới.",
                     "Nhà đã mất điện lưới cần hạn chế sử dụng thiết bị điện công suất lớn như bếp từ, bình nóng lạnh.",
                     device,
-                    False
+                    False,
+                    CHANNEL_OFF_GRID
                 )
                 self.__fcm_threads.append(t)
                 t.start()
@@ -198,7 +207,8 @@ class FCM():
                     "Cảnh báo: Tiêu thụ điện bất thường",
                     "Tiêu thụ điện bất thường, vui lòng kiểm tra xem vòi nước đã khoá chưa.",
                     device,
-                    True
+                    True,
+                    CHANNEL_WARN
                 )
                 self.__fcm_threads.append(t)
                 t.start()
