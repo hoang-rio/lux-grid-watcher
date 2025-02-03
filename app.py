@@ -277,11 +277,6 @@ def insert_daly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
     cursor.close()
     db_connection.commit()
 
-
-fcm_service = FCM(logger, config)
-fcm_service.warning_notify()
-exit(0)
-
 async def main():
     try:
         logger.info("Grid connect watch working on mode: %s",
