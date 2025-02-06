@@ -59,14 +59,14 @@ VITE_CORS_HEADER = {
     'Access-Control-Allow-Origin': 'http://localhost:5173'}
 
 
-def state(_: web.Request):
+async def state(_: web.Request):
     global last_inverter_data
     res = web.json_response(json.loads(
         last_inverter_data)["inverter_data"], headers=VITE_CORS_HEADER)
     return res
 
 
-def hourly_chart(_: web.Request):
+async def hourly_chart(_: web.Request):
     if "DB_NAME" not in config:
         return web.json_response([], headers=VITE_CORS_HEADER)
     global db_connection
@@ -87,7 +87,7 @@ def dict_factory(cursor, row):
     return d
 
 
-def total(_: web.Request):
+async def total(_: web.Request):
     if "DB_NAME" not in config:
         return web.json_response({}, headers=VITE_CORS_HEADER)
     global db_connection
@@ -101,7 +101,7 @@ def total(_: web.Request):
     return res
 
 
-def daily_chart(_: web.Request):
+async def daily_chart(_: web.Request):
     if "DB_NAME" not in config:
         return web.json_response([], headers=VITE_CORS_HEADER)
     global db_connection
@@ -117,7 +117,7 @@ def daily_chart(_: web.Request):
     return res
 
 
-def monthly_chart(_: web.Request):
+async def monthly_chart(_: web.Request):
     if "DB_NAME" not in config:
         return web.json_response([], headers=VITE_CORS_HEADER)
     global db_connection
@@ -133,7 +133,7 @@ def monthly_chart(_: web.Request):
     return res
 
 
-def yearly_chart(_: web.Request):
+async def yearly_chart(_: web.Request):
     if "DB_NAME" not in config:
         return web.json_response([], headers=VITE_CORS_HEADER)
     global db_connection
@@ -150,7 +150,7 @@ def yearly_chart(_: web.Request):
 def create_runner():
     app = web.Application()
     app.add_routes([
-        web.get("/",   http_handler),
+        web.get("/", http_handler),
         web.get("/ws", websocket_handler),
         web.get("/state", state),
         web.get("/hourly-chart", hourly_chart),
