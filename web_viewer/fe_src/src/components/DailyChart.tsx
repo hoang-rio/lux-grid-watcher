@@ -106,12 +106,15 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
     mq.addEventListener("change", (evt) => setIsDark(evt.matches));
   }, []);
 
-  if (chartData.length)
+  if (chartData.length) {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     return (
       <Chart
         type="bar"
         height={400}
-        series={series.reverse()}
+        series={series}
         options={{
           chart: {
             toolbar: {
@@ -128,7 +131,7 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
             "rgb(246, 104, 103)",
             "rgb(153, 107, 31)",
             "rgb(255, 164, 97)",
-          ].reverse(),
+          ],
           theme: {
             mode: isDark ? "dark" : "light",
           },
@@ -141,6 +144,9 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
               datetimeUTC: false,
               format: "dd",
             },
+            min: startOfMonth.getTime(),
+            max: endOfMonth.getTime(),
+            stepSize: 1,
           },
           tooltip: {
             x: {
@@ -162,10 +168,11 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
             { seriesName: SOLAR_PV_SERIE_NAME, show: false },
             { seriesName: SOLAR_PV_SERIE_NAME, show: false },
             { seriesName: SOLAR_PV_SERIE_NAME, show: false },
-          ].reverse(),
+          ],
         }}
       />
     );
+  }
   return <Loading />;
 });
 
