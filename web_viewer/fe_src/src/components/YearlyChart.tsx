@@ -9,10 +9,10 @@ import {
   useRef,
   useState,
 } from "react";
-import Chart from "react-apexcharts";
 import { IFetchChart, SeriesItem } from "../Intefaces";
 import Loading from "./Loading";
 import { roundTo } from "./utils";
+import BarChart from "./BarChart";
 
 const SOLAR_PV_SERIE_NAME = "Solar production";
 
@@ -109,66 +109,9 @@ const YearlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
     mq.addEventListener("change", (evt) => setIsDark(evt.matches));
   }, []);
 
-  if (chartData.length)
-    return (
-      <Chart
-        type="bar"
-        height={400}
-        series={series}
-        options={{
-          chart: {
-            toolbar: {
-              show: false,
-            },
-            zoom: {
-              allowMouseWheelZoom: false,
-            },
-          },
-          legend: {
-            show: true,
-            position: "top",
-          },
-          colors: [
-            "rgb(112, 173, 70)",
-            "rgb(90, 155, 213)",
-            "rgb(64, 38, 198)",
-            "rgb(246, 104, 103)",
-            "rgb(153, 107, 31)",
-            "rgb(255, 164, 97)",
-          ],
-          theme: {
-            mode: isDark ? "dark" : "light",
-          },
-          dataLabels: {
-            enabled: false,
-          },
-          xaxis: {
-            type: "category",
-          },
-          tooltip: {
-            x: {
-              format: "dd/MM/yyyy",
-            },
-            y: {
-              formatter(val) {
-                return `${val} kWh`;
-              },
-            },
-          },
-          yaxis: [
-            {
-              seriesName: SOLAR_PV_SERIE_NAME,
-              title: { text: "Energy (kWh)" },
-            },
-            { seriesName: SOLAR_PV_SERIE_NAME, show: false },
-            { seriesName: SOLAR_PV_SERIE_NAME, show: false },
-            { seriesName: SOLAR_PV_SERIE_NAME, show: false },
-            { seriesName: SOLAR_PV_SERIE_NAME, show: false },
-            { seriesName: SOLAR_PV_SERIE_NAME, show: false },
-          ],
-        }}
-      />
-    );
+  if (chartData.length) {
+    return <BarChart series={series} isDark={isDark} />;
+  }
   return <Loading />;
 });
 

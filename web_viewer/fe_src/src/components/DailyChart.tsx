@@ -9,10 +9,10 @@ import {
   useRef,
   useState,
 } from "react";
-import Chart from "react-apexcharts";
 import { IFetchChart, SeriesItem } from "../Intefaces";
 import Loading from "./Loading";
 import { roundTo } from "./utils";
+import BarChart from "./BarChart";
 
 const SOLAR_PV_SERIE_NAME = "Solar production";
 
@@ -111,68 +111,18 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     return (
-      <Chart
-        type="bar"
-        height={400}
+      <BarChart
         series={series}
-        options={{
-          chart: {
-            toolbar: {
-              show: false,
-            },
-            zoom: {
-              allowMouseWheelZoom: false,
-            },
+        isDark={isDark}
+        xaxis={{
+          type: "datetime",
+          labels: {
+            datetimeUTC: false,
+            format: "dd",
           },
-          legend: {
-            show: true,
-            position: "top",
-          },
-          colors: [
-            "rgb(112, 173, 70)",
-            "rgb(90, 155, 213)",
-            "rgb(64, 38, 198)",
-            "rgb(246, 104, 103)",
-            "rgb(153, 107, 31)",
-            "rgb(255, 164, 97)",
-          ],
-          theme: {
-            mode: isDark ? "dark" : "light",
-          },
-          dataLabels: {
-            enabled: false,
-          },
-          xaxis: {
-            type: "datetime",
-            labels: {
-              datetimeUTC: false,
-              format: "dd",
-            },
-            min: startOfMonth.getTime(),
-            max: endOfMonth.getTime(),
-            stepSize: 1,
-          },
-          tooltip: {
-            x: {
-              format: "dd/MM/yyyy",
-            },
-            y: {
-              formatter(val) {
-                return `${val} kWh`;
-              },
-            },
-          },
-          yaxis: [
-            {
-              seriesName: SOLAR_PV_SERIE_NAME,
-              title: { text: "Energy (kWh)" },
-            },
-            { seriesName: SOLAR_PV_SERIE_NAME, show: false },
-            { seriesName: SOLAR_PV_SERIE_NAME, show: false },
-            { seriesName: SOLAR_PV_SERIE_NAME, show: false },
-            { seriesName: SOLAR_PV_SERIE_NAME, show: false },
-            { seriesName: SOLAR_PV_SERIE_NAME, show: false },
-          ],
+          min: startOfMonth.getTime(),
+          max: endOfMonth.getTime(),
+          stepSize: 1,
         }}
       />
     );
