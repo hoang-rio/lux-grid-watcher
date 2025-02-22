@@ -29,8 +29,6 @@ ABNORMAL_SKIP_CHECK_HOURS = int(
     config["ABNORMAL_SKIP_CHECK_HOURS"]) if "ABNORMAL_SKIP_CHECK_HOURS" in config else 3
 ABNORMAL_USAGE_COUNT = 32 * ABNORMAL_SKIP_CHECK_HOURS
 NORMAL_MIN_USAGE_COUNT = 5 * ABNORMAL_SKIP_CHECK_HOURS
-ABNORMAL_MIN_POWER = 900
-ABNORMAL_MAX_POWER = 1100
 log_level = logging.DEBUG if config["IS_DEBUG"] == 'True' else logging.INFO
 
 logger = logging.getLogger(__file__)
@@ -78,15 +76,28 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
             return
         cursor = db_connection.cursor()
         abnormal_check_start_time = now - timedelta(hours=ABNORMAL_SKIP_CHECK_HOURS)
-        abnormnal_count = cursor.execute(
-            "SELECT COUNT(*) FROM hourly_chart WHERE datetime >= ? AND datetime < ? AND consumption > ? AND consumption < ?",
-            (abnormal_check_start_time.strftime("%Y-%m-%d %H:%M:%S"), now.strftime("%Y-%m-%d %H:%M:%S"), ABNORMAL_MIN_POWER, ABNORMAL_MAX_POWER)
-        ).fetchone()[0]
-        abnormnal_count_lower = cursor.execute(
-            "SELECT COUNT(*) FROM hourly_chart WHERE datetime >= ? AND datetime < ? AND consumption < ?",
-            (abnormal_check_start_time.strftime("%Y-%m-%d %H:%M:%S"),
-             now.strftime("%Y-%m-%d %H:%M:%S"), ABNORMAL_MIN_POWER)
-        ).fetchone()[0]
+        from web_viewer import dict_factory
+        cursor.row_factory = dict_factory
+        all_items = cursor.execute(
+            "SELECT * FROM hourly_chart WHERE datetime >= ? AND datetime < ?",
+            (abnormal_check_start_time.strftime("%Y-%m-%d %H:%M:%S"), now.strftime("%Y-%m-%d %H:%M:%S"))
+        ).fetchall()
+        abnormnal_count = 0
+        abnormnal_count_lower = 0
+        abnormal_min_power = 0
+        abnormal_max_power = 0
+        compsumption_const_count: dict = {}
+        for item in all_items:
+            rounded_consumption = item["consumption"] - item["consumption"] % 200
+            compsumption_const_count[rounded_consumption] = compsumption_const_count[rounded_consumption] + 1 if rounded_consumption in compsumption_const_count else 1
+            if rounded_consumption  > abnormal_max_power:
+                abnormal_max_power = rounded_consumption
+            if abnormal_min_power == 0 or rounded_consumption < abnormal_min_power:
+                abnormal_min_power = rounded_consumption
+        abnormal_max_power = max(
+            compsumption_const_count, key=compsumption_const_count.get) if compsumption_const_count else None
+        abnormnal_count = compsumption_const_count.get(abnormal_max_power, 0)
+        abnormnal_count_lower = compsumption_const_count.get(abnormal_min_power, 0)
         if abnormnal_count > ABNORMAL_USAGE_COUNT and abnormnal_count_lower > NORMAL_MIN_USAGE_COUNT and abnormnal_count_lower < abnormnal_count:
             logger.warning(
                 "_________Abnormal usage detected from %s to %s with %s abnormal times and %s normal times_________",
