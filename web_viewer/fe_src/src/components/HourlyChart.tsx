@@ -175,6 +175,11 @@ const HourlyChart = forwardRef(
                     enabled: false,
                   },
                 },
+                legend: {
+                  show: true,
+                  position: "top",
+                  clusterGroupedSeries: false,
+                },
                 colors: [
                   "rgb(112, 173, 70)",
                   "rgb(90, 155, 213)",

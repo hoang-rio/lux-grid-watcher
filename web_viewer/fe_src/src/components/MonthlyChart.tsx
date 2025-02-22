@@ -124,6 +124,10 @@ const MonthlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
               allowMouseWheelZoom: false,
             },
           },
+          legend: {
+            show: true,
+            position: "top",
+          },
           colors: [
             "rgb(112, 173, 70)",
             "rgb(90, 155, 213)",
