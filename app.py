@@ -100,11 +100,13 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
         abnormnal_count_lower = compsumption_const_count.get(abnormal_min_power, 0)
         if abnormnal_count > ABNORMAL_USAGE_COUNT and abnormnal_count_lower > NORMAL_MIN_USAGE_COUNT and abnormnal_count_lower < abnormnal_count:
             logger.warning(
-                "_________Abnormal usage detected from %s to %s with %s abnormal times and %s normal times_________",
+                "_________Abnormal usage detected from %s to %s with %s abnormal times and %s normal times (max_power: %s, min_power: %s)_________",
                 abnormal_check_start_time.strftime("%Y-%m-%d %H:%M:%S"),
                 now.strftime("%Y-%m-%d %H:%M:%S"),
                 abnormnal_count,
-                abnormnal_count_lower
+                abnormnal_count_lower,
+                abnormal_max_power,
+                abnormal_min_power
             )
             fcm_service.warning_notify()
             play_audio("warning.mp3", 5)
@@ -112,11 +114,13 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
             abnormal_skip_check_count = ABNORMAL_SKIP_CHECK_HOURS
         else:
             logger.info(
-                "_________No abnormal usage detected from %s to %s with %s abnormal times and %s normal times_________",
+                "_________No abnormal usage detected from %s to %s with %s abnormal times and %s normal times (max_power: %s, min_power: %s)_________",
                 abnormal_check_start_time.strftime("%Y-%m-%d %H:%M:%S"),
                 now.strftime("%Y-%m-%d %H:%M:%S"),
                 abnormnal_count,
-                abnormnal_count_lower
+                abnormnal_count_lower,
+                abnormal_max_power,
+                abnormal_min_power
             )
         cursor.close()
 
