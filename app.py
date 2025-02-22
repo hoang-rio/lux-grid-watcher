@@ -94,8 +94,7 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
                 abnormal_max_power = rounded_consumption
             if abnormal_min_power == 0 or rounded_consumption < abnormal_min_power:
                 abnormal_min_power = rounded_consumption
-        abnormal_max_power = max(
-            compsumption_const_count, key=compsumption_const_count.get) if compsumption_const_count else None
+        abnormal_max_power = max(compsumption_const_count, default=0, key=compsumption_const_count.get)
         abnormnal_count = compsumption_const_count.get(abnormal_max_power, 0)
         abnormnal_count_lower = compsumption_const_count.get(abnormal_min_power, 0)
         if abnormal_max_power != abnormal_min_power and abnormnal_count > ABNORMAL_USAGE_COUNT and abnormnal_count_lower > NORMAL_MIN_USAGE_COUNT and abnormnal_count_lower < abnormnal_count:
