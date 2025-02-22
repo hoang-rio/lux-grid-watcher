@@ -98,7 +98,7 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
             compsumption_const_count, key=compsumption_const_count.get) if compsumption_const_count else None
         abnormnal_count = compsumption_const_count.get(abnormal_max_power, 0)
         abnormnal_count_lower = compsumption_const_count.get(abnormal_min_power, 0)
-        if abnormnal_count > ABNORMAL_USAGE_COUNT and abnormnal_count_lower > NORMAL_MIN_USAGE_COUNT and abnormnal_count_lower < abnormnal_count:
+        if abnormal_max_power != abnormal_min_power and abnormnal_count > ABNORMAL_USAGE_COUNT and abnormnal_count_lower > NORMAL_MIN_USAGE_COUNT and abnormnal_count_lower < abnormnal_count:
             logger.warning(
                 "_________Abnormal usage detected from %s to %s with %s abnormal times and %s normal times (max_power: %s, min_power: %s)_________",
                 abnormal_check_start_time.strftime("%Y-%m-%d %H:%M:%S"),
