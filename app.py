@@ -29,6 +29,7 @@ ABNORMAL_SKIP_CHECK_HOURS = int(
     config["ABNORMAL_SKIP_CHECK_HOURS"]) if "ABNORMAL_SKIP_CHECK_HOURS" in config else 3
 ABNORMAL_USAGE_COUNT = 32 * ABNORMAL_SKIP_CHECK_HOURS
 NORMAL_MIN_USAGE_COUNT = 5 * ABNORMAL_SKIP_CHECK_HOURS
+ABNORMAL_MIN_POWER = 900
 log_level = logging.DEBUG if config["IS_DEBUG"] == 'True' else logging.INFO
 
 logger = logging.getLogger(__file__)
@@ -97,7 +98,7 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
         abnormal_max_power = max(compsumption_const_count, default=0, key=compsumption_const_count.get)
         abnormnal_count = compsumption_const_count.get(abnormal_max_power, 0)
         abnormnal_count_lower = compsumption_const_count.get(abnormal_min_power, 0)
-        if abnormal_max_power != abnormal_min_power and abnormnal_count > ABNORMAL_USAGE_COUNT and abnormnal_count_lower > NORMAL_MIN_USAGE_COUNT and abnormnal_count_lower < abnormnal_count:
+        if abnormal_max_power >= ABNORMAL_MIN_POWER and abnormal_max_power != abnormal_min_power and abnormnal_count > ABNORMAL_USAGE_COUNT and abnormnal_count_lower > NORMAL_MIN_USAGE_COUNT and abnormnal_count_lower < abnormnal_count:
             logger.warning(
                 "_________Abnormal usage detected from %s to %s with %s abnormal times and %s normal times (max_power: %s, min_power: %s)_________",
                 abnormal_check_start_time.strftime("%Y-%m-%d %H:%M:%S"),
