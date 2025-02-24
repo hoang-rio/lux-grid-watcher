@@ -68,7 +68,7 @@ def play_audio(audio_file: str, repeat=3):
 abnormal_skip_check_count = 0
 def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
     now = datetime.now()
-    now = now.replace(minute=0, second=0, hour=6)
+    # now = now.replace(minute=0, second=0, hour=6)
     sleep_time = int(config["SLEEP_TIME"])
     if (sleep_time >= 60 and now.minute <= sleep_time / 60) or (now.minute == 0 and now.second <= sleep_time):
         global abnormal_skip_check_count
