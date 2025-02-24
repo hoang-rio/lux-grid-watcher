@@ -141,7 +141,7 @@ async def yearly_chart(_: web.Request):
        db_connection = sqlite3.connect(config["DB_NAME"])
     cursor = db_connection.cursor()
     yearly_chart = cursor.execute(
-        "SELECT id, id, id, year, SUM(pv), SUM(battery_charged), SUM(battery_discharged), SUM(grid_import), SUM(grid_export), SUM(consumption) FROM daily_chart GROUP BY year"
+        "SELECT id, id, id, year || '' as year, SUM(pv), SUM(battery_charged), SUM(battery_discharged), SUM(grid_import), SUM(grid_export), SUM(consumption) FROM daily_chart GROUP BY year"
     ).fetchall()
     res = web.json_response(yearly_chart, headers=VITE_CORS_HEADER)
     return res
