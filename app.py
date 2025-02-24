@@ -68,7 +68,7 @@ def play_audio(audio_file: str, repeat=3):
 abnormal_skip_check_count = 0
 def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
     now = datetime.now()
-    # now = now.replace(minute=0, second=0, hour=6)
+    now = now.replace(minute=0, second=0, hour=6)
     sleep_time = int(config["SLEEP_TIME"])
     if (sleep_time >= 60 and now.minute <= sleep_time / 60) or (now.minute == 0 and now.second <= sleep_time):
         global abnormal_skip_check_count
@@ -90,15 +90,14 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
         compsumption_const_count: dict = {}
         for item in all_items:
             rounded_consumption = item["consumption"] - item["consumption"] % 200
-            compsumption_const_count[rounded_consumption] = compsumption_const_count[rounded_consumption] + 1 if rounded_consumption in compsumption_const_count else 1
-            if rounded_consumption  > abnormal_max_power:
-                abnormal_max_power = rounded_consumption
+            compsumption_const_count[rounded_consumption] = compsumption_const_count.get(rounded_consumption, 0) + 1
             if abnormal_min_power == 0 or rounded_consumption < abnormal_min_power:
                 abnormal_min_power = rounded_consumption
-        abnormal_max_power = max(compsumption_const_count, default=0, key=compsumption_const_count.get)
+            if rounded_consumption > ABNORMAL_MIN_POWER and (abnormal_max_power == 0 or compsumption_const_count[rounded_consumption] > compsumption_const_count.get(abnormal_max_power, 0)):
+                abnormal_max_power = rounded_consumption
         abnormnal_count = compsumption_const_count.get(abnormal_max_power, 0)
         abnormnal_count_lower = compsumption_const_count.get(abnormal_min_power, 0)
-        if abnormal_max_power >= ABNORMAL_MIN_POWER and abnormal_max_power != abnormal_min_power and abnormnal_count > ABNORMAL_USAGE_COUNT and abnormnal_count_lower > NORMAL_MIN_USAGE_COUNT and abnormnal_count_lower < abnormnal_count:
+        if abnormal_max_power != abnormal_min_power and abnormnal_count > ABNORMAL_USAGE_COUNT and abnormnal_count_lower > NORMAL_MIN_USAGE_COUNT and abnormnal_count_lower < abnormnal_count:
             logger.warning(
                 "_________Abnormal usage detected from %s to %s with %s abnormal times and %s normal times (max_power: %s, min_power: %s)_________",
                 abnormal_check_start_time.strftime("%Y-%m-%d %H:%M:%S"),
