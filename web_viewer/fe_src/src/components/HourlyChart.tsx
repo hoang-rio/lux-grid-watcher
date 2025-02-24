@@ -76,7 +76,7 @@ const HourlyChart = forwardRef(
       const json = await res.json();
       setChartData(json);
       isFetchingRef.current = false;
-    }, [setChartData]);
+    }, []);
 
     useImperativeHandle(
       ref,

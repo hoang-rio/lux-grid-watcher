@@ -87,14 +87,14 @@ function App() {
       console.error("API get state error", err);
     }
     isFetchingRef.current = false;
-  }, [setInverterData, setIsInitState]);
+  }, []);
 
   useEffect(() => {
     fetchState();
     selfCloseRef.current = false;
     connectSocket();
     window.addEventListener("beforeunload", closeSocket);
-    document.addEventListener("visibilitychange", () => {
+    const handleVisibilityChange = () => {
       if (!document.hidden) {
         fetchState();
         if (reconnectCountRef.current >= MAX_RECONNECT_COUNT) {
@@ -103,8 +103,13 @@ function App() {
           connectSocket();
         }
       }
-    });
-    return closeSocket;
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("beforeunload", closeSocket);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      closeSocket();
+    };
   }, [connectSocket, closeSocket, fetchState]);
 
   useEffect(() => {

@@ -76,7 +76,7 @@ const MonthlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
     const json = await res.json();
     setChartData(json);
     isFetchingRef.current = false;
-  }, [setChartData]);
+  }, []);
 
   useImperativeHandle(
     ref,

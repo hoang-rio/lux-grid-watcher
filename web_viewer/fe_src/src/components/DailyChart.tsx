@@ -20,6 +20,7 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
   const [chartData, setChartData] = useState([]);
   const [isDark, setIsDark] = useState(false);
   const isFetchingRef = useRef<boolean>(false);
+
   const series = useMemo(() => {
     const solarSeries: SeriesItem[] = [];
     const batteryChargedSeries: SeriesItem[] = [];
@@ -74,7 +75,7 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
     const json = await res.json();
     setChartData(json);
     isFetchingRef.current = false;
-  }, [setChartData]);
+  }, []);
 
   useImperativeHandle(
     ref,
@@ -102,8 +103,9 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
       setIsDark(true);
     }
 
-    // This callback will fire if the perferred color scheme changes without a reload
+    // This callback will fire if the preferred color scheme changes without a reload
     mq.addEventListener("change", (evt) => setIsDark(evt.matches));
+    return () => mq.removeEventListener("change", (evt) => setIsDark(evt.matches));
   }, []);
 
   if (chartData.length) {
