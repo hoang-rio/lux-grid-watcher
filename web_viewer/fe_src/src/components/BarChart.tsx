@@ -2,6 +2,7 @@ import Chart from "react-apexcharts";
 const SOLAR_PV_SERIE_NAME = "Solar production";
 
 import { ApexOptions } from "apexcharts";
+import { memo } from "react";
 
 interface BarChartProps {
   series: ApexOptions["series"];
@@ -9,7 +10,7 @@ interface BarChartProps {
   xaxis?: ApexOptions["xaxis"];
 }
 
-export default function BarChart({ series, isDark, xaxis }: BarChartProps) {
+function BarChart({ series, isDark, xaxis }: BarChartProps) {
   return (
     <Chart
       type="bar"
@@ -27,6 +28,7 @@ export default function BarChart({ series, isDark, xaxis }: BarChartProps) {
         legend: {
           show: true,
           position: "top",
+          horizontalAlign: "left",
         },
         colors: [
           "rgb(112, 173, 70)",
@@ -68,3 +70,5 @@ export default function BarChart({ series, isDark, xaxis }: BarChartProps) {
     />
   );
 }
+
+export default memo(BarChart);

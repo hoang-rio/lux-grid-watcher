@@ -178,6 +178,7 @@ const HourlyChart = forwardRef(
                 legend: {
                   show: true,
                   position: "top",
+                  horizontalAlign: "right",
                   clusterGroupedSeries: false,
                 },
                 colors: [
