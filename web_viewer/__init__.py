@@ -55,9 +55,7 @@ async def websocket_handler(request):
 
     return ws
 
-VITE_CORS_HEADER = {
-    'Access-Control-Allow-Origin': 'http://localhost:5173'}
-
+VITE_CORS_HEADER = {'Access-Control-Allow-Origin': '*'}
 
 async def state(_: web.Request):
     global last_inverter_data
