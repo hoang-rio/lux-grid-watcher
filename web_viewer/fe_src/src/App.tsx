@@ -72,6 +72,8 @@ function App() {
   const closeSocket = useCallback(() => {
     selfCloseRef.current = true;
     socketRef.current?.close();
+    socketRef.current = undefined;
+    isInitialRender.current = true;
   }, []);
 
   const fetchState = useCallback(async () => {
