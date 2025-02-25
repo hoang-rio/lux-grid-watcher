@@ -20,7 +20,6 @@ function App() {
   const hourlyChartfRef = useRef<IUpdateChart>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isFetchingRef = useRef(false);
-  const isInitialRender = useRef(true);
 
   const connectSocket = useCallback(() => {
     if (
@@ -93,10 +92,9 @@ function App() {
   useEffect(() => {
     fetchState();
     selfCloseRef.current = false;
-    if (!socketRef.current && !isInitialRender.current) {
+    if (!socketRef.current) {
       connectSocket();
     }
-    isInitialRender.current = false;
     window.addEventListener("beforeunload", closeSocket);
     const handleVisibilityChange = () => {
       if (!document.hidden) {
