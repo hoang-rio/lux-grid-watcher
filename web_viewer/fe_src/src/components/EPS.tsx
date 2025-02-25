@@ -30,7 +30,10 @@ export default function EPS({ inverterData, isSocketConnected }: ICProps) {
           {inverterData.p_eps === 0 ? (
             <strong className="eps-status">Standby</strong>
           ) : (
-            <GeneralValue value={inverterData.p_eps} unit=" W" />
+            <GeneralValue
+              value={isSocketConnected ? inverterData.p_eps : 0}
+              unit=" W"
+            />
           )}
           <div className="description">Backup Power(EPS)</div>
         </div>
