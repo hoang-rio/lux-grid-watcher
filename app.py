@@ -196,7 +196,7 @@ def insert_hourly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
     grid = inverter_data["p_to_grid"] - inverter_data["p_to_user"]
     consumption = inverter_data["p_inv"] + \
         inverter_data["p_to_user"] - \
-        inverter_data["p_rec"]
+        inverter_data["p_rec"] + inverter_data["p_eps"]
     hourly_chart_item = {
         "id": item_id,
         "datetime": inverter_data["deviceTime"],
