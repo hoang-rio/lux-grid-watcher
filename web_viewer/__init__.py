@@ -20,7 +20,7 @@ db_connection: sqlite3.Connection | None = None
 
 
 async def http_handler(_: web.Request):
-    index_file_path = path.join(path.dirname(__file__), 'public', 'index.html')
+    index_file_path = path.join(path.dirname(__file__), 'build', 'index.html')
     return web.FileResponse(index_file_path, headers={"expires": "0", "cache-control": "no-cache"})
 
 ws_clients: list[web.WebSocketResponse] = []
@@ -156,7 +156,7 @@ def create_runner():
         web.get("/monthly-chart", monthly_chart),
         web.get("/yearly-chart", yearly_chart),
         web.get("/total", total),
-        web.static("/", path.join(path.dirname(__file__), "public"))
+        web.static("/", path.join(path.dirname(__file__), "build"))
     ])
     return web.AppRunner(app)
 
