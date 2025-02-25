@@ -1,9 +1,9 @@
 import { lazy, memo, Suspense, useRef, useState } from "react";
-import DailyChart from "./DailyChart";
 import { IClassNameProps, IFetchChart } from "../Intefaces";
 import "./EnergyChart.css";
 import Loading from "./Loading";
 
+const DailyChart = lazy(() => import( "./DailyChart"));
 const MonthlyChart = lazy(() => import("./MonthlyChart"));
 const YearlyChart = lazy(() => import("./YearlyChart"));
 
@@ -60,7 +60,9 @@ function EnergyChart({ className }: IClassNameProps) {
       </div>
       <div className="energy-chart-content flex-1 col">
         {energyChartType === EnergyChartType.Daily && (
-          <DailyChart ref={fetchChartRef} />
+          <Suspense fallback={<Loading />}>
+            <DailyChart ref={fetchChartRef} />
+          </Suspense>
         )}
         {energyChartType === EnergyChartType.Monthly && (
           <Suspense fallback={<Loading />}>
