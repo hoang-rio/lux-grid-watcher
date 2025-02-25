@@ -16,7 +16,7 @@ function App() {
   const socketRef = useRef<WebSocket>();
   const selfCloseRef = useRef<boolean>(false);
   const reconnectCountRef = useRef<number>(0);
-  const [isSocketConnected, setIsSocketConnected] = useState<boolean>(true);
+  const [isSocketConnected, setIsSocketConnected] = useState<boolean>(false);
   const hourlyChartfRef = useRef<IUpdateChart>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isFetchingRef = useRef(false);
@@ -72,7 +72,6 @@ function App() {
   const closeSocket = useCallback(() => {
     selfCloseRef.current = true;
     socketRef.current?.close();
-    socketRef.current = undefined;
   }, []);
 
   const fetchState = useCallback(async () => {
