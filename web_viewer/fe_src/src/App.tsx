@@ -103,7 +103,7 @@ function App() {
         fetchState();
         if (reconnectCountRef.current >= MAX_RECONNECT_COUNT) {
           reconnectCountRef.current = 0;
-          console.warn("[Socket] reconnect when window active again");
+          console.warn("[Socket] Reconnect when window active again after reached MAX_RECONNECT_COUNT: %s", MAX_RECONNECT_COUNT);
           connectSocket();
         }
       }
