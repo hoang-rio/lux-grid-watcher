@@ -27,7 +27,7 @@ jobs:
           chmod 600 ${{env.SSH_KEY_FILE_PATH}}
       - name: Deploy with git
         run: |
-          SSH_DEPLOY_COMMAND="cd ${{secrets.SSH_DEPLOY_PATH}} && git pull && git submodule update"
+          SSH_DEPLOY_COMMAND="cd ${{secrets.SSH_DEPLOY_PATH}} && git pull"
           NEED_RESTART_APP=true
           GIT_CHANGED_FILE=$(git show --name-only --format="")
           if [[ $(echo $GIT_CHANGED_FILE | grep "\.py") == "" && $(echo $GIT_CHANGED_FILE | grep "\.sh") == "" && $(echo $GIT_CHANGED_FILE | grep "aiohttp") == "" ]]; then
@@ -35,8 +35,10 @@ jobs:
           fi
 
           if [[ $NEED_RESTART_APP == true ]]; then
-              if [[ $(echo $GIT_CHANGED_FILE | grep "requirements.txt") != "" || $(echo $GIT_CHANGED_FILE | grep "aiohttp") != "" ]]; then
-                  SSH_DEPLOY_COMMAND="$SSH_DEPLOY_COMMAND && ./pip-binary-install.sh"
+              if [[ $(echo $GIT_CHANGED_FILE | grep "aiohttp") != "" ]]; then
+                SSH_DEPLOY_COMMAND="$SSH_DEPLOY_COMMAND && git submodule update && ./pip-binary-install.sh"
+              elif [[ $(echo $GIT_CHANGED_FILE | grep "requirements.txt") != "" ]]; then
+                SSH_DEPLOY_COMMAND="$SSH_DEPLOY_COMMAND && ./pip-binary-install.sh"
               fi
               SSH_DEPLOY_COMMAND="$SSH_DEPLOY_COMMAND && ./restart-app.sh"
           fi
