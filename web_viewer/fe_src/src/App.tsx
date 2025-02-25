@@ -18,8 +18,9 @@ function App() {
   const reconnectCountRef = useRef<number>(0);
   const [isSocketConnected, setIsSocketConnected] = useState<boolean>(true);
   const hourlyChartfRef = useRef<IUpdateChart>(null);
-  const [isInitState, setIsInitState] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const isFetchingRef = useRef(false);
+  const isInitialRender = useRef(true);
 
   const connectSocket = useCallback(() => {
     if (
@@ -53,12 +54,12 @@ function App() {
         return;
       }
       if (reconnectCountRef.current >= MAX_RECONNECT_COUNT) {
-        console.warn("[Socket] stop reconnect by reached MAX_RECONNECT_COUNT");
+        console.warn("[Socket] Stop reconnect by reached MAX_RECONNECT_COUNT: %s", MAX_RECONNECT_COUNT);
         return;
       }
       reconnectCountRef.current++;
       console.log(
-        "[Socket] connection closed. Reconnecting (%s)...",
+        "[Socket] Connection closed. Reconnecting (%s)...",
         reconnectCountRef.current
       );
       connectSocket();
@@ -82,7 +83,7 @@ function App() {
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/state`);
       const json = await res.json();
       setInverterData(json);
-      setIsInitState(false);
+      setIsLoading(false);
     } catch (err) {
       console.error("API get state error", err);
     }
@@ -92,7 +93,10 @@ function App() {
   useEffect(() => {
     fetchState();
     selfCloseRef.current = false;
-    connectSocket();
+    if (!socketRef.current && !isInitialRender.current) {
+      connectSocket();
+    }
+    isInitialRender.current = false;
     window.addEventListener("beforeunload", closeSocket);
     const handleVisibilityChange = () => {
       if (!document.hidden) {
@@ -118,7 +122,7 @@ function App() {
     document.title = `[${deviceTimeOnly}] ${import.meta.env.VITE_APP_TITLE}`;
   }, [inverterData?.deviceTime]);
 
-  if (isInitState) {
+  if (isLoading) {
     return (
       <>
         <div className="d-flex card loading align-center justify-center flex-1">
