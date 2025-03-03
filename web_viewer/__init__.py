@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 import sqlite3
 import threading
 from aiohttp.aiohttp import web
@@ -111,6 +111,20 @@ async def daily_chart(_: web.Request):
         "SELECT * FROM daily_chart WHERE year = ? AND month = ?",
         (now.year, now.month)
     ).fetchall()
+    # Fill empty data to daily_chart from last item to last day of month
+    if len(daily_chart) > 0:
+        last_day_of_month = (now.replace(day=1, hour=0, minute=0, second=0,
+                             microsecond=0) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+        last_item_date = datetime.strptime(daily_chart[-1][3], "%Y-%m-%d")
+        while last_item_date < last_day_of_month:
+            last_item_date += timedelta(days=1)
+            daily_chart.append((
+                last_item_date.strftime("%Y%m%d"),
+                last_item_date.year,
+                last_item_date.month,
+                last_item_date.strftime("%Y-%m-%d"),
+                0, 0, 0, 0, 0, 0, ""
+            ))
     res = web.json_response(daily_chart, headers=VITE_CORS_HEADER)
     return res
 
