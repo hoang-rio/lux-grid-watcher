@@ -99,5 +99,6 @@
   "PV2": "PV2",
   "totalPV": "Tổng PV",
   "fetchingTotal": "Đang lấy tổng số...",
-  "fetchTotalError": "Lỗi khi lấy tổng số"
+  "fetchTotalError": "Lỗi khi lấy tổng số",
+  "openSourceAt": "Mã nguồn mở tại:"
 }

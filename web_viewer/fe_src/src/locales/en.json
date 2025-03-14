@@ -99,5 +99,6 @@
   "total": "Total",
   "consumptionPower": "Consumption Power",
   "fetchingTotal": "Fetching total...",
-  "fetchTotalError": "Fetch total error"
+  "fetchTotalError": "Fetch total error",
+  "openSourceAt": "Open source at:"
 }

@@ -1,6 +1,9 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 
 function Footer() {
+  const { t } = useTranslation();
+
   return (
     <div className="card text-center footer">
       &copy; 2024{" "}
@@ -8,7 +11,7 @@ function Footer() {
         Hoàng Rio
       </a>
       <br />
-      Open source at:{" "}
+      {t('openSourceAt')}{" "}
       <a href="https://github.com/hoang-rio/lux-grid-watcher" target="_blank">
         Github
       </a>
