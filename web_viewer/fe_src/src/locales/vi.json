@@ -71,7 +71,9 @@
     "exportGridPower": "Xuất khẩu điện lưới",
     "soc": "SOC",
     "power": "Công suất (W)",
-    "socPercentage": "SOC (%)"
+    "socPercentage": "SOC (%)",
+    "batteryCharging": "{{seriesName}} đang sạc:",
+    "batteryDischarging": "{{seriesName}} đang xả:"
   },
   "consumptionPower": "Công suất tiêu thụ",
   "allowAutoUpdate": "Cho phép cập nhật tự động",

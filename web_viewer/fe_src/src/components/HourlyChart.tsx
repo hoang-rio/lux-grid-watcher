@@ -243,9 +243,9 @@ const HourlyChart = forwardRef(
                             return `${seriesName}:`;
                           }
                           if (batteryValue < 0) {
-                            return `${seriesName} ${t("chart.charging")}:`;
+                            return t("chart.batteryCharging", { seriesName });
                           }
-                          return `${seriesName} ${t("chart.discharging")}:`;
+                          return t("chart.batteryDischarging", { seriesName });
                         }
                         if (seriesName === GRID_SERIE_NAME) {
                           const gridValue = opts.series[2][opts.dataPointIndex];

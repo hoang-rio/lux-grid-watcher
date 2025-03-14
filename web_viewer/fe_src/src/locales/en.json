@@ -71,7 +71,9 @@
     "exportGridPower": "Export grid power",
     "soc": "SOC",
     "power": "Power (W)",
-    "socPercentage": "SOC (%)"
+    "socPercentage": "SOC (%)",
+    "batteryCharging": "{{seriesName}} charging:",
+    "batteryDischarging": "{{seriesName}} discharging:"
   },
   "allowAutoUpdate": "Allow auto update",
   "pauseAutoUpdate": "Pause auto update",
