@@ -6,7 +6,7 @@ import Chart from "react-apexcharts";
 import { fixedIfNeed, roundTo } from "./utils";
 
 interface IProps {
-  label: "Today" | "Total";
+  label: "today" | "total";
   totalYield: number;
   charge: number;
   gridExport: number;
@@ -40,17 +40,17 @@ function YieldChart({ totalYield, charge, gridExport, label }: IProps) {
     <div className="yield-chart row flex-1">
       <div className="texts col flex-1 align-start justify-space-between">
         <div className="yield-chart-load">
-          {loadPercent}% {t('chart.consumption')} {label}
+          {t('chart.consumption', { context: label })} {loadPercent}%
         </div>
         <div className="yield-chart-charge">
-          {chargePercent}% {t('chart.batteryCharged')} {label}
+          {t('chart.batteryCharged', { context: label })} {chargePercent}%
         </div>
         <div className="yield-chart-export">
-          {exportPercent}% {t('chart.exportToGrid')} {label}
+          {t('chart.exportToGrid', { context: label })} {exportPercent}%
         </div>
         <div className="yield-chart-total">
           <strong>
-            {label} {roundTo(totalYield)} kWh
+            {t('chart.total', { context: label })} {roundTo(totalYield)} kWh
           </strong>
         </div>
       </div>
@@ -69,9 +69,9 @@ function YieldChart({ totalYield, charge, gridExport, label }: IProps) {
               mode: isDark ? "dark" : "light",
             },
             labels: [
-              `${t('chart.consumption')} ${label} PV`,
-              `${t('chart.batteryCharged')} ${label} PV`,
-              `${t('chart.exportToGrid')} ${label} PV`,
+              t('chart.consumption', { context: label }),
+              t('chart.batteryCharged', { context: label }),
+              t('chart.exportToGrid', { context: label }),
             ],
             legend: {
               show: false,

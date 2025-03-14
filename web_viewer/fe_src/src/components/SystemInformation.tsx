@@ -44,10 +44,10 @@ function SystemInformation({
             ></div>
             <div>
               {!isSocketConnected
-                ? "Offline"
+                ? t('offline')
                 : inverterData.status !== 0
-                ? "Normal"
-                : "Fault"}
+                ? t('normal')
+                : t('fault')}
             </div>
           </div>
           <button

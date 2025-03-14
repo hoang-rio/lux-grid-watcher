@@ -57,15 +57,15 @@ const HourlyChart = forwardRef(
           data: gridSeries,
         },
         {
-          name: "Consumption",
+          name: t("chart.consumption"),
           data: consumptionSeries,
         },
         {
-          name: "SOC",
+          name: t("chart.soc"),
           data: socSeries,
         },
       ];
-    }, [chartData]);
+    }, [BATTERY_SERIE_NAME, GRID_SERIE_NAME, SOLAR_PV_SERIE_NAME, chartData, t]);
 
     const fetchChart = useCallback(async () => {
       if (isFetchingRef.current) {
@@ -207,7 +207,7 @@ const HourlyChart = forwardRef(
                 yaxis: [
                   {
                     seriesName: SOLAR_PV_SERIE_NAME,
-                    title: { text: "Power (W)" },
+                    title: { text: t("chart.power") },
                   },
                   { seriesName: SOLAR_PV_SERIE_NAME, show: false },
                   { seriesName: SOLAR_PV_SERIE_NAME, show: false },
@@ -243,9 +243,9 @@ const HourlyChart = forwardRef(
                             return `${seriesName}:`;
                           }
                           if (batteryValue < 0) {
-                            return `${seriesName} Charging:`;
+                            return `${seriesName} ${t("chart.charging")}:`;
                           }
-                          return `${seriesName} Discharging:`;
+                          return `${seriesName} ${t("chart.discharging")}:`;
                         }
                         if (seriesName === GRID_SERIE_NAME) {
                           const gridValue = opts.series[2][opts.dataPointIndex];
@@ -253,9 +253,9 @@ const HourlyChart = forwardRef(
                             return `${seriesName}:`;
                           }
                           if (gridValue < 0) {
-                            return "Import Grid Power:";
+                            return `${t("chart.importGridPower")}:`;
                           }
-                          return "Export Grid Power:";
+                          return `${t("chart.exportGridPower")}:`;
                         }
                         return `${seriesName}:`;
                       },

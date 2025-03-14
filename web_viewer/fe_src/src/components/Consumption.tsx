@@ -1,10 +1,12 @@
 import { ICProps } from "../Intefaces";
 import GeneralValue from "./GeneralValue";
+import { useTranslation } from "react-i18next";
 
 export default function Consumption({
   inverterData,
   isSocketConnected,
 }: ICProps) {
+  const { t } = useTranslation();
   const pConsumption =
     inverterData.p_inv + inverterData.p_to_user - inverterData.p_rec;
   return (
@@ -37,7 +39,7 @@ export default function Consumption({
             value={isSocketConnected ? pConsumption : 0}
             unit=" W"
           />
-          <div className="description">Consumption Power</div>
+          <div className="description">{t("consumptionPower")}</div>
         </div>
       </div>
     </div>

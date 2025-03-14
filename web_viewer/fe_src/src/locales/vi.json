@@ -25,11 +25,13 @@
     "error": "[Socket] lỗi socket"
   },
   "offline": "Ngoại tuyến",
+  "normal": "Bình thường",
+  "fault": "Lỗi",
   "server": {
     "offline": "Máy chủ đang ngoại tuyến. Tải lại trang khi bạn chắc chắn rằng máy chủ đang trực tuyến"
   },
   "energyChart": {
-    "chart": "biểu đồ",
+    "chart": "Biểu đồ",
     "updateChart": "Cập nhật biểu đồ",
     "chartType": "Loại biểu đồ:",
     "daily": "Hàng ngày",
@@ -49,8 +51,26 @@
     "consumption": "Tiêu thụ",
     "solarPV": "Năng lượng mặt trời",
     "battery": "Pin",
-    "grid": "Lưới"
+    "grid": "Lưới",
+    "total": "Tổng",
+    "total_today": "Tổng hôm nay",
+    "total_total": "Tổng",
+    "batteryCharged_today": "Pin đã sạc hôm nay",
+    "batteryCharged_total": "Pin đã sạc tổng",
+    "exportToGrid_today": "Xuất khẩu lưới hôm nay",
+    "exportToGrid_total": "Xuất khẩu lưới tổng",
+    "consumption_today": "Tiêu thụ hôm nay",
+    "consumption_total": "Tiêu thụ tổng",
+    "energy": "Năng lượng (kWh)",
+    "charging": "Đang sạc",
+    "discharging": "Đang xả",
+    "importGridPower": "Nhập khẩu điện lưới",
+    "exportGridPower": "Xuất khẩu điện lưới",
+    "soc": "SOC",
+    "power": "Công suất (W)",
+    "socPercentage": "SOC (%)"
   },
+  "consumptionPower": "Công suất tiêu thụ",
   "allowAutoUpdate": "Cho phép cập nhật tự động",
   "pauseAutoUpdate": "Tạm dừng cập nhật tự động",
   "chargedToday": "Đã sạc hôm nay",
@@ -62,9 +82,13 @@
   "export": "Xuất khẩu",
   "today": "Hôm nay",
   "total": "Tổng",
+  "total_export": "Tổng xuất khẩu",
+  "total_import": "Tổng nhập khẩu",
+  "total_charged": "Tổng đã sạc",
+  "total_discharged": "Tổng đã xả",
   "eps": {
     "standby": "Chế độ chờ",
-    "backupPower": "Nguồn dự phòng"
+    "backupPower": "Nguồn dự phòng (EPS)"
   },
   "PV1": "PV1",
   "PV2": "PV2",

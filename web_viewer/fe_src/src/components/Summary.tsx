@@ -83,7 +83,7 @@ function Summary({ invertData }: IProps) {
           )}
           {yieldDisplay === YieldDisplay.CHART_TODAY && (
             <YieldChart
-              label={t('today')}
+              label="today"
               totalYield={invertData.e_pv_day}
               charge={invertData.e_chg_day}
               gridExport={invertData.e_to_grid_day}
@@ -91,7 +91,7 @@ function Summary({ invertData }: IProps) {
           )}
           {yieldDisplay === YieldDisplay.CHART_TOTAL && (
             <YieldChart
-              label={t('total')}
+              label="total"
               totalYield={total?.pv || 0}
               charge={total?.battery_charged || 0}
               gridExport={total?.grid_export || 0}
@@ -129,7 +129,7 @@ function Summary({ invertData }: IProps) {
                     unit=" kWh"
                   />
                   <div className="description">
-                    {t('total')} {isShowCharged ? t('charged') : t('discharged')}
+                    {t('total', { context: isShowCharged ? 'charged' : 'discharged' })}
                   </div>
                 </>
               )}
@@ -176,7 +176,7 @@ function Summary({ invertData }: IProps) {
                       unit=" kWh"
                     />
                     <div className="description">
-                      {t('total')} {isShowFeed ? t('export') : t('import')}
+                      {t('total', { context: isShowFeed ? 'export' : 'import' })}
                     </div>
                   </>
                 )}

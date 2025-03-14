@@ -1,15 +1,15 @@
 {
-  "systemInformation": "System Information",
+  "systemInformation": "System information",
   "reconnect": "Reconnect",
-  "solarYield": "Solar Yield",
-  "batteryCharged": "Battery Charged",
-  "batteryDischarge": "Battery Discharge",
-  "feedInEnergy": "Feed-in Energy",
+  "solarYield": "Solar yield",
+  "batteryCharged": "Battery charged",
+  "batteryDischarge": "Battery discharge",
+  "feedInEnergy": "Feed-in energy",
   "import": "Import",
   "consumption": "Consumption",
-  "todayUsed": "Today Used",
-  "totalUsed": "Total Used",
-  "hourlyChart": "Hourly Chart",
+  "todayUsed": "Today used",
+  "totalUsed": "Total used",
+  "hourlyChart": "Hourly chart",
   "updateChart": "Update chart",
   "chartType": "Chart type:",
   "daily": "Daily",
@@ -25,11 +25,13 @@
     "error": "[Socket] socket error"
   },
   "offline": "Offline",
+  "normal": "Normal",
+  "fault": "Fault",
   "server": {
     "offline": "Server is offline. Reload page when you make sure that server is online"
   },
   "energyChart": {
-    "chart": "chart",
+    "chart": "Chart",
     "updateChart": "Update chart",
     "chartType": "Chart type:",
     "daily": "Daily",
@@ -38,7 +40,7 @@
   },
   "yield": {
     "today": "Yield today",
-    "total": "Total Yield"
+    "total": "Total yield"
   },
   "chart": {
     "solarProduction": "Solar production",
@@ -49,7 +51,24 @@
     "consumption": "Consumption",
     "solarPV": "Solar PV",
     "battery": "Battery",
-    "grid": "Grid"
+    "grid": "Grid",
+    "total": "Total",
+    "total_today": "Total today",
+    "total_total": "Total",
+    "batteryCharged_today": "Battery charged today",
+    "batteryCharged_total": "Battery charged total",
+    "exportToGrid_today": "Export to grid today",
+    "exportToGrid_total": "Export to grid total",
+    "consumption_today": "Consumption today",
+    "consumption_total": "Consumption total",
+    "energy": "Energy (kWh)",
+    "charging": "Charging",
+    "discharging": "Discharging",
+    "importGridPower": "Import grid power",
+    "exportGridPower": "Export grid power",
+    "soc": "SOC",
+    "power": "Power (W)",
+    "socPercentage": "SOC (%)"
   },
   "allowAutoUpdate": "Allow auto update",
   "pauseAutoUpdate": "Pause auto update",
@@ -60,13 +79,18 @@
   "todayExport": "Today export",
   "todayImport": "Today import",
   "export": "Export",
+  "total_export": "Total export",
+  "total_import": "Total import",
+  "total_charged": "Total charged",
+  "total_discharged": "Total discharged",
   "eps": {
     "standby": "Standby",
-    "backupPower": "Backup Power"
+    "backupPower": "Backup power (EPS)"
   },
   "PV1": "PV1",
   "PV2": "PV2",
   "totalPV": "Total PV",
   "today": "Today",
-  "total": "Total"
+  "total": "Total",
+  "consumptionPower": "Consumption Power"
 }
