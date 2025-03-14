@@ -13,13 +13,15 @@ import "./HourlyChart.css";
 import Chart from "react-apexcharts";
 import { IClassNameProps, IUpdateChart, SeriesItem } from "../Intefaces";
 import Loading from "./Loading";
-
-const SOLAR_PV_SERIE_NAME = "Solar PV";
-const BATTERY_SERIE_NAME = "Battery";
-const GRID_SERIE_NAME = "Grid";
+import { useTranslation } from "react-i18next";
 
 const HourlyChart = forwardRef(
   ({ className }: IClassNameProps, ref: ForwardedRef<IUpdateChart>) => {
+    const { t } = useTranslation();
+    const SOLAR_PV_SERIE_NAME = t("chart.solarPV");
+    const BATTERY_SERIE_NAME = t("chart.battery");
+    const GRID_SERIE_NAME = t("chart.grid");
+
     const [chartData, setChartData] = useState<never[][]>([]);
     const [isDark, setIsDark] = useState(false);
     const isFetchingRef = useRef<boolean>(false);
@@ -55,15 +57,15 @@ const HourlyChart = forwardRef(
           data: gridSeries,
         },
         {
-          name: "Consumption",
+          name: t("chart.consumption"),
           data: consumptionSeries,
         },
         {
-          name: "SOC",
+          name: t("chart.soc"),
           data: socSeries,
         },
       ];
-    }, [chartData]);
+    }, [BATTERY_SERIE_NAME, GRID_SERIE_NAME, SOLAR_PV_SERIE_NAME, chartData, t]);
 
     const fetchChart = useCallback(async () => {
       if (isFetchingRef.current) {
@@ -150,13 +152,13 @@ const HourlyChart = forwardRef(
     return (
       <div className={`card hourly-chart col ${className || ""}`}>
         <div className="row justify-space-between">
-          <div className="hourly-chart-title">Hourly Chart</div>
+          <div className="hourly-chart-title">{t('hourlyChart')}</div>
           <div className="row hourly-chart-buttons">
             <button onClick={toggleAutoUpdate}>
-              {!isAutoUpdate ? "Allow auto update" : "Pause auto update"}
+              {!isAutoUpdate ? t('allowAutoUpdate') : t('pauseAutoUpdate')}
             </button>
             <button disabled={!isAutoUpdate} onClick={() => fetchChart()}>
-              Update
+              {t('updateChart')}
             </button>
           </div>
         </div>
@@ -205,7 +207,7 @@ const HourlyChart = forwardRef(
                 yaxis: [
                   {
                     seriesName: SOLAR_PV_SERIE_NAME,
-                    title: { text: "Power (W)" },
+                    title: { text: t("chart.power") },
                   },
                   { seriesName: SOLAR_PV_SERIE_NAME, show: false },
                   { seriesName: SOLAR_PV_SERIE_NAME, show: false },
@@ -241,9 +243,9 @@ const HourlyChart = forwardRef(
                             return `${seriesName}:`;
                           }
                           if (batteryValue < 0) {
-                            return `${seriesName} Charging:`;
+                            return `${seriesName} ${t("chart.charging")}:`;
                           }
-                          return `${seriesName} Discharging:`;
+                          return `${seriesName} ${t("chart.discharging")}:`;
                         }
                         if (seriesName === GRID_SERIE_NAME) {
                           const gridValue = opts.series[2][opts.dataPointIndex];
@@ -251,9 +253,9 @@ const HourlyChart = forwardRef(
                             return `${seriesName}:`;
                           }
                           if (gridValue < 0) {
-                            return "Import Grid Power:";
+                            return `${t("chart.importGridPower")}:`;
                           }
-                          return "Export Grid Power:";
+                          return `${t("chart.exportGridPower")}:`;
                         }
                         return `${seriesName}:`;
                       },

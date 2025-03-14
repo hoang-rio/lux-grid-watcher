@@ -1,4 +1,5 @@
 import { lazy, memo, Suspense, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { IClassNameProps, IFetchChart } from "../Intefaces";
 import "./EnergyChart.css";
 import Loading from "./Loading";
@@ -13,19 +14,20 @@ enum EnergyChartType {
   Yearly,
 }
 function EnergyChart({ className }: IClassNameProps) {
+  const { t } = useTranslation();
   const [energyChartType, setEnergyChartType] = useState(EnergyChartType.Daily);
   const fetchChartRef = useRef<IFetchChart>(null);
   return (
     <div className={`card col energy-chart ${className}`}>
       <div className="row justify-space-between">
         <div className="energy-chart-title">
-          {EnergyChartType[energyChartType]} chart
+          {t('energyChart.title', { context: EnergyChartType[energyChartType].toLowerCase() })}
         </div>
         <div className="row energy-chart-buttons">
           <button onClick={() => fetchChartRef?.current?.fetchChart()}>
-            Update chart
+            {t('energyChart.updateChart')}
           </button>
-          <div>Chart type:</div>
+          <div>{t('energyChart.chartType')}</div>
           <div className="row chart-select">
             <button
               className={
@@ -33,7 +35,7 @@ function EnergyChart({ className }: IClassNameProps) {
               }
               onClick={() => setEnergyChartType(EnergyChartType.Daily)}
             >
-              Daily
+              {t('energyChart.daily')}
             </button>
             <button
               className={
@@ -43,7 +45,7 @@ function EnergyChart({ className }: IClassNameProps) {
               }
               onClick={() => setEnergyChartType(EnergyChartType.Monthly)}
             >
-              Monthly
+              {t('energyChart.monthly')}
             </button>
             <button
               className={
@@ -53,7 +55,7 @@ function EnergyChart({ className }: IClassNameProps) {
               }
               onClick={() => setEnergyChartType(EnergyChartType.Yearly)}
             >
-              Yearly
+              {t('energyChart.yearly')}
             </button>
           </div>
         </div>

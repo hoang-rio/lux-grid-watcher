@@ -1,5 +1,5 @@
 import Chart from "react-apexcharts";
-const SOLAR_PV_SERIE_NAME = "Solar production";
+import { useTranslation } from "react-i18next";
 
 import { ApexOptions } from "apexcharts";
 import { memo } from "react";
@@ -11,6 +11,7 @@ interface BarChartProps {
 }
 
 function BarChart({ series, isDark, xaxis }: BarChartProps) {
+  const { t } = useTranslation();
   return (
     <Chart
       type="bar"
@@ -57,14 +58,14 @@ function BarChart({ series, isDark, xaxis }: BarChartProps) {
         },
         yaxis: [
           {
-            seriesName: SOLAR_PV_SERIE_NAME,
-            title: { text: "Energy (kWh)" },
+            seriesName: t("chart.solarProduction"),
+            title: { text: t("chart.energy") },
           },
-          { seriesName: SOLAR_PV_SERIE_NAME, show: false },
-          { seriesName: SOLAR_PV_SERIE_NAME, show: false },
-          { seriesName: SOLAR_PV_SERIE_NAME, show: false },
-          { seriesName: SOLAR_PV_SERIE_NAME, show: false },
-          { seriesName: SOLAR_PV_SERIE_NAME, show: false },
+          { seriesName: t("chart.solarProduction"), show: false },
+          { seriesName: t("chart.solarProduction"), show: false },
+          { seriesName: t("chart.solarProduction"), show: false },
+          { seriesName: t("chart.solarProduction"), show: false },
+          { seriesName: t("chart.solarProduction"), show: false },
         ],
       }}
     />

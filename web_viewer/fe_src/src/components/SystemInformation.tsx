@@ -6,20 +6,25 @@ import Inverter from "./Inverter";
 import Grid from "./Grid";
 import Consumption from "./Consumption";
 import EPS from "./EPS";
+import { useTranslation } from 'react-i18next';
+
 interface Props {
   inverterData: IInverterData;
   isSocketConnected: boolean;
   onReconnect: () => void;
 }
+
 function SystemInformation({
   inverterData,
   isSocketConnected,
   onReconnect,
 }: Props) {
+  const { t } = useTranslation();
+
   return (
     <div className="card system-information">
       <div className="system-title">
-        <span className="system-title-text">System Information</span>
+        <span className="system-title-text">{t('systemInformation')}</span>
         <span>{inverterData.deviceTime}</span>
       </div>
       <div className="system-graph">
@@ -39,19 +44,19 @@ function SystemInformation({
             ></div>
             <div>
               {!isSocketConnected
-                ? "Offline"
+                ? t('offline')
                 : inverterData.status !== 0
-                ? "Normal"
-                : "Fault"}
+                ? t('normal')
+                : t('fault')}
             </div>
           </div>
           <button
             className="system-status-reconnect"
             onClick={onReconnect}
-            title="Reconnect to socket server"
+            title={t('reconnect')}
             disabled={isSocketConnected}
           >
-            Reconnect
+            {t('reconnect')}
           </button>
         </div>
         <div className="row">
