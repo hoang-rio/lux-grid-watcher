@@ -36,7 +36,10 @@
     "chartType": "Chart type:",
     "daily": "Daily",
     "monthly": "Monthly",
-    "yearly": "Yearly"
+    "yearly": "Yearly",
+    "title_daily": "Daily Chart",
+    "title_monthly": "Monthly Chart",
+    "title_yearly": "Yearly Chart"
   },
   "yield": {
     "today": "Yield today",
@@ -92,5 +95,7 @@
   "totalPV": "Total PV",
   "today": "Today",
   "total": "Total",
-  "consumptionPower": "Consumption Power"
+  "consumptionPower": "Consumption Power",
+  "fetchingTotal": "Fetching total...",
+  "fetchTotalError": "Fetch total error"
 }

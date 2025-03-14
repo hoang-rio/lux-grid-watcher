@@ -44,17 +44,17 @@ function Summary({ invertData }: IProps) {
       return;
     }
     try {
-      console.log("Fetching total...");
+      console.log(t('fetchingTotal'));
       isFetchingRef.current = true;
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/total`);
       const json = await res.json();
       setTotal(json);
     } catch (err) {
-      console.error("Fetch total error", err);
+      console.error(t('fetchTotalError'), err);
     } finally {
       isFetchingRef.current = false;
     }
-  }, []);
+  }, [t]);
 
   const onVisibilityChange = useCallback(() => {
     if (!document.hidden) {

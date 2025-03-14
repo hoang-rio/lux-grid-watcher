@@ -21,7 +21,7 @@ function EnergyChart({ className }: IClassNameProps) {
     <div className={`card col energy-chart ${className}`}>
       <div className="row justify-space-between">
         <div className="energy-chart-title">
-          {t(`energyChart.${EnergyChartType[energyChartType].toLowerCase()}`)} {t('energyChart.chart')}
+          {t('energyChart.title', { context: EnergyChartType[energyChartType].toLowerCase() })}
         </div>
         <div className="row energy-chart-buttons">
           <button onClick={() => fetchChartRef?.current?.fetchChart()}>

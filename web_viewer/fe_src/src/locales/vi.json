@@ -36,7 +36,10 @@
     "chartType": "Loại biểu đồ:",
     "daily": "Hàng ngày",
     "monthly": "Hàng tháng",
-    "yearly": "Hàng năm"
+    "yearly": "Hàng năm",
+    "title_daily": "Biểu đồ hàng ngày",
+    "title_monthly": "Biểu đồ hàng tháng",
+    "title_yearly": "Biểu đồ hàng năm"
   },
   "yield": {
     "today": "Sản lượng hôm nay",
@@ -92,5 +95,7 @@
   },
   "PV1": "PV1",
   "PV2": "PV2",
-  "totalPV": "Tổng PV"
+  "totalPV": "Tổng PV",
+  "fetchingTotal": "Đang lấy tổng số...",
+  "fetchTotalError": "Lỗi khi lấy tổng số"
 }
