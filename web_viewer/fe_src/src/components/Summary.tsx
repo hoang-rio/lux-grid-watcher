@@ -5,6 +5,7 @@ import "./Summary.css";
 import DisplayYield from "./DisplayYield";
 import YieldChart from "./YieldChart";
 import { fixedIfNeed } from "./utils";
+import { useTranslation } from 'react-i18next';
 
 interface IProps {
   invertData: IInverterData;
@@ -15,6 +16,7 @@ enum YieldDisplay {
   CHART_TOTAL,
 }
 function Summary({ invertData }: IProps) {
+  const { t } = useTranslation();
   const [isShowCharged, setIsShowCharnged] = useState(false);
   const [isShowFeed, setIsShowFeed] = useState(false);
   const isFetchingRef = useRef(false);
@@ -74,14 +76,14 @@ function Summary({ invertData }: IProps) {
         className="yield summary-item flex-1 col"
         onClick={switchYieldDisplay}
       >
-        <div className="summary-item-title">Solar Yield</div>
+        <div className="summary-item-title">{t('solarYield')}</div>
         <div className="summary-item-content col flex-1">
           {yieldDisplay === YieldDisplay.YEILD && (
             <DisplayYield total={total} ePVDay={invertData.e_pv_day} />
           )}
           {yieldDisplay === YieldDisplay.CHART_TODAY && (
             <YieldChart
-              label="Today"
+              label={t('today')}
               totalYield={invertData.e_pv_day}
               charge={invertData.e_chg_day}
               gridExport={invertData.e_to_grid_day}
@@ -89,7 +91,7 @@ function Summary({ invertData }: IProps) {
           )}
           {yieldDisplay === YieldDisplay.CHART_TOTAL && (
             <YieldChart
-              label="Total"
+              label={t('total')}
               totalYield={total?.pv || 0}
               charge={total?.battery_charged || 0}
               gridExport={total?.grid_export || 0}
@@ -102,7 +104,7 @@ function Summary({ invertData }: IProps) {
         onClick={() => setIsShowCharnged(!isShowCharged)}
       >
         <div className="summary-item-title">
-          {isShowCharged ? "Battery Charged" : "Battery Discharge"}
+          {isShowCharged ? t('batteryCharged') : t('batteryDischarge')}
         </div>
         <div className="summary-item-content">
           <div className="row justify-space-between align-center">
@@ -115,7 +117,7 @@ function Summary({ invertData }: IProps) {
                 unit=" kWh"
               />
               <div className="description">
-                {isShowCharged ? "Charged today" : "Discharged today"}
+                {isShowCharged ? t('chargedToday') : t('dischargedToday')}
               </div>
               {total && (
                 <>
@@ -127,7 +129,7 @@ function Summary({ invertData }: IProps) {
                     unit=" kWh"
                   />
                   <div className="description">
-                    Total {isShowCharged ? "Charged" : "Discharged"}
+                    {t('total')} {isShowCharged ? t('charged') : t('discharged')}
                   </div>
                 </>
               )}
@@ -140,7 +142,7 @@ function Summary({ invertData }: IProps) {
         onClick={() => setIsShowFeed(!isShowFeed)}
       >
         <div className="summary-item-title ">
-          {isShowFeed ? "Feed-in Energy" : "Import"}
+          {isShowFeed ? t('feedInEnergy') : t('import')}
         </div>
         <div className="summary-item-content">
           <div className="row justify-space-between align-center">
@@ -162,7 +164,7 @@ function Summary({ invertData }: IProps) {
                   unit=" kWh"
                 />
                 <div className="description">
-                  {isShowFeed ? "Today Export" : "Today Import"}
+                  {isShowFeed ? t('todayExport') : t('todayImport')}
                 </div>
                 {total && (
                   <>
@@ -174,7 +176,7 @@ function Summary({ invertData }: IProps) {
                       unit=" kWh"
                     />
                     <div className="description">
-                      Total {isShowFeed ? "Export" : "Import"}
+                      {t('total')} {isShowFeed ? t('export') : t('import')}
                     </div>
                   </>
                 )}
@@ -184,7 +186,7 @@ function Summary({ invertData }: IProps) {
         </div>
       </div>
       <div className="comsumption summary-item flex-1">
-        <div className="summary-item-title ">Comsumption</div>
+        <div className="summary-item-title ">{t('consumption')}</div>
         <div className="summary-item-content">
           <div className="row justify-space-between align-center">
             <img src="/assets/icon_consumption.png" />
@@ -198,14 +200,14 @@ function Summary({ invertData }: IProps) {
                 ).toFixed(1)}
                 unit=" kWh"
               />
-              <div className="description">Today Used</div>
+              <div className="description">{t('todayUsed')}</div>
               {total && (
                 <>
                   <GeneralValue
                     value={fixedIfNeed(total.consumption)}
                     unit=" kWh"
                   />
-                  <div className="description">Total Used</div>
+                  <div className="description">{t('totalUsed')}</div>
                 </>
               )}
             </div>

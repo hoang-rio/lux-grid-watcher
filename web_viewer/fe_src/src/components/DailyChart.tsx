@@ -9,14 +9,14 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { IFetchChart, SeriesItem } from "../Intefaces";
 import Loading from "./Loading";
 import { roundTo } from "./utils";
 import BarChart from "./BarChart";
 
-const SOLAR_PV_SERIE_NAME = "Solar production";
-
 const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
+  const { t } = useTranslation();
   const [chartData, setChartData] = useState([]);
   const [isDark, setIsDark] = useState(false);
   const isFetchingRef = useRef<boolean>(false);
@@ -40,31 +40,31 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
     });
     return [
       {
-        name: SOLAR_PV_SERIE_NAME,
+        name: t("chart.solarProduction"),
         data: solarSeries,
       },
       {
-        name: "Battery discharged",
+        name: t("chart.batteryDischarged"),
         data: batterDischargedSeries,
       },
       {
-        name: "Battery charged",
+        name: t("chart.batteryCharged"),
         data: batteryChargedSeries,
       },
       {
-        name: "Export to grid",
+        name: t("chart.exportToGrid"),
         data: gridExportSeries,
       },
       {
-        name: "Import to user",
+        name: t("chart.importToUser"),
         data: gridImportSeries,
       },
       {
-        name: "Comsumption",
+        name: t("chart.consumption"),
         data: consumptionSeries,
       },
     ];
-  }, [chartData]);
+  }, [chartData, t]);
 
   const fetchChart = useCallback(async () => {
     if (isFetchingRef.current) {

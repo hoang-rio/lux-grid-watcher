@@ -1,0 +1,72 @@
+{
+  "systemInformation": "System Information",
+  "reconnect": "Reconnect",
+  "solarYield": "Solar Yield",
+  "batteryCharged": "Battery Charged",
+  "batteryDischarge": "Battery Discharge",
+  "feedInEnergy": "Feed-in Energy",
+  "import": "Import",
+  "consumption": "Consumption",
+  "todayUsed": "Today Used",
+  "totalUsed": "Total Used",
+  "hourlyChart": "Hourly Chart",
+  "updateChart": "Update chart",
+  "chartType": "Chart type:",
+  "daily": "Daily",
+  "monthly": "Monthly",
+  "yearly": "Yearly",
+  "serverOffline": "Server is offline. Reload page when you make sure that server is online",
+  "loading": "Loading...",
+  "socket": {
+    "connecting": "[Socket] Connecting to socket server...",
+    "connected": "[Socket] Connected to server",
+    "stopReconnect": "[Socket] Stop reconnect by reached MAX_RECONNECT_COUNT: %s",
+    "reconnecting": "[Socket] Connection closed. Reconnecting (%s)...",
+    "error": "[Socket] socket error"
+  },
+  "offline": "Offline",
+  "server": {
+    "offline": "Server is offline. Reload page when you make sure that server is online"
+  },
+  "energyChart": {
+    "chart": "chart",
+    "updateChart": "Update chart",
+    "chartType": "Chart type:",
+    "daily": "Daily",
+    "monthly": "Monthly",
+    "yearly": "Yearly"
+  },
+  "yield": {
+    "today": "Yield today",
+    "total": "Total Yield"
+  },
+  "chart": {
+    "solarProduction": "Solar production",
+    "batteryDischarged": "Battery discharged",
+    "batteryCharged": "Battery charged",
+    "exportToGrid": "Export to grid",
+    "importToUser": "Import to user",
+    "consumption": "Consumption",
+    "solarPV": "Solar PV",
+    "battery": "Battery",
+    "grid": "Grid"
+  },
+  "allowAutoUpdate": "Allow auto update",
+  "pauseAutoUpdate": "Pause auto update",
+  "chargedToday": "Charged today",
+  "dischargedToday": "Discharged today",
+  "charged": "Charged",
+  "discharged": "Discharged",
+  "todayExport": "Today export",
+  "todayImport": "Today import",
+  "export": "Export",
+  "eps": {
+    "standby": "Standby",
+    "backupPower": "Backup Power"
+  },
+  "PV1": "PV1",
+  "PV2": "PV2",
+  "totalPV": "Total PV",
+  "today": "Today",
+  "total": "Total"
+}

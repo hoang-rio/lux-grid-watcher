@@ -1,4 +1,5 @@
 import { memo, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import "./YieldChart.css";
 
 import Chart from "react-apexcharts";
@@ -11,6 +12,7 @@ interface IProps {
   gridExport: number;
 }
 function YieldChart({ totalYield, charge, gridExport, label }: IProps) {
+  const { t } = useTranslation();
   const [isDark, setIsDark] = useState(false);
   let load, loadPercent, chargePercent, exportPercent;
   if (!totalYield) {
@@ -31,20 +33,20 @@ function YieldChart({ totalYield, charge, gridExport, label }: IProps) {
       setIsDark(true);
     }
 
-    // This callback will fire if the perferred color scheme changes without a reload
+    // This callback will fire if the preferred color scheme changes without a reload
     mq.addEventListener("change", (evt) => setIsDark(evt.matches));
   }, []);
   return (
     <div className="yield-chart row flex-1">
       <div className="texts col flex-1 align-start justify-space-between">
         <div className="yield-chart-load">
-          {loadPercent}% Load {label}
+          {loadPercent}% {t('chart.consumption')} {label}
         </div>
         <div className="yield-chart-charge">
-          {chargePercent}% Charge {label}
+          {chargePercent}% {t('chart.batteryCharged')} {label}
         </div>
         <div className="yield-chart-export">
-          {exportPercent}% Export {label}
+          {exportPercent}% {t('chart.exportToGrid')} {label}
         </div>
         <div className="yield-chart-total">
           <strong>
@@ -67,9 +69,9 @@ function YieldChart({ totalYield, charge, gridExport, label }: IProps) {
               mode: isDark ? "dark" : "light",
             },
             labels: [
-              `Load ${label} PV`,
-              `Charge ${label} PV`,
-              `Export ${label} PV`,
+              `${t('chart.consumption')} ${label} PV`,
+              `${t('chart.batteryCharged')} ${label} PV`,
+              `${t('chart.exportToGrid')} ${label} PV`,
             ],
             legend: {
               show: false,

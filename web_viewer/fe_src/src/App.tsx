@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, lazy } from "react";
+import { useTranslation } from "react-i18next";
 import "./App.css";
 import { IUpdateChart, IInverterData } from "./Intefaces";
 import Footer from "./components/Footer";
@@ -12,6 +13,7 @@ const EnergyChart = lazy(() => import("./components/EnergyChart"));
 const MAX_RECONNECT_COUNT = 3;
 
 function App() {
+  const { t } = useTranslation();
   const [inverterData, setInverterData] = useState<IInverterData>();
   const socketRef = useRef<WebSocket>();
   const selfCloseRef = useRef<boolean>(false);
@@ -28,7 +30,7 @@ function App() {
     ) {
       return;
     }
-    console.log("[Socket] Connecting to socket server...");
+    console.log(t("socket.connecting"));
     // Create WebSocket connection.
     const socket = new WebSocket(`${import.meta.env.VITE_API_BASE_URL}/ws`);
     socketRef.current = socket;
@@ -36,7 +38,7 @@ function App() {
     // Connection opened
     socket.addEventListener("open", () => {
       reconnectCountRef.current = 0;
-      console.log("[Socket] Connected to server");
+      console.log(t("socket.connected"));
       setIsSocketConnected(true);
     });
 
@@ -47,26 +49,26 @@ function App() {
       hourlyChartfRef.current?.updateItem(jsonData.hourly_chart_item);
     });
     socket.addEventListener("close", () => {
-      document.title = `[Offline] ${import.meta.env.VITE_APP_TITLE}`;
+      document.title = `[${t("offline")}] ${import.meta.env.VITE_APP_TITLE}`;
       setIsSocketConnected(false);
       if (selfCloseRef.current || socketRef.current?.CONNECTING) {
         return;
       }
       if (reconnectCountRef.current >= MAX_RECONNECT_COUNT) {
-        console.warn("[Socket] Stop reconnect by reached MAX_RECONNECT_COUNT: %s", MAX_RECONNECT_COUNT);
+        console.warn(t("socket.stopReconnect"), MAX_RECONNECT_COUNT);
         return;
       }
       reconnectCountRef.current++;
       console.log(
-        "[Socket] Connection closed. Reconnecting (%s)...",
+        t("socket.reconnecting"),
         reconnectCountRef.current
       );
       connectSocket();
     });
     socket.addEventListener("error", (event) => {
-      console.error("[Socket] socket error", event);
+      console.error(t("socket.error"), event);
     });
-  }, [setInverterData, setIsSocketConnected]);
+  }, [setInverterData, setIsSocketConnected, t]);
 
   const closeSocket = useCallback(() => {
     selfCloseRef.current = true;
@@ -101,7 +103,7 @@ function App() {
         fetchState();
         if (reconnectCountRef.current >= MAX_RECONNECT_COUNT) {
           reconnectCountRef.current = 0;
-          console.warn("[Socket] Reconnect when window active again after reached MAX_RECONNECT_COUNT: %s", MAX_RECONNECT_COUNT);
+          console.warn(t("socket.reconnectOnActive"), MAX_RECONNECT_COUNT);
           connectSocket();
         }
       }
@@ -112,7 +114,7 @@ function App() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       closeSocket();
     };
-  }, [connectSocket, closeSocket, fetchState]);
+  }, [connectSocket, closeSocket, fetchState, t]);
 
   useEffect(() => {
     if (!inverterData?.deviceTime) return;
@@ -152,7 +154,7 @@ function App() {
   return (
     <>
       <div className="d-flex card server-offline align-center justify-center flex-1">
-        Server is offline. Reload page when you make sure that server is online
+        {t("server.offline")}
       </div>
       <Footer />
     </>

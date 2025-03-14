@@ -13,13 +13,15 @@ import "./HourlyChart.css";
 import Chart from "react-apexcharts";
 import { IClassNameProps, IUpdateChart, SeriesItem } from "../Intefaces";
 import Loading from "./Loading";
-
-const SOLAR_PV_SERIE_NAME = "Solar PV";
-const BATTERY_SERIE_NAME = "Battery";
-const GRID_SERIE_NAME = "Grid";
+import { useTranslation } from "react-i18next";
 
 const HourlyChart = forwardRef(
   ({ className }: IClassNameProps, ref: ForwardedRef<IUpdateChart>) => {
+    const { t } = useTranslation();
+    const SOLAR_PV_SERIE_NAME = t("chart.solarPV");
+    const BATTERY_SERIE_NAME = t("chart.battery");
+    const GRID_SERIE_NAME = t("chart.grid");
+
     const [chartData, setChartData] = useState<never[][]>([]);
     const [isDark, setIsDark] = useState(false);
     const isFetchingRef = useRef<boolean>(false);
@@ -150,13 +152,13 @@ const HourlyChart = forwardRef(
     return (
       <div className={`card hourly-chart col ${className || ""}`}>
         <div className="row justify-space-between">
-          <div className="hourly-chart-title">Hourly Chart</div>
+          <div className="hourly-chart-title">{t('hourlyChart')}</div>
           <div className="row hourly-chart-buttons">
             <button onClick={toggleAutoUpdate}>
-              {!isAutoUpdate ? "Allow auto update" : "Pause auto update"}
+              {!isAutoUpdate ? t('allowAutoUpdate') : t('pauseAutoUpdate')}
             </button>
             <button disabled={!isAutoUpdate} onClick={() => fetchChart()}>
-              Update
+              {t('updateChart')}
             </button>
           </div>
         </div>
