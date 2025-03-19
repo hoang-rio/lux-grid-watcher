@@ -1,10 +1,10 @@
 {
   "systemInformation": "Thông tin hệ thống",
   "reconnect": "Kết nối lại",
-  "solarYield": "Sản lượng mặt trời",
+  "solarYield": "Năng lượng mặt trời",
   "batteryCharged": "Pin đã sạc",
   "batteryDischarge": "Pin đã xả",
-  "feedInEnergy": "Dẩy lưới",
+  "feedInEnergy": "Đẩy lưới",
   "import": "Lấy lưới",
   "consumption": "Tiêu thụ",
   "todayUsed": "Đã sử dụng hôm nay",
@@ -46,7 +46,7 @@
     "total": "Tổng sản lượng"
   },
   "chart": {
-    "solarProduction": "Sản xuất mặt trời",
+    "solarProduction": "Năng lượng mặt trời",
     "batteryDischarged": "Pin đã xả",
     "batteryCharged": "Pin đã sạc",
     "exportToGrid": "Đẩy lưới",
