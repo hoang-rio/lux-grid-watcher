@@ -11,7 +11,9 @@ function Footer() {
   ];
 
   const handleLanguageChange = (lang: string) => {
-    i18n.changeLanguage(lang);
+    if (i18n.language !== lang) { // only change if different
+      i18n.changeLanguage(lang);
+    }
   };
 
   return (
