@@ -1,4 +1,4 @@
-import { memo } from "react";
+import React, { memo } from "react";
 import { useTranslation } from "react-i18next";
 import "./Footer.css";
 
@@ -36,10 +36,9 @@ function Footer() {
       <div className="footer-spacing" />
       <div className="footer-lang-container">
         {languages.map((lang, index) => (
-          <>
+          <React.Fragment key={lang.code}>
             <a
               href="#"
-              key={lang.code}
               onClick={(e) => {
                 e.preventDefault();
                 handleLanguageChange(lang.code);
@@ -53,7 +52,7 @@ function Footer() {
             {index < languages.length - 1 && (
               <span className="footer-lang-separator">|</span>
             )}
-          </>
+          </React.Fragment>
         ))}
       </div>
     </div>
