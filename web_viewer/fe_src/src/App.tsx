@@ -22,6 +22,7 @@ function App() {
   const hourlyChartfRef = useRef<IUpdateChart>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isFetchingRef = useRef(false);
+  const deviceTimeRef = useRef<string>();
 
   const connectSocket = useCallback(() => {
     if (
@@ -39,6 +40,9 @@ function App() {
     socket.addEventListener("open", () => {
       reconnectCountRef.current = 0;
       console.log(t("socket.connected"));
+      if (deviceTimeRef.current) {
+        document.title = `[${deviceTimeRef.current}] ${import.meta.env.VITE_APP_TITLE}`;
+      }
       setIsSocketConnected(true);
     });
 
@@ -68,7 +72,7 @@ function App() {
     socket.addEventListener("error", (event) => {
       console.error(t("socket.error"), event);
     });
-  }, [setInverterData, setIsSocketConnected, t]);
+  }, [t]);
 
   const closeSocket = useCallback(() => {
     selfCloseRef.current = true;
@@ -119,6 +123,7 @@ function App() {
   useEffect(() => {
     if (!inverterData?.deviceTime) return;
     const deviceTimeOnly = inverterData?.deviceTime?.split(" ")[1];
+    deviceTimeRef.current = deviceTimeOnly;
     document.title = `[${deviceTimeOnly}] ${import.meta.env.VITE_APP_TITLE}`;
   }, [inverterData?.deviceTime]);
 
