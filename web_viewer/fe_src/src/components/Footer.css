@@ -1,0 +1,18 @@
+.footer-lang-link {
+  color: #666;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.footer-lang-link.active {
+  color: #646cff;
+}
+
+.footer-lang-separator {
+  margin: 0 0.5rem;
+  color: #666;
+}
+
+.footer-lang-container {
+  margin-top: 0.5rem;
+}
