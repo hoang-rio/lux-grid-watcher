@@ -23,4 +23,20 @@ i18n
     }
   });
 
+// Ensure detected language is two characters
+const normalizeLanguage = (lng: string) => lng.substring(0, 2);
+
+const currentLang = i18n.language;
+const normalizedLang = currentLang ? normalizeLanguage(currentLang) : currentLang;
+if (currentLang && currentLang !== normalizedLang) {
+  i18n.changeLanguage(normalizedLang);
+}
+
+i18n.on('languageChanged', (lng: string) => {
+  const newLng = normalizeLanguage(lng);
+  if (newLng !== lng) {
+    i18n.changeLanguage(newLng);
+  }
+});
+
 export default i18n;
