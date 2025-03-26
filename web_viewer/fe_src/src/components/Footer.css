@@ -6,6 +6,7 @@
 
 .footer-lang-link.active {
   color: #646cff;
+  cursor: default;
 }
 
 .footer-lang-separator {
