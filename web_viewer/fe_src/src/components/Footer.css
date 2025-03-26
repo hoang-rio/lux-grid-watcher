@@ -16,3 +16,9 @@
 .footer-lang-container {
   margin-top: 0.5rem;
 }
+
+@media (prefers-color-scheme: dark) {
+  .footer-lang-link {
+    color: #ccc; /* light grey for dark mode */
+  }
+}
