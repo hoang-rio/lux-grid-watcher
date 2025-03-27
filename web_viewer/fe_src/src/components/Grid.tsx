@@ -13,6 +13,15 @@ export default function Grid({ inverterData, isSocketConnected }: ICProps) {
     }
     return 0;
   }, [inverterData.vacr, inverterData.vacs, inverterData.vact, isSocketConnected]);
+
+  const powerValue = useMemo(() => {
+    return isSocketConnected ? inverterData.p_to_user || inverterData.p_to_grid : 0;
+  }, [isSocketConnected, inverterData.p_to_user, inverterData.p_to_grid]);
+
+  const frequencyValue = useMemo(() => {
+    return isSocketConnected ? inverterData.fac / 100 : 0;
+  }, [isSocketConnected, inverterData.fac]);
+
   return (
     <div className="grid flex-1 row align-center justify-flex-end">
       <div className="row arrows">
@@ -34,37 +43,24 @@ export default function Grid({ inverterData, isSocketConnected }: ICProps) {
       <div className="col align-center">
         <GeneralValue
           className="show-small"
-          value={
-            isSocketConnected
-              ? inverterData.p_to_user || inverterData.p_to_grid
-              : 0
-          }
+          value={powerValue}
           unit=" W"
         />
         <img src="/assets/icon_grid.png" />
         <GeneralValue
           className="show-small"
-          value={
-            isSocketConnected
-              ? (inverterData.vacr || inverterData.vacs || inverterData.vact) /
-                10
-              : 0
-          }
+          value={vac}
           unit=" Vac"
         />
         <GeneralValue
           className="show-small"
-          value={isSocketConnected ? inverterData.fac / 100 : 0}
+          value={frequencyValue}
           unit=" Hz"
         />
       </div>
       <div className="grid-texts">
         <GeneralValue
-          value={
-            isSocketConnected
-              ? inverterData.p_to_user || inverterData.p_to_grid
-              : 0
-          }
+          value={powerValue}
           unit=" W"
         />
         <GeneralValue
@@ -72,7 +68,7 @@ export default function Grid({ inverterData, isSocketConnected }: ICProps) {
           unit=" Vac"
         />
         <GeneralValue
-          value={isSocketConnected ? inverterData.fac / 100 : 0}
+          value={frequencyValue}
           unit=" Hz"
         />
       </div>
