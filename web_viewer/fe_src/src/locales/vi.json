@@ -100,5 +100,6 @@
   "totalPV": "Tổng PV",
   "fetchingTotal": "Đang lấy tổng số...",
   "fetchTotalError": "Lỗi khi lấy tổng số",
-  "openSourceAt": "Mã nguồn mở tại:"
+  "openSourceAt": "Mã nguồn mở tại:",
+  "webTitle": "Trình xem thời gian thực LuxPower"
 }

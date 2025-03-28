@@ -41,7 +41,7 @@ function App() {
       reconnectCountRef.current = 0;
       console.log(t("socket.connected"));
       if (deviceTimeRef.current) {
-        document.title = `[${deviceTimeRef.current}] ${import.meta.env.VITE_APP_TITLE}`;
+        document.title = `[${deviceTimeRef.current}] ${t("webTitle")}`;
       }
       setIsSocketConnected(true);
     });
@@ -53,7 +53,7 @@ function App() {
       hourlyChartfRef.current?.updateItem(jsonData.hourly_chart_item);
     });
     socket.addEventListener("close", () => {
-      document.title = `[${t("offline")}] ${import.meta.env.VITE_APP_TITLE}`;
+      document.title = `[${t("offline")}] ${t("webTitle")}`;
       setIsSocketConnected(false);
       if (selfCloseRef.current || socketRef.current?.CONNECTING) {
         return;
@@ -124,7 +124,7 @@ function App() {
     if (!inverterData?.deviceTime) return;
     const deviceTimeOnly = inverterData?.deviceTime?.split(" ")[1];
     deviceTimeRef.current = deviceTimeOnly;
-    document.title = `[${deviceTimeOnly}] ${import.meta.env.VITE_APP_TITLE}`;
+    document.title = `[${deviceTimeOnly}] ${t("webTitle")}`;
   }, [inverterData?.deviceTime]);
 
   if (isLoading) {

@@ -100,5 +100,6 @@
   "consumptionPower": "Consumption Power",
   "fetchingTotal": "Fetching total...",
   "fetchTotalError": "Fetch total error",
-  "openSourceAt": "Open source at:"
+  "openSourceAt": "Open source at:",
+  "webTitle": "LuxPower realtime web viewer"
 }
