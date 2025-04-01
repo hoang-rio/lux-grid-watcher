@@ -11,30 +11,30 @@ interface IProps {
   invertData: IInverterData;
 }
 enum YieldDisplay {
-  YEILD,
+  YIELD,
   CHART_TODAY,
   CHART_TOTAL,
 }
 function Summary({ invertData }: IProps) {
   const { t } = useTranslation();
-  const [isShowCharged, setIsShowCharnged] = useState(false);
+  const [isShowCharged, setIsShowCharged] = useState(false);
   const [isShowFeed, setIsShowFeed] = useState(false);
   const isFetchingRef = useRef(false);
   const [total, setTotal] = useState<ITotal>();
   const [yieldDisplay, setYieldDisplay] = useState<YieldDisplay>(
-    YieldDisplay.YEILD
+    YieldDisplay.YIELD
   );
 
   const switchYieldDisplay = useCallback(() => {
     switch (yieldDisplay) {
-      case YieldDisplay.YEILD:
+      case YieldDisplay.YIELD:
         setYieldDisplay(YieldDisplay.CHART_TODAY);
         break;
       case YieldDisplay.CHART_TODAY:
         setYieldDisplay(YieldDisplay.CHART_TOTAL);
         break;
       default:
-        setYieldDisplay(YieldDisplay.YEILD);
+        setYieldDisplay(YieldDisplay.YIELD);
         break;
     }
   }, [yieldDisplay]);
@@ -70,6 +70,34 @@ function Summary({ invertData }: IProps) {
     };
   }, [fetchTotal, onVisibilityChange]);
 
+  // Extract yield content rendering
+  const renderYieldContent = () => {
+    switch (yieldDisplay) {
+      case YieldDisplay.YIELD:
+        return <DisplayYield total={total} ePVDay={invertData.e_pv_day} />;
+      case YieldDisplay.CHART_TODAY:
+        return (
+          <YieldChart
+            label="today"
+            totalYield={invertData.e_pv_day}
+            charge={invertData.e_chg_day}
+            gridExport={invertData.e_to_grid_day}
+          />
+        );
+      case YieldDisplay.CHART_TOTAL:
+        return (
+          <YieldChart
+            label="total"
+            totalYield={total?.pv || 0}
+            charge={total?.battery_charged || 0}
+            gridExport={total?.grid_export || 0}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="summary row">
       <div
@@ -78,30 +106,12 @@ function Summary({ invertData }: IProps) {
       >
         <div className="summary-item-title">{t('solarYield')}</div>
         <div className="summary-item-content col flex-1">
-          {yieldDisplay === YieldDisplay.YEILD && (
-            <DisplayYield total={total} ePVDay={invertData.e_pv_day} />
-          )}
-          {yieldDisplay === YieldDisplay.CHART_TODAY && (
-            <YieldChart
-              label="today"
-              totalYield={invertData.e_pv_day}
-              charge={invertData.e_chg_day}
-              gridExport={invertData.e_to_grid_day}
-            />
-          )}
-          {yieldDisplay === YieldDisplay.CHART_TOTAL && (
-            <YieldChart
-              label="total"
-              totalYield={total?.pv || 0}
-              charge={total?.battery_charged || 0}
-              gridExport={total?.grid_export || 0}
-            />
-          )}
+          {renderYieldContent()}
         </div>
       </div>
       <div
         className="battery summary-item flex-1"
-        onClick={() => setIsShowCharnged(!isShowCharged)}
+        onClick={() => setIsShowCharged(!isShowCharged)}
       >
         <div className="summary-item-title">
           {isShowCharged ? t('batteryCharged') : t('batteryDischarge')}
@@ -122,9 +132,8 @@ function Summary({ invertData }: IProps) {
               {total && (
                 <>
                   <GeneralValue
-                    value={fixedIfNeed(isShowCharged
-                      ? total.battery_charged
-                      : total.battery_discharged
+                    value={fixedIfNeed(
+                      isShowCharged ? total.battery_charged : total.battery_discharged
                     )}
                     unit=" kWh"
                   />
@@ -157,9 +166,7 @@ function Summary({ invertData }: IProps) {
               <div className="col">
                 <GeneralValue
                   value={
-                    isShowFeed
-                      ? invertData.e_to_grid_day
-                      : invertData.e_to_user_day
+                    isShowFeed ? invertData.e_to_grid_day : invertData.e_to_user_day
                   }
                   unit=" kWh"
                 />
@@ -169,9 +176,8 @@ function Summary({ invertData }: IProps) {
                 {total && (
                   <>
                     <GeneralValue
-                      value={fixedIfNeed(isShowFeed
-                        ? total.grid_export
-                        : total.grid_import
+                      value={fixedIfNeed(
+                        isShowFeed ? total.grid_export : total.grid_import
                       )}
                       unit=" kWh"
                     />
@@ -203,10 +209,7 @@ function Summary({ invertData }: IProps) {
               <div className="description">{t('todayUsed')}</div>
               {total && (
                 <>
-                  <GeneralValue
-                    value={fixedIfNeed(total.consumption)}
-                    unit=" kWh"
-                  />
+                  <GeneralValue value={fixedIfNeed(total.consumption)} unit=" kWh" />
                   <div className="description">{t('totalUsed')}</div>
                 </>
               )}
