@@ -533,12 +533,12 @@
 
 @media (prefers-color-scheme: dark) {
     .notification-history {
-        background: #333;
+        background: #5c5c5c;
         color: #eee;
         border: 1px solid #555;
     }
     .notification-popover {
-        background: #333;
+        background: #5c5c5c;
         border: 1px solid #555;
         box-shadow: 0 2px 8px rgba(255, 255, 255, 0.2);
     }
