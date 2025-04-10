@@ -267,6 +267,10 @@
 }
 
 .notification-popover-content ul li strong {
+    font-size: 16px;
+}
+
+.notification-body {
     font-size: 14px;
 }
 
@@ -286,6 +290,11 @@
     background: transparent;
     border: none;
     cursor: pointer;
+}
+
+.notification-no-record {
+    text-align: center;
+    color: lightgray;
 }
 
 @media screen and (max-width: 1200px) {
@@ -519,5 +528,33 @@
 @media (prefers-color-scheme: light) {
     .system-status-display {
         background-color: #eee;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .notification-history {
+        background: #333;
+        color: #eee;
+        border: 1px solid #555;
+    }
+    .notification-popover {
+        background: #333;
+        border: 1px solid #555;
+        box-shadow: 0 2px 8px rgba(255, 255, 255, 0.2);
+    }
+    .notification-popover-header h3 {
+        color: #fff;
+    }
+    .notification-no-record {
+        color: #ccc;
+    }
+    .notification-history li:hover {
+        background-color: #444;
+    }
+    .notification-button button.active {
+        background-color: #555; /* adjusted active background color */
+    }
+    .notification-date {
+        color: #aaa; /* adjusted for better visibility in dark mode */
     }
 }

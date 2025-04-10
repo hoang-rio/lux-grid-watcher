@@ -102,5 +102,6 @@
   "fetchTotalError": "Lỗi khi lấy tổng số",
   "openSourceAt": "Mã nguồn mở tại:",
   "webTitle": "Trình xem thời gian thực LuxPower",
-  "notificationHistory": "Lịch sử thông báo"
+  "notification": "Thông báo",
+  "notificationNoRecords": "Không có thông báo nào"
 }

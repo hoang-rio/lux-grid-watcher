@@ -8,6 +8,7 @@ import Consumption from "./Consumption";
 import EPS from "./EPS";
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useRef } from "react";
+import Loading from "./Loading";
 
 interface Props {
   inverterData: IInverterData;
@@ -26,6 +27,7 @@ function SystemInformation({
   const { t } = useTranslation();
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<INotificationData[]>([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false); // new state
   const popoverRef = useRef<HTMLDivElement>(null);
   const notificationButtonRef = useRef<HTMLDivElement>(null);
 
@@ -39,12 +41,15 @@ function SystemInformation({
 
   // Extracted fetchNotifications function
   const fetchNotifications = async () => {
+    setLoadingNotifications(true); // start loading
     try {
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-history`);
       const data = await res.json();
       setNotifications(data);
     } catch (error) {
       console.error("Failed to fetch notifications", error);
+    } finally {
+      setLoadingNotifications(false); // end loading
     }
   };
 
@@ -101,7 +106,7 @@ function SystemInformation({
               <button
                 onClick={toggleNotifications}
                 className={showNotifications ? "active" : "inactive"}
-                title={t("notificationHistory")}
+                title={t("notification")}
               >
                 {/* Single bell icon SVG */}
                 <svg
@@ -193,24 +198,30 @@ function SystemInformation({
           <div className="notification-history notification-popover">
             <div className="notification-popover-content" ref={popoverRef}>
               <div className="notification-popover-header">
-                <h3>{t("notificationHistory")}</h3>
+                <h3>{t("notification")}</h3>
                 <button className="close-popover" onClick={toggleNotifications}>
                   ×
                 </button>
               </div>
-              <ul>
-                {notifications.map((note, idx) => (
-                  <li key={idx}>
-                    <div>
-                      <strong>{note.title}</strong>
-                    </div>
-                    <div>{note.body}</div>
-                    <div style={{ fontSize: "smaller", color: "#555" }}>
-                      {formatDateTime(note.notified_at)}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              {loadingNotifications ? (
+                <Loading />
+              ) : notifications.length === 0 ? (
+                <div className="notification-no-record">{t("notificationNoRecords")}</div>
+              ) : (
+                <ul>
+                  {notifications.map((note, idx) => (
+                    <li key={idx}>
+                      <div>
+                        <strong>{note.title}</strong>
+                      </div>
+                      <div className="notification-body">{note.body}</div>
+                      <div className="notification-date">
+                        {formatDateTime(note.notified_at)}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         )}
