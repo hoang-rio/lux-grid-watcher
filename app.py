@@ -171,7 +171,6 @@ def handle_grid_status(json_data: dict, fcm_service: FCM):
             int(json_data['fac']) / 100,
             int(json_data['vacr']) / 10,
         )
-    dectect_off_grid_warning(is_grid_connected, json_data["p_eps"], fcm_service)
     if last_grid_connected != is_grid_connected:
         current_history = []
         if path.exists(config['HISTORY_FILE']):
@@ -196,6 +195,8 @@ def handle_grid_status(json_data: dict, fcm_service: FCM):
             play_audio("lost-grid.mp3", 5)
     else:
         logger.info("State did not change. Skip play notify audio")
+    dectect_off_grid_warning(
+        is_grid_connected, json_data["p_eps"], fcm_service)
 
 
 def insert_hourly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
