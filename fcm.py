@@ -7,6 +7,8 @@ import google.auth.transport.requests
 from threading import Thread
 import sqlite3
 
+from web_socket_client import WebSocketClient
+
 SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"]
 
 CHANNEL_ON_GRID = "111"
@@ -119,11 +121,15 @@ class FCM():
     __config: dict
     __logger: logging.Logger
     __fcm_threads: list[FCMThread]
+    __ws_client: WebSocketClient | None = None
 
     def __init__(self, logger: logging.Logger, config: dict) -> None:
         self.__config = config
         self.__logger = logger
         self.__fcm_threads = []
+
+    def _set_ws_client(self, ws_client: WebSocketClient):
+        self.__ws_client = ws_client
 
     def __get_devices(self):
         if path.exists(self.__config["DEVICE_IDS_JSON_FILE"]):
@@ -155,8 +161,27 @@ class FCM():
                 (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), title, body)
             )
             conn.commit()
+            # Limit history to 30 items by deleting older records
+            cursor.execute(
+                "DELETE FROM notification_history WHERE rowid NOT IN (SELECT rowid FROM notification_history ORDER BY notified_at DESC LIMIT 30)"
+            )
+            conn.commit()
             cursor.close()
             conn.close()
+            if self.__ws_client is not None:
+                import asyncio
+                def send_ws():
+                    asyncio.run(self.__ws_client.send_json({
+                        "event": "new_notification",
+                        "data": {
+                            "title": title,
+                            "body": body,
+                            "notified_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        }
+                    }))
+                Thread(target=send_ws).start()
+            else:
+                self.__logger.warning("__ws_client not found")
         except Exception as e:
             self.__logger.exception("Failed to log notification history: %s", e)
 
@@ -182,7 +207,7 @@ class FCM():
                 self.__fcm_threads.append(t)
                 t.start()
             self.__post_send_notify(devices)
-            self.__log_notification("Đã có điện lưới.", "Nhà đã có điện lưới có thể sử dụng điện không giới hạn.")
+        self.__log_notification("Đã có điện lưới.", "Nhà đã có điện lưới có thể sử dụng điện không giới hạn.")
 
     def offgrid_notify(self):
         self.__fcm_threads = []
@@ -206,7 +231,7 @@ class FCM():
                 self.__fcm_threads.append(t)
                 t.start()
             self.__post_send_notify(devices)
-            self.__log_notification("Mất điện lưới.", "Nhà đã mất điện lưới cần hạn chế sử dụng thiết bị điện công suất lớn như bếp từ, bình nóng lạnh.")
+        self.__log_notification("Mất điện lưới.", "Nhà đã mất điện lưới cần hạn chế sử dụng thiết bị điện công suất lớn như bếp từ, bình nóng lạnh.")
 
     def warning_notify(self):
         self.__fcm_threads = []
@@ -230,7 +255,7 @@ class FCM():
                 self.__fcm_threads.append(t)
                 t.start()
             self.__post_send_notify(devices)
-            self.__log_notification("Cảnh báo: Tiêu thụ điện bất thường", "Tiêu thụ điện bất thường, vui lòng kiểm tra xem vòi nước đã khoá chưa.")
+        self.__log_notification("Cảnh báo: Tiêu thụ điện bất thường", "Tiêu thụ điện bất thường, vui lòng kiểm tra xem vòi nước đã khoá chưa.")
 
     def offgrid_warning_notify(self):
         self.__fcm_threads = []
@@ -254,4 +279,4 @@ class FCM():
                 self.__fcm_threads.append(t)
                 t.start()
             self.__post_send_notify(devices)
-            self.__log_notification("Cảnh báo: Tiêu thụ điện cao", "Tiêu thụ điện cao hơn 1500W khi đang mất điện lưới, vui lòng chú ý.")
+        self.__log_notification("Cảnh báo: Tiêu thụ điện cao", "Tiêu thụ điện cao hơn 1500W khi đang mất điện lưới, vui lòng chú ý.")

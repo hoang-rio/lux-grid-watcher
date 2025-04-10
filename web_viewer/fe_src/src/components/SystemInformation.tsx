@@ -13,12 +13,15 @@ interface Props {
   inverterData: IInverterData;
   isSocketConnected: boolean;
   onReconnect: () => void;
+  // New prop to trigger notification popover when new notification event occurs
+  newNotificationTrigger?: number;
 }
 
 function SystemInformation({
   inverterData,
   isSocketConnected,
   onReconnect,
+  newNotificationTrigger,
 }: Props) {
   const { t } = useTranslation();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -78,6 +81,14 @@ function SystemInformation({
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showNotifications]);
+
+  // New effect: when the newNotificationTrigger prop changes, show popover and fetch notifications.
+  useEffect(() => {
+    if (newNotificationTrigger) {
+      setShowNotifications(true);
+      fetchNotifications();
+    }
+  }, [newNotificationTrigger]);
 
   return (
     <>

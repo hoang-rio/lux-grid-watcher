@@ -333,6 +333,7 @@ async def main():
                 from web_socket_client import WebSocketClient
                 ws_client = WebSocketClient(
                     logger=logger, host=config["HOST"], port=int(config["PORT"]))
+                fcm_service._set_ws_client(ws_client)
                 ws_client.start()
             dongle = dongle_handler.Dongle(logger, config)
             while True:

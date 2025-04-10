@@ -39,7 +39,8 @@ async def websocket_handler(request):
         logger.debug(f"WS_CLIENTS count: {len(ws_clients)}")
         if msg.type == aiohttp.WSMsgType.TEXT:
             global last_inverter_data
-            last_inverter_data = msg.data
+            if "inverter_data" in msg.data:
+                last_inverter_data = msg.data
             for ws_client in ws_clients:
                 if ws_client != ws:
                     if not ws_client.closed:

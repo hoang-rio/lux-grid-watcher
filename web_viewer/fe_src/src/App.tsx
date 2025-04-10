@@ -24,6 +24,9 @@ function App() {
   const isFetchingRef = useRef(false);
   const deviceTimeRef = useRef<string>();
 
+  // New state to trigger notification popover when new notification event is received.
+  const [newNotificationTrigger, setNewNotificationTrigger] = useState(0);
+
   const connectSocket = useCallback(() => {
     if (
       socketRef.current &&
@@ -46,8 +49,12 @@ function App() {
 
     socket.addEventListener("message", (event) => {
       const jsonData = JSON.parse(event.data);
-      setInverterData(jsonData.inverter_data);
-      hourlyChartfRef.current?.updateItem(jsonData.hourly_chart_item);
+      if (jsonData.event === "new_notification") {
+        setNewNotificationTrigger((prev) => prev + 1);
+      } else {
+        setInverterData(jsonData.inverter_data);
+        hourlyChartfRef.current?.updateItem(jsonData.hourly_chart_item);
+      }
     });
 
     socket.addEventListener("close", () => {
@@ -145,6 +152,7 @@ function App() {
           inverterData={inverterData}
           isSocketConnected={isSocketConnected}
           onReconnect={connectSocket}
+          newNotificationTrigger={newNotificationTrigger}
         />
         <div className="row chart">
           <HourlyChart ref={hourlyChartfRef} className="flex-1 chart-item" />
