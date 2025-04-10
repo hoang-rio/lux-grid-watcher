@@ -258,12 +258,12 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 8px;
+    padding: 8px;
 }
 
 .notification-popover-header h3 {
     margin: 0; /* reduced margin */
     font-size: 16px; /* smaller title */
-    padding: 8px; /* added padding for popover title */
 }
 
 .notification-popover-content ul li strong {
@@ -277,7 +277,7 @@
 .close-popover {
     background: transparent;
     border: none;
-    font-size: 14px;
+    font-size: 1.3rem; /* increased font size */
     cursor: pointer;
 }
 
