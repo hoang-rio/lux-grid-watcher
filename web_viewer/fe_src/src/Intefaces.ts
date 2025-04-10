@@ -76,3 +76,9 @@ export interface ITotal {
 export interface IFetchChart {
   fetchChart: () => void;
 }
+
+export interface INotificationData {
+  title: string;
+  body: string;
+  notified_at: string | number;
+}

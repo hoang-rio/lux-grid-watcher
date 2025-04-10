@@ -159,6 +159,21 @@ async def yearly_chart(_: web.Request):
     return res
 
 
+async def notification_history(request):
+    global db_connection
+    if db_connection is None:
+        from os import environ
+        from dotenv import dotenv_values
+        config = {**dotenv_values(".env"), **environ}
+        db_connection = sqlite3.connect(config["DB_NAME"])
+    cursor = db_connection.cursor()
+    notifications = cursor.execute(
+        "SELECT title, body, notified_at FROM notification_history ORDER BY notified_at DESC"
+    ).fetchall()
+    data = [{"title": row[0], "body": row[1], "notified_at": row[2]} for row in notifications]
+    return web.json_response(data, headers=VITE_CORS_HEADER)
+
+
 def create_runner():
     app = web.Application()
     app.add_routes([
@@ -170,6 +185,7 @@ def create_runner():
         web.get("/monthly-chart", monthly_chart),
         web.get("/yearly-chart", yearly_chart),
         web.get("/total", total),
+        web.get("/notification-history", notification_history),  # Added notification endpoint
         web.static("/", path.join(path.dirname(__file__), "build"))
     ])
     return web.AppRunner(app)

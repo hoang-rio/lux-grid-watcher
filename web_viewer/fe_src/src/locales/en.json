@@ -101,5 +101,6 @@
   "fetchingTotal": "Fetching total...",
   "fetchTotalError": "Fetch total error",
   "openSourceAt": "Open source at:",
-  "webTitle": "LuxPower realtime web viewer"
+  "webTitle": "LuxPower realtime web viewer",
+  "notificationHistory": "Notification History"
 }

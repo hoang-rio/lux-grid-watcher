@@ -1,8 +1,13 @@
 .system-information {
     max-width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
 }
 
 .system-title {
+    position: relative;
     margin-bottom: 20px;
 }
 
@@ -11,6 +16,25 @@
     display: inline-block;
     margin-right: 20px;
     font-weight: bold;
+}
+
+.notification-button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 5px;
+}
+
+.notification-button button {
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+    background-color: transparent;
+    color: green;
+}
+
+.notification-button button.active {
+    background-color: lightgray;
 }
 
 .system-graph {
@@ -166,6 +190,102 @@
 .system-graph {
     width: 1103px;
     margin: auto;
+}
+
+.system-content {
+    flex: 1;
+}
+
+.notification-panel {
+    width: 300px;
+    padding: 10px;
+    border-left: 1px solid #ccc;
+}
+
+.notification-panel button {
+    width: 100%;
+    padding: 5px;
+    margin-bottom: 10px;
+}
+
+.notification-history {
+    background: #f9f9f9;
+    padding: 0; /* removed parent's padding */
+    margin: 0;  /* removed parent's margin */
+}
+
+.notification-history ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.notification-history li {
+    padding: 5px;
+    margin: 0; /* removed margin */
+    border-bottom: 1px solid #ddd;
+}
+
+.notification-history li:hover {
+    background-color: #f1f1f1; /* hover effect */
+}
+
+.notification-popover {
+    position: absolute;
+    top: 45px;
+    right: 0;
+    transform: translateX(calc(-10% - 5px));
+    padding: 0; /* removed parent's padding */
+    border: 1px solid #ccc;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    width: 300px;
+    min-height: 300px;
+    cursor: default;
+}
+
+.notification-popover-content {
+    padding: 0;  /* removed internal padding */
+}
+
+.notification-popover-content ul {
+    max-height: 250px; /* adjust based on header height */
+    overflow-y: auto;
+}
+
+.notification-popover-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.notification-popover-header h3 {
+    margin: 0; /* reduced margin */
+    font-size: 16px; /* smaller title */
+    padding: 8px; /* added padding for popover title */
+}
+
+.notification-popover-content ul li strong {
+    font-size: 14px;
+}
+
+.close-popover {
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.notification-button {
+    display: inline-block;
+    margin-left: 20px;
+}
+
+.notification-button button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
 }
 
 @media screen and (max-width: 1200px) {

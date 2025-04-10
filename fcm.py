@@ -2,10 +2,10 @@ import logging
 from os import path
 import json
 import requests
-import requests.auth
 from google.oauth2 import service_account
 import google.auth.transport.requests
 from threading import Thread
+import sqlite3
 
 SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"]
 
@@ -145,6 +145,21 @@ class FCM():
         if len(valid_devices) != len(devices):
             self.__save_device(valid_devices)
 
+    def __log_notification(self, title: str, body: str):
+        try:
+            from datetime import datetime
+            conn = sqlite3.connect(self.__config["DB_NAME"])
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO notification_history (notified_at, title, body) VALUES (?, ?, ?)",
+                (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), title, body)
+            )
+            conn.commit()
+            cursor.close()
+            conn.close()
+        except Exception as e:
+            self.__logger.exception("Failed to log notification history: %s", e)
+
     def ongrid_notify(self):
         self.__fcm_threads = []
         devices = self.__get_devices()
@@ -167,6 +182,7 @@ class FCM():
                 self.__fcm_threads.append(t)
                 t.start()
             self.__post_send_notify(devices)
+            self.__log_notification("Đã có điện lưới.", "Nhà đã có điện lưới có thể sử dụng điện không giới hạn.")
 
     def offgrid_notify(self):
         self.__fcm_threads = []
@@ -190,6 +206,7 @@ class FCM():
                 self.__fcm_threads.append(t)
                 t.start()
             self.__post_send_notify(devices)
+            self.__log_notification("Mất điện lưới.", "Nhà đã mất điện lưới cần hạn chế sử dụng thiết bị điện công suất lớn như bếp từ, bình nóng lạnh.")
 
     def warning_notify(self):
         self.__fcm_threads = []
@@ -213,6 +230,7 @@ class FCM():
                 self.__fcm_threads.append(t)
                 t.start()
             self.__post_send_notify(devices)
+            self.__log_notification("Cảnh báo: Tiêu thụ điện bất thường", "Tiêu thụ điện bất thường, vui lòng kiểm tra xem vòi nước đã khoá chưa.")
 
     def offgrid_warning_notify(self):
         self.__fcm_threads = []
@@ -236,3 +254,4 @@ class FCM():
                 self.__fcm_threads.append(t)
                 t.start()
             self.__post_send_notify(devices)
+            self.__log_notification("Cảnh báo: Tiêu thụ điện cao", "Tiêu thụ điện cao hơn 1500W khi đang mất điện lưới, vui lòng chú ý.")
