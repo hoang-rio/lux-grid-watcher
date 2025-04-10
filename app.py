@@ -18,6 +18,7 @@ AUDIO_SLEEP_MAP = {
     "has-grid.mp3": 6,
     "lost-grid.mp3": 9,
     "warning.mp3": 7,
+    "warning_power_off_grid.mp3": 8
 }
 
 config: dict = {
