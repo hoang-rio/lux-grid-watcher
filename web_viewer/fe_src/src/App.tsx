@@ -13,7 +13,7 @@ const EnergyChart = lazy(() => import("./components/EnergyChart"));
 const MAX_RECONNECT_COUNT = 3;
 
 function App() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [inverterData, setInverterData] = useState<IInverterData>();
   const socketRef = useRef<WebSocket>();
   const selfCloseRef = useRef<boolean>(false);
@@ -31,48 +31,47 @@ function App() {
     ) {
       return;
     }
-    console.log(t("socket.connecting"));
-    // Create WebSocket connection.
+    console.log(i18n.t("socket.connecting"));
     const socket = new WebSocket(`${import.meta.env.VITE_API_BASE_URL}/ws`);
     socketRef.current = socket;
 
-    // Connection opened
     socket.addEventListener("open", () => {
       reconnectCountRef.current = 0;
-      console.log(t("socket.connected"));
+      console.log(i18n.t("socket.connected"));
       if (deviceTimeRef.current) {
-        document.title = `[${deviceTimeRef.current}] ${t("webTitle")}`;
+        document.title = `[${deviceTimeRef.current}] ${i18n.t("webTitle")}`;
       }
       setIsSocketConnected(true);
     });
 
-    // Listen for messages
     socket.addEventListener("message", (event) => {
       const jsonData = JSON.parse(event.data);
       setInverterData(jsonData.inverter_data);
       hourlyChartfRef.current?.updateItem(jsonData.hourly_chart_item);
     });
+
     socket.addEventListener("close", () => {
-      document.title = `[${t("offline")}] ${t("webTitle")}`;
+      document.title = `[${i18n.t("offline")}] ${i18n.t("webTitle")}`;
       setIsSocketConnected(false);
       if (selfCloseRef.current || socketRef.current?.CONNECTING) {
         return;
       }
       if (reconnectCountRef.current >= MAX_RECONNECT_COUNT) {
-        console.warn(t("socket.stopReconnect"), MAX_RECONNECT_COUNT);
+        console.warn(i18n.t("socket.stopReconnect"), MAX_RECONNECT_COUNT);
         return;
       }
       reconnectCountRef.current++;
       console.log(
-        t("socket.reconnecting"),
+        i18n.t("socket.reconnecting"),
         reconnectCountRef.current
       );
       connectSocket();
     });
+
     socket.addEventListener("error", (event) => {
-      console.error(t("socket.error"), event);
+      console.error(i18n.t("socket.error"), event);
     });
-  }, [t]);
+  }, [i18n]);
 
   const closeSocket = useCallback(() => {
     selfCloseRef.current = true;
@@ -107,7 +106,7 @@ function App() {
         fetchState();
         if (reconnectCountRef.current >= MAX_RECONNECT_COUNT) {
           reconnectCountRef.current = 0;
-          console.warn(t("socket.reconnectOnActive"), MAX_RECONNECT_COUNT);
+          console.warn(i18n.t("socket.reconnectOnActive"), MAX_RECONNECT_COUNT);
           connectSocket();
         }
       }
@@ -118,14 +117,14 @@ function App() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       closeSocket();
     };
-  }, [connectSocket, closeSocket, fetchState, t]);
+  }, [connectSocket, closeSocket, fetchState, i18n]);
 
   useEffect(() => {
     if (!inverterData?.deviceTime) return;
-    const deviceTimeOnly = inverterData?.deviceTime?.split(" ")[1];
+    const deviceTimeOnly = inverterData.deviceTime.split(" ")[1];
     deviceTimeRef.current = deviceTimeOnly;
     document.title = `[${deviceTimeOnly}] ${t("webTitle")}`;
-  }, [inverterData?.deviceTime]);
+  }, [inverterData?.deviceTime, t]);
 
   if (isLoading) {
     return (

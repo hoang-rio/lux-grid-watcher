@@ -16,7 +16,7 @@ enum YieldDisplay {
   CHART_TOTAL,
 }
 function Summary({ invertData }: IProps) {
-  const { t } = useTranslation();
+  const { i18n, t } = useTranslation();
   const [isShowCharged, setIsShowCharged] = useState(false);
   const [isShowFeed, setIsShowFeed] = useState(false);
   const isFetchingRef = useRef(false);
@@ -44,17 +44,17 @@ function Summary({ invertData }: IProps) {
       return;
     }
     try {
-      console.log(t('fetchingTotal'));
+      console.log(i18n.t('fetchingTotal'));
       isFetchingRef.current = true;
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/total`);
       const json = await res.json();
       setTotal(json);
     } catch (err) {
-      console.error(t('fetchTotalError'), err);
+      console.error(i18n.t('fetchTotalError'), err);
     } finally {
       isFetchingRef.current = false;
     }
-  }, [t]);
+  }, [i18n]);
 
   const onVisibilityChange = useCallback(() => {
     if (!document.hidden) {
