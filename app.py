@@ -31,7 +31,7 @@ ABNORMAL_SKIP_CHECK_HOURS = int(
 ABNORMAL_USAGE_COUNT = 32 * ABNORMAL_SKIP_CHECK_HOURS
 NORMAL_MIN_USAGE_COUNT = 5 * ABNORMAL_SKIP_CHECK_HOURS
 ABNORMAL_MIN_POWER = 900
-OFF_GRID_WARNING_POWER = 1500
+OFF_GRID_WARNING_POWER = 1600
 OFF_GRID_WARNING_SKIP_CHECK_COUNT = 60 // int(config["SLEEP_TIME"])
 log_level = logging.DEBUG if config["IS_DEBUG"] == 'True' else logging.INFO
 
@@ -138,7 +138,7 @@ def dectect_off_grid_warning(is_grid_connected: bool, eps_power: int, fcm_servic
             "_________Off grid warning detected with eps power: %s_________",
             eps_power
         )
-        fcm_service.offgrid_warning_notify()
+        fcm_service.offgrid_warning_notify(OFF_GRID_WARNING_POWER)
         play_audio("warning_power_off_grid.mp3", 5)
         # Skip next OFF_GRID_WARNING_SKIP_CHECK_COUNT time when detect off grid warning
         dectect_off_grid_warning_skip_check_count = OFF_GRID_WARNING_SKIP_CHECK_COUNT

@@ -257,7 +257,7 @@ class FCM():
             self.__post_send_notify(devices)
         self.__log_notification("Cảnh báo: Tiêu thụ điện bất thường", "Tiêu thụ điện bất thường, vui lòng kiểm tra xem vòi nước đã khoá chưa.")
 
-    def offgrid_warning_notify(self):
+    def offgrid_warning_notify(self, warning_power: float = 1500):
         self.__fcm_threads = []
         devices = self.__get_devices()
         if len(devices) == 0:
@@ -271,7 +271,7 @@ class FCM():
                     self.__logger,
                     self.__config,
                     "Cảnh báo: Tiêu thụ điện cao",
-                    "Tiêu thụ điện cao hơn 1500W khi đang mất điện lưới, vui lòng chú ý.",
+                    f"Tiêu thụ điện cao hơn {warning_power}W khi đang mất điện lưới, vui lòng chú ý.",
                     device,
                     False,
                     CHANNEL_WARN
@@ -279,4 +279,4 @@ class FCM():
                 self.__fcm_threads.append(t)
                 t.start()
             self.__post_send_notify(devices)
-        self.__log_notification("Cảnh báo: Tiêu thụ điện cao", "Tiêu thụ điện cao hơn 1500W khi đang mất điện lưới, vui lòng chú ý.")
+        self.__log_notification("Cảnh báo: Tiêu thụ điện cao", f"Tiêu thụ điện cao hơn {warning_power}W khi đang mất điện lưới, vui lòng chú ý.")
