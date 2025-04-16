@@ -34,7 +34,7 @@ jobs:
           if [[ $(echo $GIT_CHANGED_FILE | grep "\.py") == "" && $(echo $GIT_CHANGED_FILE | grep "\.sh") == "" && $(echo $GIT_CHANGED_FILE | grep "aiohttp") == "" ]]; then
               NEED_RESTART_APP=false
           fi
-          if [[ $(echo $GIT_CHANGED_FILE | grep "\.js") != "" || $(echo $GIT_CHANGED_FILE | grep "\.css") != "" || $(echo $GIT_CHANGED_FILE | grep "\.html") != "" ||  || $(echo $GIT_CHANGED_FILE | grep "\.png") != "" ||  || $(echo $GIT_CHANGED_FILE | grep "\.gif") != "" ]]; then
+          if [[ $(echo $GIT_CHANGED_FILE | grep "\.js") != "" || $(echo $GIT_CHANGED_FILE | grep "\.css") != "" || $(echo $GIT_CHANGED_FILE | grep "\.html") != "" ||  || $(echo $GIT_CHANGED_FILE | grep "\.png") != "" || $(echo $GIT_CHANGED_FILE | grep "\.gif") != "" ]]; then
               NEED_BUILD_FE=true
           fi
 
