@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, lazy } from "react";
 import { useTranslation } from "react-i18next";
 import "./App.css";
-import { IUpdateChart, IInverterData } from "./Intefaces";
+import { IUpdateChart, IInverterData, INotificationData } from "./Intefaces";
 import Footer from "./components/Footer";
 import Loading from "./components/Loading";
 
@@ -24,8 +24,8 @@ function App() {
   const isFetchingRef = useRef(false);
   const deviceTimeRef = useRef<string>();
 
-  // New state to trigger notification popover when new notification event is received.
-  const [newNotificationTrigger, setNewNotificationTrigger] = useState(0);
+  // Changed to hold notification object or null
+  const [newNotification, setNewNotification] = useState<INotificationData | null>(null);
 
   const connectSocket = useCallback(() => {
     if (
@@ -50,7 +50,8 @@ function App() {
     socket.addEventListener("message", (event) => {
       const jsonData = JSON.parse(event.data);
       if (jsonData.event === "new_notification") {
-        setNewNotificationTrigger((prev) => prev + 1);
+        // Use the notification information from jsonData.data
+        setNewNotification(jsonData.data);
       } else {
         setInverterData(jsonData.inverter_data);
         hourlyChartfRef.current?.updateItem(jsonData.hourly_chart_item);
@@ -152,7 +153,7 @@ function App() {
           inverterData={inverterData}
           isSocketConnected={isSocketConnected}
           onReconnect={connectSocket}
-          newNotificationTrigger={newNotificationTrigger}
+          newNotification={newNotification}
         />
         <div className="row chart">
           <HourlyChart ref={hourlyChartfRef} className="flex-1 chart-item" />

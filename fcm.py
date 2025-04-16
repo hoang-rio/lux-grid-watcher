@@ -156,9 +156,10 @@ class FCM():
             from datetime import datetime
             conn = sqlite3.connect(self.__config["DB_NAME"])
             cursor = conn.cursor()
+            now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cursor.execute(
                 "INSERT INTO notification_history (notified_at, title, body) VALUES (?, ?, ?)",
-                (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), title, body)
+                (now_str, title, body)
             )
             conn.commit()
             # Limit history to 30 items by deleting older records
@@ -176,7 +177,7 @@ class FCM():
                         "data": {
                             "title": title,
                             "body": body,
-                            "notified_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            "notified_at": now_str
                         }
                     }))
                 Thread(target=send_ws).start()
