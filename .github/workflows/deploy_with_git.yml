@@ -19,7 +19,7 @@ concurrency:
 env:
   SSH_KEY_FILE_DIR: .keys
   SSH_KEY_FILE_PATH: .keys/deploy_key.pem
-  FORCE_BUILD_FE: ${{ github.event.inputs.force_build_fe || false }}
+  FORCE_BUILD_FE: ${{ inputs.force_build_fe || false }}
 
 jobs:
   ssh_deploy:
@@ -60,7 +60,7 @@ jobs:
               cd web_viewer/fe_src
               yarn install
               yarn build
-              rsync -avz -e "ssh -i ${{env.SSH_KEY_FILE_PATH}} -p ${{secrets.SSH_DEPLOY_PORT}} -o StrictHostKeyChecking=no" --delete build/ ${{secrets.SSH_DEPLOY_USER}}@${{secrets.SSH_DEPLOY_HOST}}:${{secrets.SSH_DEPLOY_PATH}}/web_viewer/build/
+              rsync -avz -e "ssh -i ../../${{env.SSH_KEY_FILE_PATH}} -p ${{secrets.SSH_DEPLOY_PORT}} -o StrictHostKeyChecking=no" --delete build/ ${{secrets.SSH_DEPLOY_USER}}@${{secrets.SSH_DEPLOY_HOST}}:${{secrets.SSH_DEPLOY_PATH}}/web_viewer/build/
           fi
       - name: Clean deploy key file
         run: rm -rf ${{env.SSH_KEY_FILE_PATH}}
