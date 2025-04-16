@@ -81,7 +81,7 @@
 .system-status {
     position: absolute;
     right: 0;
-    top: 10px;
+    top: -5px;
 }
 
 .system-status-display {
@@ -110,7 +110,7 @@
 }
 
 .system-status-reconnect {
-    margin-left: 10px;
+    margin-left: 5px;
 }
 
 .battery-row {
