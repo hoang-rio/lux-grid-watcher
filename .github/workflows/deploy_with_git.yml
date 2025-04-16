@@ -19,7 +19,7 @@ concurrency:
 env:
   SSH_KEY_FILE_DIR: .keys
   SSH_KEY_FILE_PATH: .keys/deploy_key.pem
-  FORCE_BUILD_FE: ${{ inputs.force_build_fe || false }}
+  BUILD_FE: ${{ inputs.force_build_fe || false }}
 
 jobs:
   ssh_deploy:
@@ -33,17 +33,17 @@ jobs:
           mkdir ${{env.SSH_KEY_FILE_DIR}}
           echo "${{secrets.SSH_DEPLOY_KEY}}" > ${{env.SSH_KEY_FILE_PATH}}
           chmod 600 ${{env.SSH_KEY_FILE_PATH}}
-      - name: Deploy with git
+      - name: Deploy BE
         run: |
           SSH_DEPLOY_COMMAND="cd ${{secrets.SSH_DEPLOY_PATH}} && git pull"
           NEED_RESTART_APP=true
-          NEED_BUILD_FE=false
+          BUILD_FE=false
           GIT_CHANGED_FILE=$(git show --name-only --format="")
           if [[ $(echo $GIT_CHANGED_FILE | grep "\.py") == "" && $(echo $GIT_CHANGED_FILE | grep "\.sh") == "" && $(echo $GIT_CHANGED_FILE | grep "aiohttp") == "" ]]; then
               NEED_RESTART_APP=false
           fi
           if [[ $(echo $GIT_CHANGED_FILE | grep "\.js") != "" || $(echo $GIT_CHANGED_FILE | grep "\.css") != "" || $(echo $GIT_CHANGED_FILE | grep "\.html") != "" || $(echo $GIT_CHANGED_FILE | grep "\.png") != "" || $(echo $GIT_CHANGED_FILE | grep "\.gif") != "" ]]; then
-              NEED_BUILD_FE=true
+              echo "BUILD_FE=true" >> $GITHUB_ENV
           fi
 
           if [[ $NEED_RESTART_APP == true ]]; then
@@ -56,11 +56,12 @@ jobs:
           fi
           echo $SSH_DEPLOY_COMMAND
           ssh -i ${{env.SSH_KEY_FILE_PATH}} -p ${{secrets.SSH_DEPLOY_PORT}} -o StrictHostKeyChecking=no ${{secrets.SSH_DEPLOY_USER}}@${{secrets.SSH_DEPLOY_HOST}} "$SSH_DEPLOY_COMMAND"
-          if [[ $NEED_BUILD_FE == true || ${{env.FORCE_BUILD_FE}} == true ]]; then
-              cd web_viewer/fe_src
-              yarn install
-              yarn build
-              rsync -avz -e "ssh -i ../../${{env.SSH_KEY_FILE_PATH}} -p ${{secrets.SSH_DEPLOY_PORT}} -o StrictHostKeyChecking=no" --delete ../build/ ${{secrets.SSH_DEPLOY_USER}}@${{secrets.SSH_DEPLOY_HOST}}:${{secrets.SSH_DEPLOY_PATH}}/web_viewer/build/
-          fi
+      - name: Deploy FE
+        if: env.BUILD_FE == 'true'
+        run: |
+          cd web_viewer/fe_src
+          yarn install
+          yarn build
+          rsync -avz -e "ssh -i ../../${{env.SSH_KEY_FILE_PATH}} -p ${{secrets.SSH_DEPLOY_PORT}} -o StrictHostKeyChecking=no" --delete ../build/ ${{secrets.SSH_DEPLOY_USER}}@${{secrets.SSH_DEPLOY_HOST}}:${{secrets.SSH_DEPLOY_PATH}}/web_viewer/build/
       - name: Clean deploy key file
         run: rm -rf ${{env.SSH_KEY_FILE_PATH}}
