@@ -29,9 +29,13 @@ jobs:
         run: |
           SSH_DEPLOY_COMMAND="cd ${{secrets.SSH_DEPLOY_PATH}} && git pull"
           NEED_RESTART_APP=true
+          NEED_BUILD_FE=false
           GIT_CHANGED_FILE=$(git show --name-only --format="")
           if [[ $(echo $GIT_CHANGED_FILE | grep "\.py") == "" && $(echo $GIT_CHANGED_FILE | grep "\.sh") == "" && $(echo $GIT_CHANGED_FILE | grep "aiohttp") == "" ]]; then
               NEED_RESTART_APP=false
+          fi
+          if [[ $(echo $GIT_CHANGED_FILE | grep "\.js") != "" || $(echo $GIT_CHANGED_FILE | grep "\.css") != "" || $(echo $GIT_CHANGED_FILE | grep "\.html") != "" ||  || $(echo $GIT_CHANGED_FILE | grep "\.png") != "" ||  || $(echo $GIT_CHANGED_FILE | grep "\.gif") != "" ]]; then
+              NEED_BUILD_FE=true
           fi
 
           if [[ $NEED_RESTART_APP == true ]]; then
@@ -44,5 +48,11 @@ jobs:
           fi
           echo $SSH_DEPLOY_COMMAND
           ssh -i ${{env.SSH_KEY_FILE_PATH}} -p ${{secrets.SSH_DEPLOY_PORT}} -o StrictHostKeyChecking=no ${{secrets.SSH_DEPLOY_USER}}@${{secrets.SSH_DEPLOY_HOST}} "$SSH_DEPLOY_COMMAND"
+          if [[ $NEED_BUILD_FE == true ]]; then
+              cd web_viewer/fe_src
+              yarn install
+              yarn build
+              rsync -avz -e "ssh -i ${{env.SSH_KEY_FILE_PATH}} -p ${{secrets.SSH_DEPLOY_PORT}} -o StrictHostKeyChecking=no" --delete build/ ${{secrets.SSH_DEPLOY_USER}}@${{secrets.SSH_DEPLOY_HOST}}:${{secrets.SSH_DEPLOY_PATH}}/web_viewer/build/
+          fi
       - name: Clean deploy key file
         run: rm -rf ${{env.SSH_KEY_FILE_PATH}}
