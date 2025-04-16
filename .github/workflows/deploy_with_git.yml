@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Force build FE'
+        required: true
+        default: 'main'
 
 concurrency:
   group: ${{ github.event.ref }}
@@ -12,6 +18,7 @@ concurrency:
 env:
   SSH_KEY_FILE_DIR: .keys
   SSH_KEY_FILE_PATH: .keys/deploy_key.pem
+  FORCE_BUILD_FE: ${{ github.event.inputs.branch || false }}
 
 jobs:
   ssh_deploy:
@@ -48,7 +55,7 @@ jobs:
           fi
           echo $SSH_DEPLOY_COMMAND
           ssh -i ${{env.SSH_KEY_FILE_PATH}} -p ${{secrets.SSH_DEPLOY_PORT}} -o StrictHostKeyChecking=no ${{secrets.SSH_DEPLOY_USER}}@${{secrets.SSH_DEPLOY_HOST}} "$SSH_DEPLOY_COMMAND"
-          if [[ $NEED_BUILD_FE == true ]]; then
+          if [[ $NEED_BUILD_FE == true || ${{env.FORCE_BUILD_FE}} == true ]]; then
               cd web_viewer/fe_src
               yarn install
               yarn build
