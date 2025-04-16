@@ -33,7 +33,7 @@ jobs:
           mkdir ${{env.SSH_KEY_FILE_DIR}}
           echo "${{secrets.SSH_DEPLOY_KEY}}" > ${{env.SSH_KEY_FILE_PATH}}
           chmod 600 ${{env.SSH_KEY_FILE_PATH}}
-      - name: Deploy BE
+      - name: Deploy BE with git
         run: |
           SSH_DEPLOY_COMMAND="cd ${{secrets.SSH_DEPLOY_PATH}} && git pull"
           NEED_RESTART_APP=true
@@ -42,7 +42,7 @@ jobs:
           if [[ $(echo $GIT_CHANGED_FILE | grep "\.py") == "" && $(echo $GIT_CHANGED_FILE | grep "\.sh") == "" && $(echo $GIT_CHANGED_FILE | grep "aiohttp") == "" ]]; then
               NEED_RESTART_APP=false
           fi
-          if [[ $(echo $GIT_CHANGED_FILE | grep "\.js") != "" || $(echo $GIT_CHANGED_FILE | grep "\.css") != "" || $(echo $GIT_CHANGED_FILE | grep "\.html") != "" || $(echo $GIT_CHANGED_FILE | grep "\.png") != "" || $(echo $GIT_CHANGED_FILE | grep "\.gif") != "" ]]; then
+          if [[ $(echo $GIT_CHANGED_FILE | grep "fe_src") != "" ]]; then
               echo "BUILD_FE=true" >> $GITHUB_ENV
           fi
 
@@ -56,7 +56,7 @@ jobs:
           fi
           echo $SSH_DEPLOY_COMMAND
           ssh -i ${{env.SSH_KEY_FILE_PATH}} -p ${{secrets.SSH_DEPLOY_PORT}} -o StrictHostKeyChecking=no ${{secrets.SSH_DEPLOY_USER}}@${{secrets.SSH_DEPLOY_HOST}} "$SSH_DEPLOY_COMMAND"
-      - name: Deploy FE
+      - name: Build and deploy FE
         if: env.BUILD_FE == 'true'
         run: |
           cd web_viewer/fe_src
