@@ -1,11 +1,16 @@
 .footer-lang-link {
-  color: #666;
   text-decoration: none;
   cursor: pointer;
 }
 
-.footer-lang-link.active {
+.footer-lang-link:not(.active) {
   color: #646cff;
+  /* clickable language highlighted */
+}
+
+.footer-lang-link.active {
+  color: #666;
+  /* active language not highlighted */
   cursor: default;
 }
 
@@ -19,7 +24,8 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .footer-lang-link {
-    color: #ccc; /* light grey for dark mode */
+  .footer-lang-link.active {
+    color: #ccc;
+    /* grey for active link in dark mode */
   }
 }
