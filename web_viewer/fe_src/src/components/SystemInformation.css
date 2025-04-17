@@ -37,6 +37,10 @@
     background-color: lightgray;
 }
 
+.notification-button button:not(.active):hover {
+    background-color: #f0f0f0; /* Light mode hover background */
+}
+
 .system-graph {
     position: relative;
 }
@@ -556,5 +560,8 @@
     }
     .notification-date {
         color: #aaa; /* adjusted for better visibility in dark mode */
+    }
+    .notification-button button:not(.active):hover {
+        background-color: #666; /* Updated Dark mode hover background */
     }
 }
