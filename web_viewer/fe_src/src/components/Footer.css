@@ -3,11 +3,6 @@
   cursor: pointer;
 }
 
-.footer-lang-link:not(.active) {
-  color: #646cff;
-  /* clickable language highlighted */
-}
-
 .footer-lang-link.active {
   color: #666;
   /* active language not highlighted */
@@ -27,5 +22,8 @@
   .footer-lang-link.active {
     color: #ccc;
     /* grey for active link in dark mode */
+  }
+  .footer-lang-separator {
+    color: #aaa; /* improved contrast in dark mode */
   }
 }
