@@ -62,6 +62,9 @@ function App() {
       document.title = `[${i18n.t("offline")}] ${i18n.t("webTitle")}`;
       setIsSocketConnected(false);
       if (selfCloseRef.current || socketRef.current?.CONNECTING) {
+        console.log(i18n.t("socket.closed"));
+        socketRef.current = undefined;
+        reconnectCountRef.current = 0;
         return;
       }
       if (reconnectCountRef.current >= MAX_RECONNECT_COUNT) {

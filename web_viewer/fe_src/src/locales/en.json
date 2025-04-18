@@ -23,7 +23,8 @@
     "stopReconnect": "[Socket] Stop reconnect by reached MAX_RECONNECT_COUNT: %s",
     "reconnecting": "[Socket] Connection closed. Reconnecting (%s)...",
     "error": "[Socket] socket error",
-    "closing": "[Socket] Closing socket"
+    "closing": "[Socket] Closing socket...",
+    "closed": "[Socket] Socket closed"
   },
   "offline": "Offline",
   "normal": "Normal",
