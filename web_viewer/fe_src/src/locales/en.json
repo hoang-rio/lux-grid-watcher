@@ -18,11 +18,11 @@
   "serverOffline": "Server is offline. Reload page when you make sure that server is online",
   "loading": "Loading...",
   "socket": {
-    "connecting": "[Socket] Connecting to socket server...",
+    "connecting": "[Socket] Connecting to server...",
     "connected": "[Socket] Connected to server",
     "stopReconnect": "[Socket] Stop reconnect by reached MAX_RECONNECT_COUNT: %s",
     "reconnecting": "[Socket] Connection closed. Reconnecting (%s)...",
-    "error": "[Socket] socket error",
+    "error": "[Socket] Socket error",
     "closing": "[Socket] Closing socket...",
     "closed": "[Socket] Socket closed"
   },
