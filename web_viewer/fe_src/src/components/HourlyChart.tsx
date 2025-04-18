@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 
 const HourlyChart = forwardRef(
   ({ className }: IClassNameProps, ref: ForwardedRef<IUpdateChart>) => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const SOLAR_PV_SERIE_NAME = t("chart.solarPV");
     const BATTERY_SERIE_NAME = t("chart.battery");
     const GRID_SERIE_NAME = t("chart.grid");
@@ -26,7 +26,6 @@ const HourlyChart = forwardRef(
     const [isDark, setIsDark] = useState(false);
     const isFetchingRef = useRef<boolean>(false);
     const [isAutoUpdate, setIsAutoUpdate] = useState(true);
-    const updateChartOnClickRef = useRef(false);
 
     const series = useMemo(() => {
       const pvSeries: SeriesItem[] = [];
@@ -57,15 +56,21 @@ const HourlyChart = forwardRef(
           data: gridSeries,
         },
         {
-          name: t("chart.consumption"),
+          name: i18n.t("chart.consumption"),
           data: consumptionSeries,
         },
         {
-          name: t("chart.soc"),
+          name: i18n.t("chart.soc"),
           data: socSeries,
         },
       ];
-    }, [BATTERY_SERIE_NAME, GRID_SERIE_NAME, SOLAR_PV_SERIE_NAME, chartData, t]);
+    }, [
+      BATTERY_SERIE_NAME,
+      GRID_SERIE_NAME,
+      SOLAR_PV_SERIE_NAME,
+      chartData,
+      i18n,
+    ]);
 
     const fetchChart = useCallback(async () => {
       if (isFetchingRef.current) {
@@ -103,27 +108,18 @@ const HourlyChart = forwardRef(
     );
 
     const onVisibilityChange = useCallback(() => {
-       if (!document.hidden && isAutoUpdate) {
-          updateChartOnClickRef.current = true;
-       }
-    }, [isAutoUpdate]);
-
-    const onDocumentClick = useCallback(() => {
-      if (updateChartOnClickRef.current) {
+      if (!document.hidden && isAutoUpdate) {
         fetchChart();
-        updateChartOnClickRef.current = false;
       }
-    }, [fetchChart]);
+    }, [isAutoUpdate, fetchChart]);
 
     useEffect(() => {
       fetchChart();
       document.addEventListener("visibilitychange", onVisibilityChange);
-      document.addEventListener("click", onDocumentClick);
       return () => {
         document.removeEventListener("visibilitychange", onVisibilityChange);
-        document.removeEventListener("click", onDocumentClick);
-      }
-    }, [fetchChart, isAutoUpdate, onDocumentClick, onVisibilityChange]);
+      };
+    }, [fetchChart, onVisibilityChange]);
 
     useEffect(() => {
       const mq = window.matchMedia("(prefers-color-scheme: dark)");
@@ -152,13 +148,13 @@ const HourlyChart = forwardRef(
     return (
       <div className={`card hourly-chart col ${className || ""}`}>
         <div className="row justify-space-between">
-          <div className="hourly-chart-title">{t('hourlyChart')}</div>
+          <div className="hourly-chart-title">{t("hourlyChart")}</div>
           <div className="row hourly-chart-buttons">
             <button onClick={toggleAutoUpdate}>
-              {!isAutoUpdate ? t('allowAutoUpdate') : t('pauseAutoUpdate')}
+              {!isAutoUpdate ? t("allowAutoUpdate") : t("pauseAutoUpdate")}
             </button>
             <button disabled={!isAutoUpdate} onClick={() => fetchChart()}>
-              {t('updateChart')}
+              {t("updateChart")}
             </button>
           </div>
         </div>
@@ -243,9 +239,13 @@ const HourlyChart = forwardRef(
                             return `${seriesName}:`;
                           }
                           if (batteryValue < 0) {
-                            return t("chart.batteryCharging", { seriesName });
+                            return i18n.t("chart.batteryCharging", {
+                              seriesName,
+                            });
                           }
-                          return t("chart.batteryDischarging", { seriesName });
+                          return i18n.t("chart.batteryDischarging", {
+                            seriesName,
+                          });
                         }
                         if (seriesName === GRID_SERIE_NAME) {
                           const gridValue = opts.series[2][opts.dataPointIndex];
@@ -253,9 +253,9 @@ const HourlyChart = forwardRef(
                             return `${seriesName}:`;
                           }
                           if (gridValue < 0) {
-                            return `${t("chart.importGridPower")}:`;
+                            return `${i18n.t("chart.importGridPower")}:`;
                           }
-                          return `${t("chart.exportGridPower")}:`;
+                          return `${i18n.t("chart.exportGridPower")}:`;
                         }
                         return `${seriesName}:`;
                       },
