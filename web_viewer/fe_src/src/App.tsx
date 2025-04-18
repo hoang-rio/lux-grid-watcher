@@ -82,9 +82,10 @@ function App() {
   }, [i18n]);
 
   const closeSocket = useCallback(() => {
+    console.log(i18n.t("socket.closing"));
     selfCloseRef.current = true;
     socketRef.current?.close();
-  }, []);
+  }, [i18n]);
 
   const fetchState = useCallback(async () => {
     try {

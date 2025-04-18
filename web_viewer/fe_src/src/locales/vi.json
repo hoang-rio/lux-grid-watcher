@@ -22,7 +22,8 @@
     "connected": "[Socket] Đã kết nối đến máy chủ",
     "stopReconnect": "[Socket] Dừng kết nối lại do đã đạt MAX_RECONNECT_COUNT: %s",
     "reconnecting": "[Socket] Kết nối đã đóng. Đang kết nối lại (%s)...",
-    "error": "[Socket] lỗi socket"
+    "error": "[Socket] lỗi socket",
+    "closing": "[Socket] Đang đóng socket"
   },
   "offline": "Ngoại tuyến",
   "normal": "Bình thường",
