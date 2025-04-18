@@ -109,23 +109,28 @@ function App() {
       connectSocket();
     }
     window.addEventListener("beforeunload", closeSocket);
+    return () => {
+      window.removeEventListener("beforeunload", closeSocket);
+      closeSocket();
+    };
+  }, [connectSocket, closeSocket, fetchState, i18n]);
+
+  useEffect(() => {
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
+      if (document.hidden) {
+        // When the page is hidden, close the socket to reduce activity
+        closeSocket();
+      } else {
+        // When back to foreground, fetch state and reconnect
         fetchState();
-        if (reconnectCountRef.current >= MAX_RECONNECT_COUNT) {
-          reconnectCountRef.current = 0;
-          console.warn(i18n.t("socket.reconnectOnActive"), MAX_RECONNECT_COUNT);
-          connectSocket();
-        }
+        connectSocket();
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
-      window.removeEventListener("beforeunload", closeSocket);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      closeSocket();
     };
-  }, [connectSocket, closeSocket, fetchState, i18n]);
+  }, [connectSocket, closeSocket, fetchState]);
 
   useEffect(() => {
     if (!inverterData?.deviceTime) return;
