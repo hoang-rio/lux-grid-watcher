@@ -175,6 +175,10 @@
     font-size: 18px;
 }
 
+.eps-status.show-small {
+    text-align: center;
+}
+
 .consumption-texts {
     margin-top: 185px;
 }
