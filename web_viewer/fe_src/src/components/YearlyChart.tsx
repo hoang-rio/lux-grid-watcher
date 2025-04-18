@@ -16,7 +16,7 @@ import { roundTo } from "./utils";
 import BarChart from "./BarChart";
 
 const YearlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
-  const { t } = useTranslation();
+  const { i18n } = useTranslation();
   const [chartData, setChartData] = useState([]);
   const [isDark, setIsDark] = useState(false);
   const isFetchingRef = useRef<boolean>(false);
@@ -39,31 +39,31 @@ const YearlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
     });
     return [
       {
-        name: t("chart.solarProduction"),
+        name: i18n.t("chart.solarProduction"),
         data: solarSeries,
       },
       {
-        name: t("chart.batteryDischarged"),
+        name: i18n.t("chart.batteryDischarged"),
         data: batterDischargedSeries,
       },
       {
-        name: t("chart.batteryCharged"),
+        name: i18n.t("chart.batteryCharged"),
         data: batteryChargedSeries,
       },
       {
-        name: t("chart.exportToGrid"),
+        name: i18n.t("chart.exportToGrid"),
         data: gridExportSeries,
       },
       {
-        name: t("chart.importToUser"),
+        name: i18n.t("chart.importToUser"),
         data: gridImportSeries,
       },
       {
-        name: t("chart.consumption"),
+        name: i18n.t("chart.consumption"),
         data: consumptionSeries,
       },
     ];
-  }, [chartData, t]);
+  }, [chartData, i18n]);
 
   const fetchChart = useCallback(async () => {
     if (isFetchingRef.current) {
