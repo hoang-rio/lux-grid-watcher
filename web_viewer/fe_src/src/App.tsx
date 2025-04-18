@@ -4,6 +4,7 @@ import "./App.css";
 import { IUpdateChart, IInverterData, INotificationData } from "./Intefaces";
 import Footer from "./components/Footer";
 import Loading from "./components/Loading";
+import * as logUtil from "./utils/logUtil";
 
 const SystemInformation = lazy(() => import("./components/SystemInformation"));
 const Summary = lazy(() => import("./components/Summary"));
@@ -34,13 +35,13 @@ function App() {
     ) {
       return;
     }
-    console.log(i18n.t("socket.connecting"));
+    logUtil.log(i18n.t("socket.connecting"));
     const socket = new WebSocket(`${import.meta.env.VITE_API_BASE_URL}/ws`);
     socketRef.current = socket;
 
     socket.addEventListener("open", () => {
       reconnectCountRef.current = 0;
-      console.log(i18n.t("socket.connected"));
+      logUtil.log(i18n.t("socket.connected"));
       if (deviceTimeRef.current) {
         document.title = `[${deviceTimeRef.current}] ${i18n.t("webTitle")}`;
       }
@@ -50,7 +51,6 @@ function App() {
     socket.addEventListener("message", (event) => {
       const jsonData = JSON.parse(event.data);
       if (jsonData.event === "new_notification") {
-        // Use the notification information from jsonData.data
         setNewNotification(jsonData.data);
       } else {
         setInverterData(jsonData.inverter_data);
@@ -62,17 +62,17 @@ function App() {
       document.title = `[${i18n.t("offline")}] ${i18n.t("webTitle")}`;
       setIsSocketConnected(false);
       if (selfCloseRef.current || socketRef.current?.CONNECTING) {
-        console.log(i18n.t("socket.closed"));
+        logUtil.log(i18n.t("socket.closed"));
         socketRef.current = undefined;
         reconnectCountRef.current = 0;
         return;
       }
       if (reconnectCountRef.current >= MAX_RECONNECT_COUNT) {
-        console.warn(i18n.t("socket.stopReconnect"), MAX_RECONNECT_COUNT);
+        logUtil.warn(i18n.t("socket.stopReconnect"), MAX_RECONNECT_COUNT);
         return;
       }
       reconnectCountRef.current++;
-      console.log(
+      logUtil.log(
         i18n.t("socket.reconnecting"),
         reconnectCountRef.current
       );
@@ -80,12 +80,12 @@ function App() {
     });
 
     socket.addEventListener("error", (event) => {
-      console.error(i18n.t("socket.error"), event);
+      logUtil.error(i18n.t("socket.error"), event);
     });
   }, [i18n]);
 
   const closeSocket = useCallback(() => {
-    console.log(i18n.t("socket.closing"));
+    logUtil.log(i18n.t("socket.closing"));
     selfCloseRef.current = true;
     socketRef.current?.close();
   }, [i18n]);
@@ -101,7 +101,7 @@ function App() {
       setInverterData(json);
       setIsLoading(false);
     } catch (err) {
-      console.error("API get state error", err);
+      logUtil.error("API get state error", err);
     }
     isFetchingRef.current = false;
   }, []);

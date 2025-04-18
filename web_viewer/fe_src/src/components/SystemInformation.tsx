@@ -9,6 +9,7 @@ import EPS from "./EPS";
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useRef } from "react";
 import Loading from "./Loading";
+import * as logUtil from "../utils/logUtil";
 
 interface Props {
   inverterData: IInverterData;
@@ -46,8 +47,8 @@ function SystemInformation({
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-history`);
       const data = await res.json();
       setNotifications(data);
-    } catch (error) {
-      console.error("Failed to fetch notifications", error);
+    } catch (err) {
+      logUtil.error("Failed to fetch notifications", err);
     } finally {
       setLoadingNotifications(false); // end loading
     }

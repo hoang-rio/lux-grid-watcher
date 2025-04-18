@@ -6,6 +6,7 @@ import DisplayYield from "./DisplayYield";
 import YieldChart from "./YieldChart";
 import { fixedIfNeed } from "./utils";
 import { useTranslation } from 'react-i18next';
+import * as logUtil from "../utils/logUtil";
 
 interface IProps {
   invertData: IInverterData;
@@ -44,13 +45,13 @@ function Summary({ invertData }: IProps) {
       return;
     }
     try {
-      console.log(i18n.t('fetchingTotal'));
+      logUtil.log(i18n.t('fetchingTotal'));
       isFetchingRef.current = true;
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/total`);
       const json = await res.json();
       setTotal(json);
     } catch (err) {
-      console.error(i18n.t('fetchTotalError'), err);
+      logUtil.error(i18n.t('fetchTotalError'), err);
     } finally {
       isFetchingRef.current = false;
     }
