@@ -56,6 +56,14 @@ jobs:
           fi
           echo $SSH_DEPLOY_COMMAND
           ssh -i ${{env.SSH_KEY_FILE_PATH}} -p ${{secrets.SSH_DEPLOY_PORT}} -o StrictHostKeyChecking=no ${{secrets.SSH_DEPLOY_USER}}@${{secrets.SSH_DEPLOY_HOST}} "$SSH_DEPLOY_COMMAND"
+      - name: Cache node modules
+        if: env.BUILD_FE == 'true'
+        uses: actions/cache@v3
+        with:
+          path: web_viewer/fe_src/node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('web_viewer/fe_src/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
       - name: Build and deploy FE
         if: env.BUILD_FE == 'true'
         run: |
