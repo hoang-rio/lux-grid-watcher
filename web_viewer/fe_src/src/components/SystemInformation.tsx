@@ -7,7 +7,7 @@ import Grid from "./Grid";
 import Consumption from "./Consumption";
 import EPS from "./EPS";
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Loading from "./Loading";
 import * as logUtil from "../utils/logUtil";
 
@@ -23,9 +23,9 @@ function SystemInformation({
   inverterData,
   isSocketConnected,
   onReconnect,
-  newNotification: newNotificationTrigger,
+  newNotification,
 }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<INotificationData[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false); // new state
@@ -33,32 +33,33 @@ function SystemInformation({
   const notificationButtonRef = useRef<HTMLDivElement>(null);
 
   // Added helper function to format datetime
-  const formatDateTime = (dateInput: string | number) => {
+  const formatDateTime = useCallback((dateInput: string | number) => {
     const date = new Date(dateInput);
     return date.toLocaleString();
-  };
+  }, []);
 
-  const toggleNotifications = () => setShowNotifications(prev => !prev);
+  const toggleNotifications = useCallback(() => setShowNotifications(prev => !prev), []);
 
   // Extracted fetchNotifications function
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     setLoadingNotifications(true); // start loading
     try {
+      logUtil.log(i18n.t("notification.fetchingNotifications")); // changed namespace from "log"
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-history`);
       const data = await res.json();
       setNotifications(data);
     } catch (err) {
-      logUtil.error("Failed to fetch notifications", err);
+      logUtil.error(i18n.t("notification.failedFetchNotifications"), err); // changed namespace from "log"
     } finally {
       setLoadingNotifications(false); // end loading
     }
-  };
+  }, [i18n]);
 
   useEffect(() => {
     if (showNotifications) {
       fetchNotifications();
     }
-  }, [showNotifications]);
+  }, [showNotifications, fetchNotifications]);
 
   // Updated effect: auto fetch notifications when page becomes visible regardless of popover state
   useEffect(() => {
@@ -69,7 +70,7 @@ function SystemInformation({
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, []);
+  }, [fetchNotifications]);
 
   useEffect(() => {
     if (showNotifications) {
@@ -90,11 +91,11 @@ function SystemInformation({
 
   // New effect: when a new notification is received, show the popover and prepend to notifications list.
   useEffect(() => {
-    if (newNotificationTrigger) {
+    if (newNotification) {
       setShowNotifications(true);
-      setNotifications((prev) => [newNotificationTrigger, ...prev]);
+      setNotifications((prev) => [newNotification, ...prev]);
     }
-  }, [newNotificationTrigger]);
+  }, [newNotification]);
 
   return (
     <>
@@ -107,7 +108,7 @@ function SystemInformation({
               <button
                 onClick={toggleNotifications}
                 className={showNotifications ? "active" : "inactive"}
-                title={t("notification")}
+                title={t("notification.title")}
               >
                 {/* Single bell icon SVG */}
                 <svg
@@ -199,7 +200,7 @@ function SystemInformation({
           <div className="notification-history notification-popover">
             <div className="notification-popover-content" ref={popoverRef}>
               <div className="notification-popover-header">
-                <h3>{t("notification")}</h3>
+                <h3>{t("notification.title")}</h3>
                 <button className="close-popover" onClick={toggleNotifications}>
                   ×
                 </button>
@@ -207,7 +208,7 @@ function SystemInformation({
               {loadingNotifications ? (
                 <Loading />
               ) : notifications.length === 0 ? (
-                <div className="notification-no-record">{t("notificationNoRecords")}</div>
+                <div className="notification-no-record">{t("notification.noRecords")}</div>
               ) : (
                 <ul>
                   {notifications.map((note, idx) => (

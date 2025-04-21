@@ -104,6 +104,10 @@
   "fetchTotalError": "Fetch total error",
   "openSourceAt": "Open source at:",
   "webTitle": "LuxPower realtime web viewer",
-  "notification": "Notification",
-  "notificationNoRecords": "No notification records"
+  "notification": {
+    "title": "Notification",
+    "noRecords": "No notification records",
+    "fetchingNotifications": "Fetching notifications...",
+    "failedFetchNotifications": "Failed to fetch notifications"
+  }
 }

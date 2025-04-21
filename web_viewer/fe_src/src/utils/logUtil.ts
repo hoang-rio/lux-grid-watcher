@@ -3,13 +3,25 @@ const getDateTimePrefix = (): string => {
 };
 
 export const log = (...args: unknown[]): void => {
-    console.log(`[${getDateTimePrefix()}]`, ...args);
+    if (typeof args[0] === 'string') {
+        console.log(`[${getDateTimePrefix()}] ` + args[0], ...args.slice(1));
+    } else {
+        console.log(`[${getDateTimePrefix()}]`, ...args);
+    }
 };
 
 export const warn = (...args: unknown[]): void => {
-    console.warn(`[${getDateTimePrefix()}]`, ...args);
+    if (typeof args[0] === 'string') {
+        console.warn(`[${getDateTimePrefix()}] ` + args[0], ...args.slice(1));
+    } else {
+        console.warn(`[${getDateTimePrefix()}]`, ...args);
+    }
 };
 
 export const error = (...args: unknown[]): void => {
-    console.error(`[${getDateTimePrefix()}]`, ...args);
+    if (typeof args[0] === 'string') {
+        console.error(`[${getDateTimePrefix()}] ` + args[0], ...args.slice(1));
+    } else {
+        console.error(`[${getDateTimePrefix()}]`, ...args);
+    }
 };
