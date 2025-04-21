@@ -92,7 +92,7 @@
   "total_discharged": "Total discharged",
   "eps": {
     "standby": "Standby",
-    "backupPower": "Backup power (EPS)"
+    "backupPower": "Backup power(EPS)"
   },
   "PV1": "PV1",
   "PV2": "PV2",
