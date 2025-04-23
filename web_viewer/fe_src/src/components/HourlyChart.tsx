@@ -26,6 +26,11 @@ const HourlyChart = forwardRef(
     const [isDark, setIsDark] = useState(false);
     const isFetchingRef = useRef<boolean>(false);
     const [isAutoUpdate, setIsAutoUpdate] = useState(true);
+    const [startOfDay, setStartOfDay] = useState(() => {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      return now;
+    });
 
     const series = useMemo(() => {
       const pvSeries: SeriesItem[] = [];
@@ -108,10 +113,17 @@ const HourlyChart = forwardRef(
     );
 
     const onVisibilityChange = useCallback(() => {
-      if (!document.hidden && isAutoUpdate) {
-        fetchChart();
+      if (!document.hidden) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (today.getTime() !== startOfDay.getTime()) {
+          setStartOfDay(today);
+        }
+        if (isAutoUpdate) {
+          fetchChart();
+        }
       }
-    }, [isAutoUpdate, fetchChart]);
+    }, [isAutoUpdate, fetchChart, startOfDay]);
 
     useEffect(() => {
       fetchChart();
@@ -138,12 +150,6 @@ const HourlyChart = forwardRef(
       }
       setIsAutoUpdate(!isAutoUpdate);
     }, [isAutoUpdate, fetchChart]);
-
-    const startOfDay = useMemo(() => {
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
-      return now;
-    }, []);
 
     return (
       <div className={`card hourly-chart col ${className || ""}`}>
