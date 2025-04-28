@@ -352,7 +352,6 @@ async def main():
                             "inverter_data": inverter_data,
                             "hourly_chart_item": hourly_chart_item
                         })
-                        fcm_service.warning_notify()
                 logger.info("Wating for %s second before next check",
                             config["SLEEP_TIME"])
                 time.sleep(int(config["SLEEP_TIME"]))
