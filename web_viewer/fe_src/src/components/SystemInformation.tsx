@@ -40,17 +40,40 @@ function SystemInformation({
     return date.toLocaleString();
   }, []);
 
+  // Fetch unread notification count on mount and when page becomes visible
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      logUtil.log(i18n.t("notification.fetchingUnreadCount"));
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-unread-count`);
+      const data = await res.json();
+      setUnreadCount(data.unread_count);
+    } catch (err) {
+      logUtil.error(i18n.t("notification.failedFetchUnreadCount"), err);
+    }
+  }, [i18n]);
+
+  useEffect(() => {
+    fetchUnreadCount();
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchUnreadCount();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [fetchUnreadCount]);
+
   // Extracted fetchNotifications function
   const fetchNotifications = useCallback(async () => {
     setLoadingNotifications(true); // start loading
     try {
-      logUtil.log(i18n.t("notification.fetchingNotifications")); // changed namespace from "log"
+      logUtil.log(i18n.t("notification.fetchingNotifications"));
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-history`);
       const data = await res.json();
       setNotifications(data.notifications);
-      setUnreadCount(data.unread_count);
+      // Don't set unreadCount here, it's handled by fetchUnreadCount
     } catch (err) {
-      logUtil.error(i18n.t("notification.failedFetchNotifications"), err); // changed namespace from "log"
+      logUtil.error(i18n.t("notification.failedFetchNotifications"), err);
     } finally {
       setLoadingNotifications(false); // end loading
     }
@@ -61,17 +84,6 @@ function SystemInformation({
       fetchNotifications();
     }
   }, [showNotifications, fetchNotifications]);
-
-  // Updated effect: auto fetch notifications when page becomes visible regardless of popover state
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        fetchNotifications();
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [fetchNotifications]);
 
   useEffect(() => {
     if (showNotifications) {
@@ -105,11 +117,11 @@ function SystemInformation({
     } else {
       if (notificationOpened.current && unreadCount > 0) {
         fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-mark-read`, { method: 'POST' })
-          .then(() => setUnreadCount(0));
+          .then(() => fetchUnreadCount());
       }
       notificationOpened.current = false;
     }
-  }, [showNotifications, unreadCount]);
+  }, [showNotifications, unreadCount, fetchUnreadCount]);
 
   const handleShowNotifications = useCallback(() => {
     setShowNotifications((prev) => !prev);

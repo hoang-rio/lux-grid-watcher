@@ -65,13 +65,20 @@ async def state(_: web.Request):
     return res
 
 
+def get_db_connection():
+    global db_connection
+    if db_connection is None:
+        db_name = config.get("DB_NAME")
+        if not db_name:
+            raise RuntimeError("DB_NAME not set in config or .env")
+        db_connection = sqlite3.connect(db_name)
+    return db_connection
+
+
 async def hourly_chart(_: web.Request):
     if "DB_NAME" not in config:
         return web.json_response([], headers=VITE_CORS_HEADER)
-    global db_connection
-    if db_connection is None:
-       db_connection = sqlite3.connect(config["DB_NAME"])
-    cursor = db_connection.cursor()
+    cursor = get_db_connection().cursor()
     start_of_day = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     hourly_chart = cursor.execute(
         "SELECT * FROM hourly_chart WHERE datetime >= ?", (start_of_day.strftime("%Y-%m-%d %H:%M:%S"),)).fetchall()
@@ -89,10 +96,8 @@ def dict_factory(cursor, row):
 async def total(_: web.Request):
     if "DB_NAME" not in config:
         return web.json_response({}, headers=VITE_CORS_HEADER)
-    global db_connection
-    if db_connection is None:
-       db_connection = sqlite3.connect(config["DB_NAME"])
-    cursor = db_connection.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor()
     cursor.row_factory = dict_factory
     total = cursor.execute(
         "SELECT SUM(pv) as pv, SUM(battery_charged) as battery_charged, SUM(battery_discharged) as battery_discharged, SUM(grid_import) as grid_import, SUM(grid_export) as grid_export, SUM(consumption) as consumption FROM daily_chart").fetchone()
@@ -103,10 +108,7 @@ async def total(_: web.Request):
 async def daily_chart(_: web.Request):
     if "DB_NAME" not in config:
         return web.json_response([], headers=VITE_CORS_HEADER)
-    global db_connection
-    if db_connection is None:
-       db_connection = sqlite3.connect(config["DB_NAME"])
-    cursor = db_connection.cursor()
+    cursor = get_db_connection().cursor()
     now = datetime.now()
     daily_chart = cursor.execute(
         "SELECT * FROM daily_chart WHERE year = ? AND month = ?",
@@ -133,10 +135,7 @@ async def daily_chart(_: web.Request):
 async def monthly_chart(_: web.Request):
     if "DB_NAME" not in config:
         return web.json_response([], headers=VITE_CORS_HEADER)
-    global db_connection
-    if db_connection is None:
-       db_connection = sqlite3.connect(config["DB_NAME"])
-    cursor = db_connection.cursor()
+    cursor = get_db_connection().cursor()
     now = datetime.now()
     monthly_chart = cursor.execute(
         "SELECT id, id, id, month || '/' || year as month, SUM(pv), SUM(battery_charged), SUM(battery_discharged), SUM(grid_import), SUM(grid_export), SUM(consumption) FROM daily_chart WHERE year = ? GROUP BY month",
@@ -149,10 +148,7 @@ async def monthly_chart(_: web.Request):
 async def yearly_chart(_: web.Request):
     if "DB_NAME" not in config:
         return web.json_response([], headers=VITE_CORS_HEADER)
-    global db_connection
-    if db_connection is None:
-       db_connection = sqlite3.connect(config["DB_NAME"])
-    cursor = db_connection.cursor()
+    cursor = get_db_connection().cursor()
     yearly_chart = cursor.execute(
         "SELECT id, id, id, year || '' as year, SUM(pv), SUM(battery_charged), SUM(battery_discharged), SUM(grid_import), SUM(grid_export), SUM(consumption) FROM daily_chart GROUP BY year"
     ).fetchall()
@@ -161,33 +157,26 @@ async def yearly_chart(_: web.Request):
 
 
 async def notification_history(request):
-    global db_connection
-    if db_connection is None:
-        from os import environ
-        from dotenv import dotenv_values
-        config = {**dotenv_values(".env"), **environ}
-        db_connection = sqlite3.connect(config["DB_NAME"])
-    cursor = db_connection.cursor()
+    cursor = get_db_connection().cursor()
     notifications = cursor.execute(
         "SELECT id, title, body, notified_at, read FROM notification_history ORDER BY notified_at DESC"
     ).fetchall()
     data = [{"id": row[0], "title": row[1], "body": row[2], "notified_at": row[3], "read": row[4]} for row in notifications]
-    # Also return unread count
-    unread_count = cursor.execute("SELECT COUNT(*) FROM notification_history WHERE read = 0").fetchone()[0]
-    return web.json_response({"notifications": data, "unread_count": unread_count}, headers=VITE_CORS_HEADER)
+    return web.json_response({"notifications": data}, headers=VITE_CORS_HEADER)
 
 
 async def mark_notifications_read(request):
-    global db_connection
-    if db_connection is None:
-        from os import environ
-        from dotenv import dotenv_values
-        config = {**dotenv_values(".env"), **environ}
-        db_connection = sqlite3.connect(config["DB_NAME"])
-    cursor = db_connection.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor()
     cursor.execute("UPDATE notification_history SET read = 1 WHERE read = 0")
-    db_connection.commit()
+    conn.commit()
     return web.json_response({"success": True}, headers=VITE_CORS_HEADER)
+
+
+async def notification_unread_count(request):
+    cursor = get_db_connection().cursor()
+    unread_count = cursor.execute("SELECT COUNT(*) FROM notification_history WHERE read = 0").fetchone()[0]
+    return web.json_response({"unread_count": unread_count}, headers=VITE_CORS_HEADER)
 
 
 def create_runner():
@@ -203,6 +192,7 @@ def create_runner():
         web.get("/total", total),
         web.get("/notification-history", notification_history),
         web.post("/notification-mark-read", mark_notifications_read),
+        web.get("/notification-unread-count", notification_unread_count),
         web.static("/", path.join(path.dirname(__file__), "build"))
     ])
     return web.AppRunner(app)

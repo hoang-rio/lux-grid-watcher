@@ -108,6 +108,8 @@
     "title": "Thông báo",
     "noRecords": "Không có thông báo nào",
     "fetchingNotifications": "Đang lấy thông báo...",
-    "failedFetchNotifications": "Lấy thông báo thất bại"
+    "failedFetchNotifications": "Lấy thông báo thất bại",
+    "fetchingUnreadCount": "Đang lấy số lượng thông báo chưa đọc...",
+    "failedFetchUnreadCount": "Lấy số lượng thông báo chưa đọc thất bại"
   }
 }

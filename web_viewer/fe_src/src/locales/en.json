@@ -108,6 +108,8 @@
     "title": "Notification",
     "noRecords": "No notification records",
     "fetchingNotifications": "Fetching notifications...",
-    "failedFetchNotifications": "Failed to fetch notifications"
+    "failedFetchNotifications": "Failed to fetch notifications",
+    "fetchingUnreadCount": "Fetching unread notification count...",
+    "failedFetchUnreadCount": "Failed to fetch unread notification count"
   }
 }
