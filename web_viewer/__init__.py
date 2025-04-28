@@ -93,8 +93,7 @@ async def total(_: web.Request):
     if db_connection is None:
        db_connection = sqlite3.connect(config["DB_NAME"])
     cursor = db_connection.cursor()
-    db_connection.row_factory = dict_factory
-    cursor = db_connection.cursor()
+    cursor.row_factory = dict_factory
     total = cursor.execute(
         "SELECT SUM(pv) as pv, SUM(battery_charged) as battery_charged, SUM(battery_discharged) as battery_discharged, SUM(grid_import) as grid_import, SUM(grid_export) as grid_export, SUM(consumption) as consumption FROM daily_chart").fetchone()
     res = web.json_response(total, headers=VITE_CORS_HEADER)
