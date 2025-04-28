@@ -31,7 +31,7 @@ def dict_factory(cursor, row):
 
 # WebSocket state
 ws_clients: List[web.WebSocketResponse] = []
-last_inverter_data: str = '{}'
+last_inverter_data: str = '{"inverter_data": {}}'
 
 async def http_handler(_: web.Request):
     index_file_path = path.join(path.dirname(__file__), 'build', 'index.html')
