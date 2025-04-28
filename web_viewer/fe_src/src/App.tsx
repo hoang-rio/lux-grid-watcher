@@ -11,7 +11,7 @@ const Summary = lazy(() => import("./components/Summary"));
 const HourlyChart = lazy(() => import("./components/HourlyChart"));
 const EnergyChart = lazy(() => import("./components/EnergyChart"));
 
-const MAX_RECONNECT_COUNT = 3;
+const MAX_RECONNECT_COUNT = 5;
 
 function App() {
   const { t, i18n } = useTranslation();
@@ -40,6 +40,7 @@ function App() {
     socketRef.current = socket;
 
     socket.addEventListener("open", () => {
+      selfCloseRef.current = false;
       reconnectCountRef.current = 0;
       logUtil.log(i18n.t("socket.connected"));
       if (deviceTimeRef.current) {
