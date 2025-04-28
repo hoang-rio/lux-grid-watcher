@@ -107,10 +107,10 @@ function App() {
         setIsLoading(false);
       }
     } catch (err) {
-      logUtil.error(t("getStateError"), err);
+      logUtil.error(i18n.t("getStateError"), err);
     }
     isFetchingRef.current = false;
-  }, []);
+  }, [i18n]);
 
   useEffect(() => {
     fetchState();
