@@ -51,6 +51,9 @@ function App() {
 
     socket.addEventListener("message", (event) => {
       const jsonData = JSON.parse(event.data);
+      if (isLoading) {
+        setIsLoading(false);
+      }
       if (jsonData.event === "new_notification") {
         setNewNotification(jsonData.data);
       } else {
@@ -83,7 +86,7 @@ function App() {
     socket.addEventListener("error", (event) => {
       logUtil.error(i18n.t("socket.error"), event);
     });
-  }, [i18n]);
+  }, [i18n, isLoading]);
 
   const closeSocket = useCallback(() => {
     logUtil.log(i18n.t("socket.closing"));
@@ -99,10 +102,12 @@ function App() {
       isFetchingRef.current = true;
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/state`);
       const json = await res.json();
-      setInverterData(json);
-      setIsLoading(false);
+      if (Object.keys(json).length !== 0) {
+        setInverterData(json);
+        setIsLoading(false);
+      }
     } catch (err) {
-      logUtil.error("API get state error", err);
+      logUtil.error(t("getStateError"), err);
     }
     isFetchingRef.current = false;
   }, []);

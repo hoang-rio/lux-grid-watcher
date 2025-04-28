@@ -111,5 +111,6 @@
     "failedFetchNotifications": "Failed to fetch notifications",
     "fetchingUnreadCount": "Fetching unread notification count...",
     "failedFetchUnreadCount": "Failed to fetch unread notification count"
-  }
+  },
+  "getStateError": "API get state error"
 }
