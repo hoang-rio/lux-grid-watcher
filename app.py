@@ -321,10 +321,10 @@ async def main():
         run_web_view = config["RUN_WEB_VIEWER"] == "True"
         if config["WORKING_MODE"] == DONGLE_MODE:
             if run_web_view:
-                if "DB_NAME" in config:
-                    from migration import run_migration
-                    with sqlite3.connect(config["DB_NAME"]) as db_connection:
-                        run_migration(db_connection, logger)
+                db_connection = sqlite3.connect(
+                    config["DB_NAME"]) if "DB_NAME" in config else None
+                from migration import run_migration
+                run_migration(db_connection, logger)
                 from web_viewer import WebViewer
                 webViewer = WebViewer(logger)
                 webViewer.start()
@@ -339,18 +339,17 @@ async def main():
                 inverter_data = dongle.get_dongle_input()
                 if inverter_data is not None:
                     handle_grid_status(inverter_data, fcm_service)
-                    if run_web_view and "DB_NAME" in config:
-                        with sqlite3.connect(config["DB_NAME"]) as db_connection:
-                            hourly_chart_item = insert_hourly_chart(db_connection, inverter_data)
-                            await ws_client.send_json({
-                                "inverter_data": inverter_data,
-                                "hourly_chart_item": hourly_chart_item
-                            })
-                            insert_daly_chart(db_connection, inverter_data)
-                            if ABNORMAL_SKIP_CHECK_HOURS > -1:  # Skip check if ABNORMAL_SKIP_CHECK_HOURS is -1
-                                dectect_abnormal_usage(db_connection, fcm_service)
-                            else:
-                                logger.info("Skip abnormal usage check")
+                    if run_web_view:
+                        hourly_chart_item = insert_hourly_chart(db_connection, inverter_data)
+                        insert_daly_chart(db_connection, inverter_data)
+                        if ABNORMAL_SKIP_CHECK_HOURS> -1: # Skip check if ABNORMAL_SKIP_CHECK_HOURS is -1
+                            dectect_abnormal_usage(db_connection, fcm_service)
+                        else:
+                            logger.info("Skip abnormal usage check")
+                        await ws_client.send_json({
+                            "inverter_data": inverter_data,
+                            "hourly_chart_item": hourly_chart_item
+                        })
                 logger.info("Wating for %s second before next check",
                             config["SLEEP_TIME"])
                 time.sleep(int(config["SLEEP_TIME"]))
