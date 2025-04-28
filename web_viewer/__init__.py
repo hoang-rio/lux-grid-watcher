@@ -69,7 +69,6 @@ def get_db_connection():
     if not db_name:
         raise RuntimeError("DB_NAME not set in config or .env")
     conn = sqlite3.connect(db_name, check_same_thread=False)
-    conn.row_factory = dict_factory
     return conn
 
 
@@ -96,6 +95,7 @@ async def total(_: web.Request):
     if "DB_NAME" not in config:
         return web.json_response({}, headers=VITE_CORS_HEADER)
     with get_db_connection() as conn:
+        conn.row_factory = dict_factory
         cursor = conn.cursor()
         total = cursor.execute(
             "SELECT SUM(pv) as pv, SUM(battery_charged) as battery_charged, SUM(battery_discharged) as battery_discharged, SUM(grid_import) as grid_import, SUM(grid_export) as grid_export, SUM(consumption) as consumption FROM daily_chart").fetchone()
