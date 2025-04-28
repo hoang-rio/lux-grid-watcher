@@ -41,6 +41,31 @@
     background-color: #f0f0f0; /* Light mode hover background */
 }
 
+.notification-unread-badge {
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    background: #ee3939;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 10px;
+    min-width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    z-index: 2;
+    font-weight: bold;
+    box-shadow: 0 0 2px #333;
+    line-height: 1;
+    aspect-ratio: 1 / 1;
+}
+
+.notification-unread {
+    background: #ffeaea;
+}
+
 .system-graph {
     position: relative;
 }
@@ -236,6 +261,10 @@
 
 .notification-history li:hover {
     background-color: #f1f1f1; /* hover effect */
+}
+
+.notification-history li.notification-unread:hover {
+    background-color: #ffd6d6;
 }
 
 .notification-popover {
@@ -563,6 +592,9 @@
     .notification-history li:hover {
         background-color: #444;
     }
+    .notification-history li.notification-unread:hover {
+        background-color: #a13a3a;
+    }
     .notification-button button.active {
         background-color: #555; /* adjusted active background color */
     }
@@ -571,5 +603,9 @@
     }
     .notification-button button:not(.active):hover {
         background-color: #666; /* Updated Dark mode hover background */
+    }
+    .notification-unread {
+        background: #7a2323;
+        color: #fff;
     }
 }

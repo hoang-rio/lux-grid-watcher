@@ -29,16 +29,16 @@ function SystemInformation({
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<INotificationData[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false); // new state
+  const [unreadCount, setUnreadCount] = useState(0);
   const popoverRef = useRef<HTMLDivElement>(null);
   const notificationButtonRef = useRef<HTMLDivElement>(null);
+  const notificationOpened = useRef(false); // Track if notification popover was opened
 
   // Added helper function to format datetime
   const formatDateTime = useCallback((dateInput: string | number) => {
     const date = new Date(dateInput);
     return date.toLocaleString();
   }, []);
-
-  const toggleNotifications = useCallback(() => setShowNotifications(prev => !prev), []);
 
   // Extracted fetchNotifications function
   const fetchNotifications = useCallback(async () => {
@@ -47,7 +47,8 @@ function SystemInformation({
       logUtil.log(i18n.t("notification.fetchingNotifications")); // changed namespace from "log"
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-history`);
       const data = await res.json();
-      setNotifications(data);
+      setNotifications(data.notifications);
+      setUnreadCount(data.unread_count);
     } catch (err) {
       logUtil.error(i18n.t("notification.failedFetchNotifications"), err); // changed namespace from "log"
     } finally {
@@ -89,13 +90,30 @@ function SystemInformation({
     }
   }, [showNotifications]);
 
-  // New effect: when a new notification is received, show the popover and prepend to notifications list.
+  // Remove auto-open popover on new notification, just update unread count
   useEffect(() => {
     if (newNotification) {
-      setShowNotifications(true);
+      setUnreadCount((prev) => prev + 1);
       setNotifications((prev) => [newNotification, ...prev]);
     }
   }, [newNotification]);
+
+  // Mark notifications as read when popover is closed after being opened
+  useEffect(() => {
+    if (showNotifications) {
+      notificationOpened.current = true;
+    } else {
+      if (notificationOpened.current && unreadCount > 0) {
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-mark-read`, { method: 'POST' })
+          .then(() => setUnreadCount(0));
+      }
+      notificationOpened.current = false;
+    }
+  }, [showNotifications, unreadCount]);
+
+  const handleShowNotifications = useCallback(() => {
+    setShowNotifications((prev) => !prev);
+  }, []);
 
   return (
     <>
@@ -106,7 +124,7 @@ function SystemInformation({
             <span>{inverterData.deviceTime}</span>
             <div className="notification-button" ref={notificationButtonRef}>
               <button
-                onClick={toggleNotifications}
+                onClick={handleShowNotifications}
                 className={showNotifications ? "active" : "inactive"}
                 title={t("notification.title")}
               >
@@ -126,6 +144,9 @@ function SystemInformation({
                   <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
                   <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                 </svg>
+                {unreadCount > 0 && (
+                  <span className="notification-unread-badge">{unreadCount}</span>
+                )}
               </button>
             </div>
           </div>
@@ -201,7 +222,7 @@ function SystemInformation({
             <div className="notification-popover-content" ref={popoverRef}>
               <div className="notification-popover-header">
                 <h3>{t("notification.title")}</h3>
-                <button className="close-popover" onClick={toggleNotifications}>
+                <button className="close-popover" onClick={handleShowNotifications}>
                   ×
                 </button>
               </div>
@@ -212,7 +233,7 @@ function SystemInformation({
               ) : (
                 <ul>
                   {notifications.map((note, idx) => (
-                    <li key={idx}>
+                    <li key={idx} className={note.read === 0 ? "notification-unread" : ""}>
                       <div>
                         <strong>{note.title}</strong>
                       </div>

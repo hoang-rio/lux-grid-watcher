@@ -177,7 +177,8 @@ class FCM():
                         "data": {
                             "title": title,
                             "body": body,
-                            "notified_at": now_str
+                            "notified_at": now_str,
+                            "read": 0
                         }
                     }))
                 Thread(target=send_ws).start()

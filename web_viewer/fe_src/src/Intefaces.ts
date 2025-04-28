@@ -78,7 +78,9 @@ export interface IFetchChart {
 }
 
 export interface INotificationData {
+  id: number;
   title: string;
   body: string;
   notified_at: string | number;
+  read: number;
 }
