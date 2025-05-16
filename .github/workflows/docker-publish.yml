@@ -52,12 +52,14 @@ jobs:
         id: previoustag
         run: |
           PREV_TAG=$(git tag --sort=-creatordate | grep -v "${{ github.ref_name }}" | head -n 1)
+          echo "Previous tag: $PREV_TAG"
           echo "previous_tag=$PREV_TAG" >> $GITHUB_OUTPUT
 
       - name: Generate commit changelog
         id: changelog
         run: |
             PREV_TAG="${{ steps.previoustag.outputs.previous_tag }}"
+            echo "Previous tag: $PREV_TAG"
             CURR_TAG="${{ github.ref_name }}"
             if [ -z "$PREV_TAG" ]; then
                 git log --pretty=format:'- `%h`: %s' $CURR_TAG | head -n 10 > commits.txt
