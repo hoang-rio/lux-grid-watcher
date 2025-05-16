@@ -51,14 +51,14 @@ function App() {
 
     socket.addEventListener("message", (event) => {
       const jsonData = JSON.parse(event.data);
-      if (isLoading) {
-        setIsLoading(false);
-      }
       if (jsonData.event === "new_notification") {
         setNewNotification(jsonData.data);
       } else {
         setInverterData(jsonData.inverter_data);
         hourlyChartfRef.current?.updateItem(jsonData.hourly_chart_item);
+        if (isLoading) {
+          setIsLoading(false);
+        }
       }
     });
 

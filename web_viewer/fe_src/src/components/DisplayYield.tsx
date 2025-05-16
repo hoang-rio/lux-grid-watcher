@@ -17,7 +17,7 @@ function DisplayYield({ total, ePVDay }: IProps) {
         <div className="description">{t('yield.today')}</div>
         {total && (
           <>
-            <GeneralValue value={total.pv.toFixed(1)} unit=" kWh" />
+            <GeneralValue value={total?.pv?.toFixed(1) ?? 0} unit=" kWh" />
             <div className="description">{t('yield.total')}</div>
           </>
         )}

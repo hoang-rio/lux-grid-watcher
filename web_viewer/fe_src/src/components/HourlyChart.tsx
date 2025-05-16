@@ -98,7 +98,7 @@ const HourlyChart = forwardRef(
             return;
           }
           const lastItem = chartData[chartData.length - 1];
-          if (JSON.stringify(lastItem) === JSON.stringify(hourlyItem)) {
+          if (!lastItem || JSON.stringify(lastItem) === JSON.stringify(hourlyItem)) {
             return;
           }
           const newChartData = [...chartData];
