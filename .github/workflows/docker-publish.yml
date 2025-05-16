@@ -68,7 +68,7 @@ jobs:
             fi
             {
                 echo 'changelog<<EOF'
-                cat commits.txt
+                echo "$(cat commits.txt)"
                 echo EOF
             } >> $GITHUB_OUTPUT
 
