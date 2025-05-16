@@ -62,9 +62,9 @@ jobs:
             echo "Previous tag: $PREV_TAG"
             CURR_TAG="${{ github.ref_name }}"
             if [ -z "$PREV_TAG" ]; then
-                git log --pretty=format:'* `%h`: %s' $CURR_TAG | head -n 10 > commits.txt
+                git log --pretty=format:'* %h: %s' $CURR_TAG | head -n 10 > commits.txt
             else
-                git log --pretty=format:'* `%h`: %s' $PREV_TAG..$CURR_TAG > commits.txt
+                git log --pretty=format:'* %h: %s' $PREV_TAG..$CURR_TAG | head -n 10 > commits.txt
             fi
             {
                 echo 'changelog<<EOF'
