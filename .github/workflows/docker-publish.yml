@@ -59,16 +59,18 @@ jobs:
       - name: Generate commit changelog
         id: changelog
         run: |
-          PREV_TAG="${{ steps.previoustag.outputs.previous_tag }}"
-          CURR_TAG="${{ github.ref_name }}"
-          if [ -z "$PREV_TAG" ]; then
-            git log --pretty=format:'- `%h`: %s' $CURR_TAG > commits.txt
-          else
-            git log --pretty=format:'- `%h`: %s' $PREV_TAG..$CURR_TAG > commits.txt
-          fi
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          cat commits.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+            PREV_TAG="${{ steps.previoustag.outputs.previous_tag }}"
+            CURR_TAG="${{ github.ref_name }}"
+            if [ -z "$PREV_TAG" ]; then
+                git log --pretty=format:'- `%h`: %s' $CURR_TAG > commits.txt
+            else
+                git log --pretty=format:'- `%h`: %s' $PREV_TAG..$CURR_TAG > commits.txt
+            fi
+            {
+                echo "changelog<<EOF"
+                cat commits.txt
+                echo "EOF"
+            } >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
