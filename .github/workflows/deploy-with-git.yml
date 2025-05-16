@@ -1,4 +1,4 @@
-name: "Deploy with git"
+name: Deploy with git via SSH
 
 on:
   push:
@@ -13,7 +13,7 @@ on:
         default: true
 
 concurrency:
-  group: ${{ github.event.ref }}
+  group: ssh_deploy_${{ github.ref_name }}
   cancel-in-progress: true
 
 env:
@@ -22,7 +22,7 @@ env:
   BUILD_FE: ${{ inputs.force_build_fe || false }}
 
 jobs:
-  ssh_deploy:
+  ssh-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
