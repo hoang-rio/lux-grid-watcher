@@ -53,7 +53,7 @@ jobs:
       - name: Get previous tag
         id: previoustag
         run: |
-          PREV_TAG=$(git tag --sort=-creatordate | grep -v "${GITHUB_REF_NAME}" | head -n 1)
+          PREV_TAG=$(git tag --sort=-creatordate | grep -v "${{ github.ref_name }}" | head -n 1)
           echo "previous_tag=$PREV_TAG" >> $GITHUB_OUTPUT
 
       - name: Generate commit changelog
