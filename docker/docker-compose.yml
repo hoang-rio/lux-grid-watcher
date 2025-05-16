@@ -1,0 +1,13 @@
+services:
+  lux_grid_watcher:
+    image: ghcr.io/hoangrio/lux-grid-watcher:latest
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile
+    container_name: lux_grid_watcher
+    restart: unless-stopped
+    volumes:
+      - ../.env:/app/.env
+      - ../web.db:/app/web.db
+    ports:
+      - 8088:88
