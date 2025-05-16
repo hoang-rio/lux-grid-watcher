@@ -67,9 +67,9 @@ jobs:
                 git log --pretty=format:'- `%h`: %s' $PREV_TAG..$CURR_TAG > commits.txt
             fi
             {
-                echo "changelog<<EOF"
+                echo 'changelog<<EOF'
                 cat commits.txt
-                echo "EOF"
+                echo EOF
             } >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
