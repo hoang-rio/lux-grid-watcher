@@ -131,20 +131,23 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
 
 dectect_off_grid_warning_skip_check_count = 0
 def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: int, fcm_service: FCM):
+    global dectect_off_grid_warning_skip_check_count
     # Nofify off grid warning if eps power is greater than OFF_GRID_WARNING_POWER and eps power is less than 2 times of pv power
     if not is_grid_connected and eps_power >= OFF_GRID_WARNING_POWER and pv_power < eps_power / 2:
-        global dectect_off_grid_warning_skip_check_count
         if dectect_off_grid_warning_skip_check_count > 0:
             dectect_off_grid_warning_skip_check_count = dectect_off_grid_warning_skip_check_count - 1
             return
         logger.warning(
-            "_________Off grid warning detected with eps power: %s_________",
+            "_________Off grid warning detected with pv power: (%sW) and eps power: (%sW)_________",
+            pv_power,
             eps_power
         )
         fcm_service.offgrid_warning_notify(OFF_GRID_WARNING_POWER)
         play_audio("warning_power_off_grid.mp3", 5)
         # Skip next OFF_GRID_WARNING_SKIP_CHECK_COUNT time when detect off grid warning
         dectect_off_grid_warning_skip_check_count = OFF_GRID_WARNING_SKIP_CHECK_COUNT
+    else:
+        dectect_off_grid_warning_skip_check_count = 0
 
 def handle_grid_status(json_data: dict, fcm_service: FCM):
     # is_grid_connected = True
