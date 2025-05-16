@@ -39,4 +39,43 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ghcr.io/hoangrio/lux-grid-watcher:${{ github.ref_name }}
+          tags: ghcr.io/hoang-rio/lux-grid-watcher:${{ github.ref_name }}
+
+      - name: Get previous tag
+        id: previoustag
+        run: |
+          PREV_TAG=$(git tag --sort=-creatordate | grep -v "${GITHUB_REF_NAME}" | head -n 1)
+          echo "previous_tag=$PREV_TAG" >> $GITHUB_OUTPUT
+
+      - name: Generate commit changelog
+        id: changelog
+        run: |
+          PREV_TAG="${{ steps.previoustag.outputs.previous_tag }}"
+          CURR_TAG="${{ github.ref_name }}"
+          if [ -z "$PREV_TAG" ]; then
+            git log --pretty=format:'- `%h`: %s' $CURR_TAG > commits.txt
+          else
+            git log --pretty=format:'- `%h`: %s' $PREV_TAG..$CURR_TAG > commits.txt
+          fi
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          cat commits.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## Docker Image
+            [View on GitHub Container Registry](https://github.com/hoang-rio/lux-grid-watcher/pkgs/container/lux-grid-watcher)
+            
+            Pull with:
+            ```sh
+            docker pull ghcr.io/hoang-rio/lux-grid-watcher:${{ github.ref_name }}
+            ```
+
+            ## Full changelog
+            ${{ steps.changelog.outputs.changelog }}
+
+            [Compare changes with previous release](https://github.com/hoang-rio/lux-grid-watcher/compare/${{ steps.previoustag.outputs.previous_tag }}...${{ github.ref_name }})

@@ -1,6 +1,6 @@
 services:
   lux_grid_watcher:
-    image: ghcr.io/hoangrio/lux-grid-watcher:latest
+    image: ghcr.io/hoang-rio/lux-grid-watcher:latest
     build:
       context: ..
       dockerfile: ./docker/Dockerfile
