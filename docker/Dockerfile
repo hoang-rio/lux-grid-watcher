@@ -22,6 +22,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Expose the port the app runs on
 EXPOSE 88
 
-VOLUME [ "/app/.env", "/app/web.db" ]
+VOLUME [ "/app/.env", "/app/db/web.db" ]
 
 CMD [ "python", "app.py" ]

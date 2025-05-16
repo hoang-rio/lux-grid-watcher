@@ -7,7 +7,7 @@ services:
     container_name: lux_grid_watcher
     restart: unless-stopped
     volumes:
-      - ../.env:/app/.env
-      - ../web.db:/app/web.db
+      - ../.env:/app/.env:ro
+      - ../db:/app/db:rw
     ports:
       - 88:88
