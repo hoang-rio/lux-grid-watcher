@@ -1,5 +1,9 @@
+# Lux Grid Watcher
+
+[Tiếng Việt](README-vi.md) | [English](README.md)
+
 ## About
-A python script allow watch Luxpower SNA inverter in realtime. Tested in Luxpower SNA 6k
+A python script allow watch Luxpower SNA inverter in realtime. Tested in Luxpower SNA 6K
 
 ## Configuration
 * Copy `.env.example` to `.env`
@@ -12,6 +16,11 @@ A python script allow watch Luxpower SNA inverter in realtime. Tested in Luxpowe
 * Active python venv `source venv/Scripts/activate` on git-bash Windows or `source venv/bin/active` on Unix/Linux
 * Install dependencies with `pip install -r requirements.txt` or `./pip-binary-install.sh`
 * Run application with `python app.py`
+> If you can't install and run you can use docker method bellow
+
+## Locking for docker? Here is step
+* cd to `docker` folder
+* run command `docker compose up -d` to run docker container
 
 ## Notification app
 You can implement notification app for Android/iOS by your self and push Firebase Device ID to devices.json file to get notification when grid connect state change.
@@ -19,8 +28,8 @@ You can implement notification app for Android/iOS by your self and push Firebas
 I also developed an app for Android/iOS. If you need it feel free to contact me
 
 ## Webviewer
-* Build FE with command `cd web_viewer/fe_src && yarn install && yarn build`
-* Now you can see LuxPower realtime webviewer in http://locahost:88 (This url can be change by modify variable in `.env` file) like image bellow.
+* Build FE with command `cd web_viewer/fe_src && yarn install && yarn build` (Ignore this step if you runing via docker)
+* Now you can see LuxPower realtime webviewer in http://locahost:88 (This url can be change by modify `PORT` variable in `.env` file) like image bellow.
 
 <center>
 <picture style="max-width: 800px">

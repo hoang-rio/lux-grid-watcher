@@ -1,6 +1,6 @@
 services:
   lux_grid_watcher:
-    image: ghcr.io/hoang-rio/lux-grid-watcher:latest
+    image: ghcr.io/hoang-rio/lux-grid-watcher:v1.1.6
     build:
       context: ..
       dockerfile: ./docker/Dockerfile
@@ -10,4 +10,4 @@ services:
       - ../.env:/app/.env
       - ../web.db:/app/web.db
     ports:
-      - 8088:88
+      - 88:88
