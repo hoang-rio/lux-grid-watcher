@@ -14,11 +14,13 @@ import asyncio
 
 DONGLE_MODE = "DONGLE"
 
+# SLEEP_TIME should be minimum audio duration + 2 seconds
+# Example: 4 seconds for has-grid.mp3 + 2 seconds = 6 seconds to sleep
 AUDIO_SLEEP_MAP = {
     "has-grid.mp3": 6,
     "lost-grid.mp3": 9,
     "warning.mp3": 7,
-    "warning_power_off_grid.mp3": 8
+    "warning_power_off_grid.mp3": 6
 }
 
 config: dict = {
