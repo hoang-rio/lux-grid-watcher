@@ -3,7 +3,7 @@
 [Tiếng Việt](README-vi.md) | [English](README.md)
 
 ## About
-A python script allow watch Luxpower SNA inverter in realtime. Tested in Luxpower SNA 6K
+A python script allow watch Luxpower SNA inverter in realtime. Tested in Luxpower SNA 6K with old wifi dongle (BAxxxxxx wifi name)
 
 ## Configuration
 * Copy `.env.example` to `.env`

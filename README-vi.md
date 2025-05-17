@@ -3,7 +3,7 @@
 [Tiếng Việt](README-vi.md) | [English](README.md)
 
 ## Giới thiệu
-Một script Python cho phép giám sát biến tần Luxpower SNA theo thời gian thực. Đã thử nghiệm trên Luxpower SNA 6K.
+Một script Python cho phép giám sát biến tần Luxpower SNA theo thời gian thực. Đã thử nghiệm trên Luxpower SNA 6K với kết nối wifi loại cũ (tên wifi dạng BAxxxxxx)
 
 ## Cấu hình
 * Sao chép `.env.example` thành `.env`
