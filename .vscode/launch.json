@@ -25,6 +25,13 @@
       "autoReload": {
         "enabled": true
       }
+    },
+    {
+      "name": "Vite.js: debug with Firefox",
+      "type": "firefox",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/web_viewer/fe_src",
     }
   ]
 }
