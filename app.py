@@ -247,15 +247,22 @@ def insert_hourly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
                 hourly_chart_item["grid"], hourly_chart_item["consumption"], hourly_chart_item["soc"]),
         )
     else:
+        sleep_count_since_zero = max(int(device_time.second / sleep_time), 1)
+        total_count = sleep_count_since_zero + 1
+        pv_average = round((hourly_chart_item["pv"] * sleep_count_since_zero + exist_item["pv"]) / total_count)
+        battery_average = round((hourly_chart_item["battery"] * sleep_count_since_zero + exist_item["battery"]) / total_count)
+        grid_average = round((hourly_chart_item["grid"] * sleep_count_since_zero + exist_item["grid"]) / total_count)
+        consumption_average = round((hourly_chart_item["consumption"] * sleep_count_since_zero + exist_item["consumption"]) / total_count)
+        soc_average = round((hourly_chart_item["soc"] * sleep_count_since_zero + exist_item["soc"]) / total_count)
         cursor.execute(
             "UPDATE hourly_chart SET datetime = ?, pv = ?, battery = ?, grid = ?, consumption = ?, soc = ? WHERE id = ?",
             (
                 hourly_chart_item["datetime"],
-                round((hourly_chart_item["pv"] + exist_item["pv"]) / 2),
-                round((hourly_chart_item["battery"] + exist_item["battery"]) / 2),
-                round((hourly_chart_item["grid"] + exist_item["grid"]) / 2),
-                round((hourly_chart_item["consumption"] + exist_item["consumption"]) / 2),
-                round((hourly_chart_item["soc"] + exist_item["soc"]) / 2),
+                pv_average,
+                battery_average,
+                grid_average,
+                consumption_average,
+                soc_average,
                 item_id)
         )
     cursor.close()
