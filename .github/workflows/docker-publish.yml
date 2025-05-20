@@ -4,10 +4,17 @@ on:
   push:
     tags:
       - '*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release'
+        required: true
+        default: 'v1.0.0'
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  TAG_TO_RELEASE: ${{ github.event.inputs.tag || github.ref_name }}
 
 concurrency:
   group: build_${{ github.ref_name }}
@@ -46,12 +53,12 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_TO_RELEASE }},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
       - name: Get previous tag
         id: previoustag
         run: |
-          PREV_TAG=$(git tag --sort=-creatordate | grep -v "${{ github.ref_name }}" | head -n 1)
+          PREV_TAG=$(git tag --sort=-creatordate | grep -v "${{ env.TAG_TO_RELEASE }}" | head -n 1)
           echo "Previous tag: $PREV_TAG"
           echo "previous_tag=$PREV_TAG" >> $GITHUB_OUTPUT
 
@@ -60,7 +67,7 @@ jobs:
         run: |
             PREV_TAG="${{ steps.previoustag.outputs.previous_tag }}"
             echo "Previous tag: $PREV_TAG"
-            CURR_TAG="${{ github.ref_name }}"
+            CURR_TAG="${{ env.TAG_TO_RELEASE }}"
             if [ -z "$PREV_TAG" ]; then
                 git log --pretty=format:'* %h: %s' $CURR_TAG | head -n 10 > commits.txt
             else
@@ -75,18 +82,18 @@ jobs:
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
+          tag: ${{ env.TAG_TO_RELEASE }}
+          name: Release ${{ env.TAG_TO_RELEASE }}
           body: |
             ## Docker Image
             [View on GitHub Container Registry](https://github.com/hoang-rio/lux-grid-watcher/pkgs/container/lux-grid-watcher)
             
             Pull with:
             ```sh
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_TO_RELEASE }}
             ```
 
             ### What's Changed
             ${{ steps.changelog.outputs.changelog }}
 
-            **Full changelog**: https://github.com/hoang-rio/lux-grid-watcher/compare/${{ steps.previoustag.outputs.previous_tag }}...${{ github.ref_name }}
+            **Full changelog**: https://github.com/hoang-rio/lux-grid-watcher/compare/${{ steps.previoustag.outputs.previous_tag }}...${{ env.TAG_TO_RELEASE }}
