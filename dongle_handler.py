@@ -69,7 +69,7 @@ class Dongle():
             self.__client.send(bytes(msg))
             data = self.__client.recv(1024)
             self.__logger.debug("Server: %s", list(data))
-            if data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE and Dongle.toInt(list(data[32:34])) == 0 and len(data) >= 97:
+            if data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE and Dongle.toInt(list(data[32:34])) == 0 and len(data) == 117:
                 parsed_data = Dongle.readInput1(list(data))
                 self.__logger.debug("Parsed data: %s", parsed_data)
                 parsed_data['deviceTime'] = datetime.now().strftime(
