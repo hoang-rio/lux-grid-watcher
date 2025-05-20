@@ -21,6 +21,7 @@ STATUS_MAP: dict = {
     0x88: "pv powering EPS(grid off), surplus stored in battery",
 }
 
+TCP_FUNCTION_TRANSLATE = 194
 
 class Dongle():
     __client: socket | None = None
@@ -44,21 +45,20 @@ class Dongle():
     def get_dongle_input(self) -> Optional[dict]:
         try:
             self.__logger.info("Start get dongle input")
-            # TCP Header to dataTranslated readInput1
-            msg = [161, 26, 1, 0, 32, 0, 1, 194]
+            # TCP Header to dataTranslated readInput1 with TCP_PROTOCOL_V1
+            TCP_PROTOCOL_V1 = 1
+            msg = [161, 26, TCP_PROTOCOL_V1, 0, 32, 0, 1, 194]
             dongle_serial_arr = bytearray(
                 str(self.__config["DONGLE_SERIAL"]).encode()
             )
             # Dongle SERIAL
             msg.extend(dongle_serial_arr)
-            # msg.extend([66, 65, 51, 50, 56, 48, 49, 49, 54, 52])
             msg.extend([18, 0, 0, 4])
             # INVERTER SERIAL
             invert_serial_arr = bytearray(
                 str(self.__config["INVERT_SERIAL"]).encode()
             )
             msg.extend(invert_serial_arr)
-            # msg.extend([51, 53, 48, 51, 54, 56, 48, 49, 54, 49])
             msg.extend([0, 0, 40, 0, 226, 149])
             if self.__client is None:
                 self.__logger.info(
@@ -69,7 +69,7 @@ class Dongle():
             self.__client.send(bytes(msg))
             data = self.__client.recv(1024)
             self.__logger.debug("Server: %s", list(data))
-            if data[0] != 0 and Dongle.toInt(list(data[32:34])) == 0 and len(data) >= 97:
+            if data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE and Dongle.toInt(list(data[32:34])) == 0 and len(data) >= 97:
                 parsed_data = Dongle.readInput1(list(data))
                 self.__logger.debug("Parsed data: %s", parsed_data)
                 parsed_data['deviceTime'] = datetime.now().strftime(
@@ -77,7 +77,7 @@ class Dongle():
                 )
                 self.__logger.info("Finish get dongle input")
                 if parsed_data["v_bat"] < 40 or parsed_data["v_bat"] > 58:
-                    self.__logger.warn(
+                    self.__logger.warning(
                         "v_bat must between 40 and must lower than 58. Ignore this result.\nFull result: %s",
                         parsed_data,
                     )
