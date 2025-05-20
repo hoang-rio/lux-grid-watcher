@@ -30,6 +30,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ env.TAG_TO_RELEASE }}
           submodules: recursive
           fetch-depth: 0
 
