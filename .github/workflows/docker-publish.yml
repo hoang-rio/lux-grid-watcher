@@ -87,7 +87,7 @@ jobs:
           name: Release ${{ env.TAG_TO_RELEASE }}
           body: |
             ## Docker Image
-            [View on GitHub Container Registry](https://github.com/hoang-rio/lux-grid-watcher/pkgs/container/lux-grid-watcher)
+            [View on GitHub Container Registry](https://github.com/${{github.repository}}/pkgs/container/lux-grid-watcher)
             
             Pull with:
             ```sh
@@ -97,4 +97,4 @@ jobs:
             ### What's Changed
             ${{ steps.changelog.outputs.changelog }}
 
-            **Full changelog**: https://github.com/hoang-rio/lux-grid-watcher/compare/${{ steps.previoustag.outputs.previous_tag }}...${{ env.TAG_TO_RELEASE }}
+            **Full changelog**: https://github.com/${{github.repository}}/compare/${{ steps.previoustag.outputs.previous_tag }}...${{ env.TAG_TO_RELEASE }}
