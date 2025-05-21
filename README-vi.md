@@ -2,6 +2,8 @@
 
 [Tiếng Việt](README-vi.md) | [English](README.md)
 
+[![Commit activity](https://img.shields.io/github/commit-activity/m/hoang-rio/lux-grid-watcher)](https://github.com/hoang-rio/lux-grid-watcher/commits/main/) [![Docker publish action status](https://img.shields.io/github/actions/workflow/status/hoang-rio/lux-grid-watcher/docker-publish.yml?label=docker%20publish)](https://github.com/hoang-rio/lux-grid-watcher/actions/workflows/docker-publish.yml) [![Docker Image Latest](https://ghcr-badge.egpl.dev/hoang-rio/lux-grid-watcher/latest_tag?trim=major&label=latest%20image%20tag)](https://github.com/hoang-rio/lux-grid-watcher/pkgs/container/lux-grid-watcher) [![Docker Image Latest](https://ghcr-badge.egpl.dev/hoang-rio/lux-grid-watcher/tags?trim=major)](https://github.com/hoang-rio/lux-grid-watcher/pkgs/container/lux-grid-watcher) [![Docker Image Size](https://ghcr-badge.egpl.dev/hoang-rio/lux-grid-watcher/size)](https://github.com/hoang-rio/lux-grid-watcher/pkgs/container/lux-grid-watcher)
+
 ## Giới thiệu
 Một script Python cho phép giám sát biến tần Luxpower SNA theo thời gian thực. Đã thử nghiệm trên Luxpower SNA 6K với kết nối wifi loại cũ (tên wifi dạng BAxxxxxx)
 
