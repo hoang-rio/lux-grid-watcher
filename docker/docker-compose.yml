@@ -5,6 +5,8 @@ services:
       context: ..
       dockerfile: ./docker/Dockerfile
     container_name: lux_grid_watcher
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
     restart: unless-stopped
     volumes:
       - ../.env:/app/.env:ro
