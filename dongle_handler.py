@@ -69,8 +69,8 @@ class Dongle():
             self.__client.send(bytes(msg))
             data = self.__client.recv(1024)
             self.__logger.debug("Server: %s", list(data))
-            if data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE and Dongle.toInt(list(data[32:34])) == 0 and len(data) == 117:
-                parsed_data = Dongle.readInput1(list(data))
+            if data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE and Dongle.to_int(list(data[32:34])) == 0 and len(data) == 117:
+                parsed_data = Dongle.read_input1(list(data))
                 self.__logger.debug("Parsed data: %s", parsed_data)
                 parsed_data['deviceTime'] = datetime.now().strftime(
                     "%Y-%m-%d %H:%M:%S"
@@ -95,14 +95,14 @@ class Dongle():
             return None
 
     @staticmethod
-    def toInt(ints: list[int]):
+    def to_int(ints: list[int]):
         return sum(b << (idx * 8) for idx, b in enumerate(ints))
 
     @staticmethod
-    def readInput1(input: list[int]):
+    def read_input1(input: list[int]):
         # Remove header + checksum
         data = input[20: len(input) - 2]
-        status = Dongle.toInt(data[15:15 + 2])
+        status = Dongle.to_int(data[15:15 + 2])
         status_text = "Unknow status"
         if status in STATUS_MAP:
             status_text = STATUS_MAP[status]
@@ -115,59 +115,59 @@ class Dongle():
             "status": status,
             "status_text": status_text,
 
-            "v_pv_1": Dongle.toInt(data[17:17 + 2]) / 10.0,  # V
-            "v_pv_2": Dongle.toInt(data[19:19 + 2]) / 10.0,  # V
-            "v_pv_3": Dongle.toInt(data[21:21 + 2]) / 10.0,  # V
+            "v_pv_1": Dongle.to_int(data[17:17 + 2]) / 10.0,  # V
+            "v_pv_2": Dongle.to_int(data[19:19 + 2]) / 10.0,  # V
+            "v_pv_3": Dongle.to_int(data[21:21 + 2]) / 10.0,  # V
 
-            "v_bat": Dongle.toInt(data[23:23 + 2]) / 10.0,  # V
+            "v_bat": Dongle.to_int(data[23:23 + 2]) / 10.0,  # V
             "soc": data[25],  # %
             "soh": data[26],  # %
-            "internal_fault": Dongle.toInt(data[27:27 + 2]),
+            "internal_fault": Dongle.to_int(data[27:27 + 2]),
 
-            "p_pv": Dongle.toInt(data[29:29 + 2]) + Dongle.toInt(data[31:31 + 2]) + Dongle.toInt(data[33:33 + 2]),
-            "p_pv_1": Dongle.toInt(data[29:29 + 2]),  # W
-            "p_pv_2": Dongle.toInt(data[31:31 + 2]),  # W
-            "p_pv_3": Dongle.toInt(data[33:33 + 2]),  # W
-            "p_charge": Dongle.toInt(data[35:35 + 2]),  # W
-            "p_discharge": Dongle.toInt(data[37:37 + 2]),  # W
-            "vacr": Dongle.toInt(data[39:39 + 2]),  # / 10.0 V
-            "vacs": Dongle.toInt(data[41:41 + 2]),  # / 10.0 V
-            "vact": Dongle.toInt(data[43:43 + 2]),  # / 10.0 V
-            "fac": Dongle.toInt(data[45:45 + 2]),  # / 100.0 Hz
+            "p_pv": Dongle.to_int(data[29:29 + 2]) + Dongle.to_int(data[31:31 + 2]) + Dongle.to_int(data[33:33 + 2]),
+            "p_pv_1": Dongle.to_int(data[29:29 + 2]),  # W
+            "p_pv_2": Dongle.to_int(data[31:31 + 2]),  # W
+            "p_pv_3": Dongle.to_int(data[33:33 + 2]),  # W
+            "p_charge": Dongle.to_int(data[35:35 + 2]),  # W
+            "p_discharge": Dongle.to_int(data[37:37 + 2]),  # W
+            "vacr": Dongle.to_int(data[39:39 + 2]),  # / 10.0 V
+            "vacs": Dongle.to_int(data[41:41 + 2]),  # / 10.0 V
+            "vact": Dongle.to_int(data[43:43 + 2]),  # / 10.0 V
+            "fac": Dongle.to_int(data[45:45 + 2]),  # / 100.0 Hz
 
-            "p_inv": Dongle.toInt(data[47:47 + 2]),  # W
-            "p_rec": Dongle.toInt(data[49:49 + 2]),  # W
+            "p_inv": Dongle.to_int(data[47:47 + 2]),  # W
+            "p_rec": Dongle.to_int(data[49:49 + 2]),  # W
 
             # IinvRMS https://github.com/celsworth/lxp-bridge/blob/d4d2b14ed12330e62bde6bacc81bbfc4037295ee/src/lxp/packet.rs#L268-L269
-            "i_inv_rms": Dongle.toInt(data[51:51 + 2]),  # W ?
+            "i_inv_rms": Dongle.to_int(data[51:51 + 2]),  # W ?
 
-            "pf": Dongle.toInt(data[53:53 + 2]) / 1000.0,  # Hz
+            "pf": Dongle.to_int(data[53:53 + 2]) / 1000.0,  # Hz
 
-            "v_eps_r": Dongle.toInt(data[55:55 + 2]) / 10.0,  # V
-            "v_eps_s": Dongle.toInt(data[57:57 + 2]) / 10.0,  # V
-            "v_eps_t": Dongle.toInt(data[59:59 + 2]) / 10.0,  # V
-            "f_eps": Dongle.toInt(data[61:61 + 2]) / 100.0,  # Hz
+            "v_eps_r": Dongle.to_int(data[55:55 + 2]) / 10.0,  # V
+            "v_eps_s": Dongle.to_int(data[57:57 + 2]) / 10.0,  # V
+            "v_eps_t": Dongle.to_int(data[59:59 + 2]) / 10.0,  # V
+            "f_eps": Dongle.to_int(data[61:61 + 2]) / 100.0,  # Hz
 
-            "p_eps": Dongle.toInt(data[63:63 + 2]),  # W
-            "s_eps": Dongle.toInt(data[65:65 + 2]),  # W
+            "p_eps": Dongle.to_int(data[63:63 + 2]),  # W
+            "s_eps": Dongle.to_int(data[65:65 + 2]),  # W
 
-            "p_to_grid": Dongle.toInt(data[67:67 + 2]),  # W
-            "p_to_user": Dongle.toInt(data[69:69 + 2]),  # W
+            "p_to_grid": Dongle.to_int(data[67:67 + 2]),  # W
+            "p_to_user": Dongle.to_int(data[69:69 + 2]),  # W
 
-            "e_pv_day": (Dongle.toInt(data[71:71 + 2]) +
+            "e_pv_day": (Dongle.to_int(data[71:71 + 2]) +
                          # kWh
-                         Dongle.toInt(data[73:73 + 2]) + Dongle.toInt(data[75:75 + 2])) / 10.0,
-            "e_pv_1_day": Dongle.toInt(data[71:71 + 2]) / 10.0,  # kWh
-            "e_pv_2_day": Dongle.toInt(data[73:73 + 2]) / 10.0,  # kWh
-            "e_pv_3_day": Dongle.toInt(data[75:75 + 2]) / 10.0,  # kWh
-            "e_inv_day": Dongle.toInt(data[77:77 + 2]) / 10.0,  # kWh
-            "e_rec_day": Dongle.toInt(data[79:79 + 2]) / 10.0,  # kWh
-            "e_chg_day": Dongle.toInt(data[81:81 + 2]) / 10.0,  # kWh
-            "e_dischg_day": Dongle.toInt(data[83:83 + 2]) / 10.0,  # kWh
-            "e_eps_day": Dongle.toInt(data[85:85 + 2]) / 10.0,  # kWh
-            "e_to_grid_day": Dongle.toInt(data[87:87 + 2]) / 10.0,  # kWh
-            "e_to_user_day": Dongle.toInt(data[89:89 + 2]) / 10.0,  # kWh
+                         Dongle.to_int(data[73:73 + 2]) + Dongle.to_int(data[75:75 + 2])) / 10.0,
+            "e_pv_1_day": Dongle.to_int(data[71:71 + 2]) / 10.0,  # kWh
+            "e_pv_2_day": Dongle.to_int(data[73:73 + 2]) / 10.0,  # kWh
+            "e_pv_3_day": Dongle.to_int(data[75:75 + 2]) / 10.0,  # kWh
+            "e_inv_day": Dongle.to_int(data[77:77 + 2]) / 10.0,  # kWh
+            "e_rec_day": Dongle.to_int(data[79:79 + 2]) / 10.0,  # kWh
+            "e_chg_day": Dongle.to_int(data[81:81 + 2]) / 10.0,  # kWh
+            "e_dischg_day": Dongle.to_int(data[83:83 + 2]) / 10.0,  # kWh
+            "e_eps_day": Dongle.to_int(data[85:85 + 2]) / 10.0,  # kWh
+            "e_to_grid_day": Dongle.to_int(data[87:87 + 2]) / 10.0,  # kWh
+            "e_to_user_day": Dongle.to_int(data[89:89 + 2]) / 10.0,  # kWh
 
-            "v_bus_1": Dongle.toInt(data[91:91 + 2]) / 10.0,  # V
-            "v_bus_2": Dongle.toInt(data[93:93 + 2]) / 10.0  # V
+            "v_bus_1": Dongle.to_int(data[91:91 + 2]) / 10.0,  # V
+            "v_bus_2": Dongle.to_int(data[93:93 + 2]) / 10.0  # V
         }
