@@ -35,9 +35,9 @@ Tôi cũng đã phát triển một ứng dụng cho Android/iOS. Nếu bạn c�
 
 <center>
 <picture style="max-width: 800px">
-    <source srcset="misc/screenshot-light.png" media="(prefers-color-scheme: light)"/>
-    <source srcset="misc/screenshot-dark.png"  media="(prefers-color-scheme: dark)"/>
-    <img src="misc/screenshot-light.png"/>
+    <source srcset="misc/screenshot-light-vi.png" media="(prefers-color-scheme: light)"/>
+    <source srcset="misc/screenshot-dark-vi.png"  media="(prefers-color-scheme: dark)"/>
+    <img src="misc/screenshot-light-vi.png"/>
 </picture>
 </center>
 
