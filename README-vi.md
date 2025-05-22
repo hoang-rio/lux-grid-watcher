@@ -31,7 +31,7 @@ Tôi cũng đã phát triển một ứng dụng cho Android/iOS. Nếu bạn c�
 
 ## Trình xem web
 * Biên dịch giao diện với lệnh `cd web_viewer/fe_src && yarn install && yarn build` (Bỏ qua bước này nếu bạn chạy bằng docker)
-* Bây giờ bạn có thể xem giao diện web LuxPower theo thời gian thực tại http://localhost:88 (URL này có thể thay đổi bằng cách chỉnh sửa biến `PORT` trong tập tin `.env`) như hình bên dưới.
+* Bây giờ bạn có thể xem giao diện web LuxPower theo thời gian thực tại http://localhost:88, giao diện sẽ tương tự như hình ảnh bên dưới (URL này có thể thay đổi bằng cách chỉnh sửa biến `PORT` trong tập tin `.env`)
 
 <center>
 <picture style="max-width: 800px">

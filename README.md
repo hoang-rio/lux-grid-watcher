@@ -29,9 +29,9 @@ You can implement notification app for Android/iOS by your self and push Firebas
 
 I also developed an app for Android/iOS. If you need it feel free to contact me
 
-## Webviewer
+## Web Viewer
 * Build FE with command `cd web_viewer/fe_src && yarn install && yarn build` (Ignore this step if you runing via docker)
-* Now you can see LuxPower realtime webviewer in http://locahost:88 (This url can be change by modify `PORT` variable in `.env` file) like image bellow.
+* Now you can see LuxPower realtime web viewer in http://locahost:88, UI layout will be similar with the image bellow (This url can be change by modify `PORT` variable in `.env` file)
 
 <center>
 <picture style="max-width: 800px">
