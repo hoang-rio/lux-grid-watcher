@@ -143,7 +143,7 @@ def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: 
             eps_power
         )
         fcm_service.offgrid_warning_notify(OFF_GRID_WARNING_POWER)
-        play_audio("warning_power_off_grid.mp3", 5)
+        play_audio("warning_power_off_grid.mp3")
         # Skip next OFF_GRID_WARNING_SKIP_CHECK_COUNT time when detect off grid warning
         dectect_off_grid_warning_skip_check_count = OFF_GRID_WARNING_SKIP_CHECK_COUNT
     else:
