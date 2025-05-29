@@ -108,7 +108,7 @@ class FCMThread(Thread):
         self.__logger.info("FCM Result: %s", req.text)
 
     def run(self):
-        log_prefix = "ON" if self.__is_grid_connected else "OFF"
+        log_prefix = "WARN" if self.__channel_id == CHANNEL_WARN else "ON" if self.__is_grid_connected else "OFF"
         self.__logger.info(
             f"{log_prefix} [{self.__device}]: Start send notify")
         self.__send_notify(self.__title, self.__body,
