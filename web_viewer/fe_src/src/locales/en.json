@@ -29,6 +29,7 @@
   "offline": "Offline",
   "normal": "Normal",
   "fault": "Fault",
+  "notice": "Notice",
   "server": {
     "offline": "Server is offline. Reload page when you make sure that server is online"
   },

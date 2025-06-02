@@ -12,6 +12,7 @@ STATUS_MAP: dict = {
     0x04: "pv supporting load first, surplus into grid",
     0x08: "pv charging battery",
     0x10: "discharge battery to support load, surplus into grid",
+    0x11: "AC Bypass",
     0x14: "pv + battery discharging to support load, surplus into grid",
     0x20: "ac charging battery",
     0x28: "pv + ac charging battery",

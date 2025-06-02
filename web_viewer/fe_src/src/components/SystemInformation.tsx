@@ -7,7 +7,7 @@ import Grid from "./Grid";
 import Consumption from "./Consumption";
 import EPS from "./EPS";
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Loading from "./Loading";
 import * as logUtil from "../utils/logUtil";
 
@@ -127,6 +127,27 @@ function SystemInformation({
     setShowNotifications((prev) => !prev);
   }, []);
 
+  const status = useMemo(() => {
+    if (!isSocketConnected) {
+      return "offline";
+    }
+    if (inverterData.status === 1) {
+      return "fault";
+    }
+    if (
+      inverterData.internal_fault !== 0 ||
+      inverterData.status_text == "Unknow status"
+    ) {
+      return "notice";
+    }
+    return "normal";
+  }, [
+    isSocketConnected,
+    inverterData.status,
+    inverterData.internal_fault,
+    inverterData.status_text,
+  ]);
+
   return (
     <>
       <div className="card system-information">
@@ -169,20 +190,10 @@ function SystemInformation({
                 title={inverterData.status_text}
               >
                 <div
-                  className={`system-status-icon ${
-                    !isSocketConnected
-                      ? "offline"
-                      : inverterData.status !== 0
-                      ? "normal"
-                      : "fault"
-                  }`}
+                  className={`system-status-icon ${status}`}
                 ></div>
                 <div>
-                  {!isSocketConnected
-                    ? t("offline")
-                    : inverterData.status !== 0
-                    ? t("normal")
-                    : t("fault")}
+                  {t(status)}
                 </div>
               </div>
               <button

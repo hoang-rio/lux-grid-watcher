@@ -29,6 +29,7 @@
   "offline": "Ngoại tuyến",
   "normal": "Bình thường",
   "fault": "Lỗi",
+  "notice": "Cần chú ý",
   "server": {
     "offline": "Máy chủ đang ngoại tuyến. Tải lại trang khi bạn chắc chắn rằng máy chủ đang trực tuyến"
   },
