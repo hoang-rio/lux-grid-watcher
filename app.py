@@ -165,14 +165,16 @@ def handle_grid_status(json_data: dict, fcm_service: FCM):
     status_text = json_data["status_text"] if "status_text" in json_data else json_data["status"]
     if not is_grid_connected:
         logger.warning(
-            "_________Inverter disconnected from GRID since: %s with status: \"%s\"_________",
+            "_________Inverter disconnected from GRID since: %s with status: \"%s\" (%s)_________",
             disconnected_time,
             status_text,
+            json_data["status"],
         )
     else:
         logger.info(
-            "_________Inverter currently connected to GRID with\nStatus: \"%s\" at deviceTime: %s with fac: %s Hz and vacr: %s V_________",
+            "_________Inverter currently connected to GRID with\nStatus: \"%s\" (%s) at deviceTime: %s with fac: %s Hz and vacr: %s V_________",
             status_text,
+            json_data["status"],
             json_data['deviceTime'],
             int(json_data['fac']) / 100,
             int(json_data['vacr']) / 10,
