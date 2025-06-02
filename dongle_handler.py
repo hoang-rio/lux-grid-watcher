@@ -79,10 +79,9 @@ class Dongle():
                 self.__logger.info("Finish get dongle input")
                 if parsed_data["v_bat"] < 40 or parsed_data["v_bat"] > 58:
                     self.__logger.warning(
-                        "v_bat must between 40 and must lower than 58. Ignore this result.\nFull result: %s",
+                        "v_bat should between 40V and 58V. Inverter may not work properly. Parsed data: %s",
                         parsed_data,
                     )
-                    return None
                 return parsed_data
             else:
                 self.__logger.info("Not Input1 data. Skip")
