@@ -14,7 +14,6 @@ import Chart from "react-apexcharts";
 import { IClassNameProps, IUpdateChart, SeriesItem } from "../Intefaces";
 import Loading from "./Loading";
 import { useTranslation } from "react-i18next";
-import React from "react";
 
 const HourlyChart = forwardRef(
   ({ className }: IClassNameProps, ref: ForwardedRef<IUpdateChart>) => {
