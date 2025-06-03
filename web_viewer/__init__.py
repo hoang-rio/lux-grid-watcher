@@ -74,13 +74,23 @@ async def state(_: web.Request):
         data = {}
     return web.json_response(data, headers=VITE_CORS_HEADER)
 
-async def hourly_chart(_: web.Request):
+async def hourly_chart(request: web.Request):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        start_of_day = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        date_str = request.rel_url.query.get('date')
+        if date_str:
+            try:
+                query_date = datetime.strptime(date_str, "%Y-%m-%d")
+            except Exception:
+                query_date = datetime.now()
+        else:
+            query_date = datetime.now()
+        start_of_day = query_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = start_of_day + timedelta(days=1)
         hourly_chart = cursor.execute(
-            "SELECT * FROM hourly_chart WHERE datetime >= ?", (start_of_day.strftime("%Y-%m-%d %H:%M:%S"),)
+            "SELECT * FROM hourly_chart WHERE datetime >= ? AND datetime < ?",
+            (start_of_day.strftime("%Y-%m-%d %H:%M:%S"), end_of_day.strftime("%Y-%m-%d %H:%M:%S"))
         ).fetchall()
         return web.json_response(hourly_chart, headers=VITE_CORS_HEADER)
     except Exception as e:

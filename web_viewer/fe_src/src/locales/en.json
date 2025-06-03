@@ -9,7 +9,10 @@
   "consumption": "Consumption",
   "todayUsed": "Today used",
   "totalUsed": "Total used",
-  "hourlyChart": "Hourly chart",
+  "hourlyChart": {
+    "title": "Hourly chart",
+    "noData": "No data for this day."
+  },
   "updateChart": "Update chart",
   "chartType": "Chart type:",
   "daily": "Daily",

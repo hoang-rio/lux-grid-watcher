@@ -14,6 +14,7 @@ import Chart from "react-apexcharts";
 import { IClassNameProps, IUpdateChart, SeriesItem } from "../Intefaces";
 import Loading from "./Loading";
 import { useTranslation } from "react-i18next";
+import React from "react";
 
 const HourlyChart = forwardRef(
   ({ className }: IClassNameProps, ref: ForwardedRef<IUpdateChart>) => {
@@ -31,6 +32,12 @@ const HourlyChart = forwardRef(
       now.setHours(0, 0, 0, 0);
       return now;
     });
+    // Use string for selectedDate to avoid timezone issues
+    const [selectedDate, setSelectedDate] = useState(() => {
+      const now = new Date();
+      return now.toISOString().slice(0, 10);
+    });
+    const [isLoading, setIsLoading] = useState(false);
 
     const series = useMemo(() => {
       const pvSeries: SeriesItem[] = [];
@@ -77,18 +84,21 @@ const HourlyChart = forwardRef(
       i18n,
     ]);
 
-    const fetchChart = useCallback(async () => {
+    const fetchChart = useCallback(async (dateStr?: string) => {
       if (isFetchingRef.current) {
         return;
       }
       isFetchingRef.current = true;
+      setIsLoading(true);
+      const dStr = dateStr || selectedDate;
       const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/hourly-chart`
+        `${import.meta.env.VITE_API_BASE_URL}/hourly-chart?date=${dStr}`
       );
       const json = await res.json();
       setChartData(json);
+      setIsLoading(false);
       isFetchingRef.current = false;
-    }, []);
+    }, [selectedDate]);
 
     useImperativeHandle(
       ref,
@@ -126,12 +136,12 @@ const HourlyChart = forwardRef(
     }, [isAutoUpdate, fetchChart, startOfDay]);
 
     useEffect(() => {
-      fetchChart();
+      fetchChart(selectedDate);
       document.addEventListener("visibilitychange", onVisibilityChange);
       return () => {
         document.removeEventListener("visibilitychange", onVisibilityChange);
       };
-    }, [fetchChart, onVisibilityChange]);
+    }, [fetchChart, onVisibilityChange, selectedDate]);
 
     useEffect(() => {
       const mq = window.matchMedia("(prefers-color-scheme: dark)");
@@ -154,18 +164,42 @@ const HourlyChart = forwardRef(
     return (
       <div className={`card hourly-chart col ${className || ""}`}>
         <div className="row justify-space-between">
-          <div className="hourly-chart-title">{t("hourlyChart")}</div>
+          <div className="hourly-chart-title">{t("hourlyChart.title")}</div>
           <div className="row hourly-chart-buttons">
+            <input
+              type="date"
+              value={selectedDate}
+              min={(() => {
+                const minDate = new Date();
+                minDate.setDate(minDate.getDate() - 29);
+                return minDate.toISOString().slice(0, 10);
+              })()}
+              max={(() => {
+                const maxDate = new Date();
+                return maxDate.toISOString().slice(0, 10);
+              })()}
+              onChange={(e) => {
+                setSelectedDate(e.target.value);
+                setStartOfDay(new Date(e.target.value + "T00:00:00"));
+                fetchChart(e.target.value);
+              }}
+              style={{ marginRight: 10 }}
+            />
             <button onClick={toggleAutoUpdate}>
               {!isAutoUpdate ? t("allowAutoUpdate") : t("pauseAutoUpdate")}
             </button>
-            <button disabled={!isAutoUpdate} onClick={() => fetchChart()}>
+            <button
+              disabled={!isAutoUpdate}
+              onClick={() => fetchChart(selectedDate)}
+            >
               {t("updateChart")}
             </button>
           </div>
         </div>
         <div className="hourly-chart-content col flex-1">
-          {chartData.length ? (
+          {isLoading ? (
+            <Loading />
+          ) : chartData.length ? (
             <Chart
               type="line"
               height={400}
@@ -271,7 +305,9 @@ const HourlyChart = forwardRef(
               }}
             />
           ) : (
-            <Loading />
+            <div className="col flex-1 justify-center align-center">
+              {t("hourlyChart.noData")}
+            </div>
           )}
         </div>
       </div>

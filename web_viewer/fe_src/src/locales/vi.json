@@ -9,7 +9,10 @@
   "consumption": "Tiêu thụ",
   "todayUsed": "Đã sử dụng hôm nay",
   "totalUsed": "Tổng cộng đã sử dụng",
-  "hourlyChart": "Biểu đồ hàng giờ",
+  "hourlyChart": {
+    "title": "Biểu đồ hàng giờ",
+    "noData": "Không có dữ liệu cho ngày này."
+  },
   "updateChart": "Cập nhật biểu đồ",
   "chartType": "Loại biểu đồ:",
   "daily": "Hàng ngày",
