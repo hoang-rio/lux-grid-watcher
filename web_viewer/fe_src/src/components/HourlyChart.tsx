@@ -106,8 +106,16 @@ const HourlyChart = forwardRef(
           if (!isAutoUpdate) {
             return;
           }
+          // Only update if selectedDate is today
+          const todayStr = new Date().toISOString().slice(0, 10);
+          if (selectedDate !== todayStr) {
+            return;
+          }
           const lastItem = chartData[chartData.length - 1];
-          if (!lastItem || JSON.stringify(lastItem) === JSON.stringify(hourlyItem)) {
+          if (
+            !lastItem ||
+            JSON.stringify(lastItem) === JSON.stringify(hourlyItem)
+          ) {
             return;
           }
           const newChartData = [...chartData];
