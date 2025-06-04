@@ -26,7 +26,7 @@ const HourlyChart = forwardRef(
     const [isDark, setIsDark] = useState(false);
     const isFetchingRef = useRef<boolean>(false);
     const [isAutoUpdate, setIsAutoUpdate] = useState(true);
-    const [startOfDay, setStartOfDay] = useState(() => {
+    const [selectedDayStart, setSelectedDayStart] = useState(() => {
       const now = new Date();
       now.setHours(0, 0, 0, 0);
       return now;
@@ -34,9 +34,12 @@ const HourlyChart = forwardRef(
     // Use string for selectedDate to avoid timezone issues
     const [selectedDate, setSelectedDate] = useState(() => {
       const now = new Date();
-      return now.toISOString().slice(0, 10);
+      return formatLocalDate(now);
     });
     const [isLoading, setIsLoading] = useState(false);
+
+    // Track if today is selected
+    const isTodaySelectedRef = useRef(true);
 
     const series = useMemo(() => {
       const pvSeries: SeriesItem[] = [];
@@ -107,7 +110,7 @@ const HourlyChart = forwardRef(
             return;
           }
           // Only update if selectedDate is today
-          const todayStr = new Date().toISOString().slice(0, 10);
+          const todayStr = formatLocalDate(new Date());
           if (selectedDate !== todayStr) {
             return;
           }
@@ -133,14 +136,20 @@ const HourlyChart = forwardRef(
       if (!document.hidden) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        if (today.getTime() !== startOfDay.getTime()) {
-          setStartOfDay(today);
-        }
-        if (isAutoUpdate) {
-          fetchChart();
+        const todayStr = formatLocalDate(today);
+        // Only run logic if today is selected
+        if (isTodaySelectedRef.current === true) {
+          const shouldFetch = selectedDate !== todayStr || isAutoUpdate;
+          if (selectedDate !== todayStr) {
+            setSelectedDate(todayStr);
+            setSelectedDayStart(today);
+          }
+          if (shouldFetch) {
+            fetchChart(todayStr);
+          }
         }
       }
-    }, [isAutoUpdate, fetchChart, startOfDay]);
+    }, [isAutoUpdate, fetchChart, selectedDate]);
 
     useEffect(() => {
       fetchChart(selectedDate);
@@ -168,6 +177,25 @@ const HourlyChart = forwardRef(
       setIsAutoUpdate(!isAutoUpdate);
     }, [isAutoUpdate, fetchChart]);
 
+    // Helper to format date as YYYY-MM-DD in local time
+    function formatLocalDate(date: Date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    // Memoize min and max date for the date input
+    const minDateStr = useMemo(() => {
+      const minDate = new Date();
+      minDate.setDate(minDate.getDate() - 29);
+      return formatLocalDate(minDate);
+    }, []);
+    const maxDateStr = useMemo(() => {
+      const maxDate = new Date();
+      return formatLocalDate(maxDate);
+    }, []);
+
     return (
       <div className={`card hourly-chart col ${className || ""}`}>
         <div className="row justify-space-between">
@@ -176,18 +204,14 @@ const HourlyChart = forwardRef(
             <input
               type="date"
               value={selectedDate}
-              min={(() => {
-                const minDate = new Date();
-                minDate.setDate(minDate.getDate() - 29);
-                return minDate.toISOString().slice(0, 10);
-              })()}
-              max={(() => {
-                const maxDate = new Date();
-                return maxDate.toISOString().slice(0, 10);
-              })()}
+              min={minDateStr}
+              max={maxDateStr}
               onChange={(e) => {
                 setSelectedDate(e.target.value);
-                setStartOfDay(new Date(e.target.value + "T00:00:00"));
+                setSelectedDayStart(new Date(e.target.value + "T00:00:00"));
+                // Set isTodaySelectedRef to true if today is selected, false otherwise
+                const todayStr = formatLocalDate(new Date());
+                isTodaySelectedRef.current = e.target.value === todayStr;
                 fetchChart(e.target.value);
               }}
               style={{ marginRight: 10 }}
@@ -241,7 +265,7 @@ const HourlyChart = forwardRef(
                 },
                 xaxis: {
                   type: "datetime",
-                  min: startOfDay.getTime(),
+                  min: selectedDayStart.getTime(),
                   labels: {
                     datetimeUTC: false,
                     format: "HH:mm",
