@@ -298,7 +298,7 @@ const HourlyChart = forwardRef(
                 ],
                 tooltip: {
                   x: {
-                    format: "HH:mm",
+                    format: "dd/MM/yyyy HH:mm",
                   },
                   y: {
                     formatter(val, opts) {
