@@ -40,6 +40,7 @@ const HourlyChart = forwardRef(
 
     // Track if today is selected
     const isTodaySelectedRef = useRef(true);
+    const selectedDateRef = useRef(selectedDate);
 
     const series = useMemo(() => {
       const pvSeries: SeriesItem[] = [];
@@ -92,7 +93,7 @@ const HourlyChart = forwardRef(
       }
       isFetchingRef.current = true;
       setIsLoading(true);
-      const dStr = dateStr || selectedDate;
+      const dStr = dateStr || selectedDateRef.current;
       const res = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/hourly-chart?date=${dStr}`
       );
@@ -100,7 +101,7 @@ const HourlyChart = forwardRef(
       setChartData(json);
       setIsLoading(false);
       isFetchingRef.current = false;
-    }, [selectedDate]);
+    }, []);
 
     useImperativeHandle(
       ref,
@@ -152,12 +153,16 @@ const HourlyChart = forwardRef(
     }, [isAutoUpdate, fetchChart, selectedDate]);
 
     useEffect(() => {
-      fetchChart(selectedDate);
       document.addEventListener("visibilitychange", onVisibilityChange);
       return () => {
         document.removeEventListener("visibilitychange", onVisibilityChange);
       };
-    }, [fetchChart, onVisibilityChange, selectedDate]);
+    }, [onVisibilityChange]);
+
+    useEffect(() => {
+      // Fetch initial chart data when component mounts
+      fetchChart();
+    }, [fetchChart]);
 
     useEffect(() => {
       const mq = window.matchMedia("(prefers-color-scheme: dark)");
@@ -208,6 +213,7 @@ const HourlyChart = forwardRef(
               max={maxDateStr}
               onChange={(e) => {
                 setSelectedDate(e.target.value);
+                selectedDateRef.current = e.target.value;
                 setSelectedDayStart(new Date(e.target.value + "T00:00:00"));
                 // Set isTodaySelectedRef to true if today is selected, false otherwise
                 const todayStr = formatLocalDate(new Date());
