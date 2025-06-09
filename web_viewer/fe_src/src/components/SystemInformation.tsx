@@ -136,7 +136,9 @@ function SystemInformation({
     }
     if (
       inverterData.internal_fault !== 0 ||
-      inverterData.status_text == "Unknow status"
+      inverterData.status_text == "Unknow status" ||
+      inverterData.v_bat < 40 ||
+      inverterData.v_bat > 58
     ) {
       return "notice";
     }
@@ -146,6 +148,7 @@ function SystemInformation({
     inverterData.status,
     inverterData.internal_fault,
     inverterData.status_text,
+    inverterData.v_bat,
   ]);
 
   return (

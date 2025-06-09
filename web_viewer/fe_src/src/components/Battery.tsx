@@ -1,7 +1,14 @@
+import { useMemo } from "react";
 import { ICProps } from "../Intefaces";
 import GeneralValue from "./GeneralValue";
 
 function Battery({ inverterData, isSocketConnected }: ICProps) {
+  const iconColor = useMemo(() => {
+    if (inverterData.soc < 10 || inverterData.v_bat < 40) return "red";
+    if (inverterData.soc < 50) return "yellow";
+    return "green";
+  }, [inverterData.soc, inverterData.v_bat]);
+
   return (
     <div className="battery flex-1">
       <div className="row align-center">
@@ -37,7 +44,7 @@ function Battery({ inverterData, isSocketConnected }: ICProps) {
             className="battery-icon"
             src={`/assets/icon_battery_${
               isSocketConnected ? Math.round(inverterData.soc / 2 / 10) : 0
-            }_green.png`}
+            }_${iconColor}.png`}
           />
           <GeneralValue
             className="show-small"
