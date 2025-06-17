@@ -38,6 +38,12 @@ class PlayAudio(threading.Thread):
                 cast.wait(self.__sleep)
                 self.__logger.debug("Cast status: %s", cast.status)
                 mediaController = cast.media_controller
+                # Save original Chromecast volume
+                original_cast_volume = cast.status.volume_level
+                try:
+                    cast.set_volume(1.0)  # Set to 100%
+                except Exception as e:
+                    self.__logger.warning("Failed to set Chromecast volume: %s", e)
                 self.__logger.info(
                     "[%s]: Playing on %s %s times repeat",
                     self.__audio_file,
@@ -63,6 +69,12 @@ class PlayAudio(threading.Thread):
                     time.sleep(self.__sleep)
                 self.__logger.debug("MediaControler status: %s",
                                     mediaController.status)
+                # Restore original Chromecast volume
+                if original_cast_volume is not None:
+                    try:
+                        cast.set_volume(original_cast_volume)
+                    except Exception as e:
+                        self.__logger.warning("Failed to restore Chromecast volume: %s", e)
                 cast.disconnect()
                 browser.stop_discovery()
             else:
