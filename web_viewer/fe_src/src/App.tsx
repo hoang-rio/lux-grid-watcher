@@ -56,9 +56,7 @@ function App() {
       } else {
         setInverterData(jsonData.inverter_data);
         hourlyChartfRef.current?.updateItem(jsonData.hourly_chart_item);
-        if (isLoading) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     });
 
@@ -86,7 +84,7 @@ function App() {
     socket.addEventListener("error", (event) => {
       logUtil.error(i18n.t("socket.error"), event);
     });
-  }, [i18n, isLoading]);
+  }, [i18n]);
 
   const closeSocket = useCallback(() => {
     logUtil.log(i18n.t("socket.closing"));
@@ -113,7 +111,6 @@ function App() {
   }, [i18n]);
 
   useEffect(() => {
-    fetchState();
     selfCloseRef.current = false;
     if (!socketRef.current) {
       connectSocket();
@@ -123,7 +120,11 @@ function App() {
       window.removeEventListener("beforeunload", closeSocket);
       closeSocket();
     };
-  }, [connectSocket, closeSocket, fetchState, i18n]);
+  }, [connectSocket, closeSocket]);
+
+  useEffect(() => {
+    fetchState();
+  }, [fetchState])
 
   useEffect(() => {
     const handleVisibilityChange = () => {
