@@ -3,11 +3,10 @@ import asyncio
 from aiohttp import aiohttp
 from logging import Logger
 import threading
-from json import dumps
 
 class WebSocketClient(threading.Thread):
     __ws: ClientWebSocketResponse | None = None
-    __logger: Logger | None = None
+    __logger: Logger
     __host: str
     __port: int
 
@@ -30,9 +29,9 @@ class WebSocketClient(threading.Thread):
                 await self.__ws.send_json(data=data)
             except Exception as e:
                 self.__logger.exception("Error when send message", e)
-                self.connect()
+                await self.connect()
         else:
-            self.connect()
+            await self.connect()
             self.__logger.error("Web socket client did not initial or closed")
 
     async def connect(self):
@@ -41,8 +40,7 @@ class WebSocketClient(threading.Thread):
                 self.__ws = ws
                 async for msg in ws:
                     if msg.type == aiohttp.WSMsgType.TEXT:
-                        if self.__logger is not None:
-                            self.__logger.debug("[Ws client] receive data")
-                            self.__logger.debug(msg.data)
+                        self.__logger.debug("[WS Client] receive data")
+                        self.__logger.debug(msg.data)
                     elif msg.type == aiohttp.WSMsgType.ERROR:
                         break
