@@ -26,7 +26,8 @@ function App() {
   const deviceTimeRef = useRef<string>();
 
   // Changed to hold notification object or null
-  const [newNotification, setNewNotification] = useState<INotificationData | null>(null);
+  const [newNotification, setNewNotification] =
+    useState<INotificationData | null>(null);
 
   const connectSocket = useCallback(() => {
     if (
@@ -74,10 +75,7 @@ function App() {
         return;
       }
       reconnectCountRef.current++;
-      logUtil.log(
-        i18n.t("socket.reconnecting"),
-        reconnectCountRef.current
-      );
+      logUtil.log(i18n.t("socket.reconnecting"), reconnectCountRef.current);
       connectSocket();
     });
 
@@ -124,7 +122,7 @@ function App() {
 
   useEffect(() => {
     fetchState();
-  }, [fetchState])
+  }, [fetchState]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
