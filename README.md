@@ -1,6 +1,6 @@
 # Lux Grid Watcher
 
-[Tiếng Việt](README-vi.md) | [English](README.md)
+[Tiếng Việt](README-vi.md) | English
 
 [![GitHub Release](https://img.shields.io/github/v/release/hoang-rio/lux-grid-watcher)](https://github.com/hoang-rio/lux-grid-watcher/releases) [![License](https://img.shields.io/github/license/hoang-rio/lux-grid-watcher?color=blue)](LICENSE) [![Commit activity](https://img.shields.io/github/commit-activity/m/hoang-rio/lux-grid-watcher)](https://github.com/hoang-rio/lux-grid-watcher/commits/main/) [![GitHub last commit](https://img.shields.io/github/last-commit/hoang-rio/lux-grid-watcher?color=blue)](https://github.com/hoang-rio/lux-grid-watcher)
 
