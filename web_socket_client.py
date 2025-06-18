@@ -31,8 +31,8 @@ class WebSocketClient(threading.Thread):
                 self.__logger.exception("Error when send message", e)
                 await self.connect()
         else:
-            await self.connect()
             self.__logger.error("Web socket client did not initial or closed")
+            await self.connect()
 
     async def connect(self):
         async with ClientSession() as session:
