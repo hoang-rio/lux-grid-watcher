@@ -36,7 +36,7 @@ class WebSocketClient(threading.Thread):
 
     async def connect(self):
         async with ClientSession() as session:
-            async with session.ws_connect(f"http://{self.__host}:{self.__port}/ws") as ws:
+            async with session.ws_connect(f"ws://{self.__host}:{self.__port}/ws") as ws:
                 self.__ws = ws
                 async for msg in ws:
                     if msg.type == aiohttp.WSMsgType.TEXT:
