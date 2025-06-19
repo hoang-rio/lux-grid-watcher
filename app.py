@@ -11,6 +11,7 @@ from fcm import FCM
 import json
 from play_audio import PlayAudio
 import asyncio
+from web_socket_client import WebSocketClient
 
 DONGLE_MODE = "DONGLE"
 
@@ -321,10 +322,17 @@ def insert_daily_chart(db_connection: sqlite3.Connection, inverter_data: dict):
     cursor.close()
     db_connection.commit()
 
-def get_web_socket_client():
-    from web_socket_client import WebSocketClient
+
+async def initialize_web_socket_client(fcm_service: FCM, old_ws_client: WebSocketClient | None = None):
+    if old_ws_client is not None:
+        # Reinitialize the web socket client for next iteration
+        logger.info("Stopping old web socket client")
+        await old_ws_client.stop()
+        logger.info("Reinitializing web socket client for next iteration")
     ws_client = WebSocketClient(
         logger=logger, host=config["HOST"], port=int(config["PORT"]))
+    fcm_service._set_ws_client(ws_client)
+    ws_client.start()
     return ws_client
 
 async def main():
@@ -343,9 +351,7 @@ async def main():
                 webViewer = WebViewer(logger)
                 webViewer.start()
                 time.sleep(1)
-                ws_client = get_web_socket_client()
-                fcm_service._set_ws_client(ws_client)
-                ws_client.start()
+                ws_client = await initialize_web_socket_client(fcm_service)
             dongle = dongle_handler.Dongle(logger, config)
             while True:
                 try:
@@ -371,21 +377,10 @@ async def main():
                                 )
                                 if not sent:
                                     logger.error("Failed to send data to web socket")
-                                    await ws_client.stop()
-                                    # Reinitialize the web socket client for next iteration
-                                    logger.info(
-                                        "Reinitializing web socket client for next iteration")
-                                    ws_client = get_web_socket_client()
-                                    fcm_service._set_ws_client(ws_client)
-                                    ws_client.start()
+                                    ws_client = await initialize_web_socket_client(fcm_service, ws_client)
                             except asyncio.TimeoutError:
                                 logger.error("Timeout waiting for web socket to send data for %s seconds", timeout_duration)
-                                await ws_client.stop()
-                                # Reinitialize the web socket client for next iteration
-                                logger.info("Reinitializing web socket client for next iteration")
-                                ws_client = get_web_socket_client()
-                                fcm_service._set_ws_client(ws_client)
-                                ws_client.start()
+                                ws_client = await initialize_web_socket_client(fcm_service, ws_client)
                             insert_daily_chart(db_connection, inverter_data)
                             if ABNORMAL_SKIP_CHECK_HOURS > -1:  # Skip check if ABNORMAL_SKIP_CHECK_HOURS is -1
                                 dectect_abnormal_usage(db_connection, fcm_service)
