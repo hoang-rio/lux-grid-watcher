@@ -371,7 +371,7 @@ async def main():
                                 )
                                 if not sent:
                                     logger.error("Failed to send data to web socket")
-                                    ws_client.stop()
+                                    await ws_client.stop()
                                     # Reinitialize the web socket client for next iteration
                                     logger.info(
                                         "Reinitializing web socket client for next iteration")
@@ -380,7 +380,7 @@ async def main():
                                     ws_client.start()
                             except asyncio.TimeoutError:
                                 logger.error("Timeout waiting for web socket to send data for %s seconds", timeout_duration)
-                                ws_client.stop()
+                                await ws_client.stop()
                                 # Reinitialize the web socket client for next iteration
                                 logger.info("Reinitializing web socket client for next iteration")
                                 ws_client = get_web_socket_client()
