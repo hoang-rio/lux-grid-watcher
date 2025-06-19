@@ -23,16 +23,16 @@ class WebSocketClient(threading.Thread):
         if self.__ws is not None and not self.__ws.closed:
             await self.__ws.close()
 
-    async def send_json(self, data):
+    async def send_json(self, data) -> bool:
         if self.__ws is not None and not self.__ws.closed:
             try:
                 await self.__ws.send_json(data=data)
+                return True
             except Exception as e:
                 self.__logger.exception("Error when send message", e)
-                await self.connect()
         else:
             self.__logger.error("Web socket client did not initial or closed")
-            await self.connect()
+        return False
 
     async def connect(self):
         async with ClientSession() as session:

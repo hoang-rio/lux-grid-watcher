@@ -362,13 +362,22 @@ async def main():
                         if run_web_view:
                             hourly_chart_item = insert_hourly_chart(db_connection, inverter_data)
                             try:
-                                await asyncio.wait_for(
+                                sent = await asyncio.wait_for(
                                     ws_client.send_json({
                                         "inverter_data": inverter_data,
                                         "hourly_chart_item": hourly_chart_item
                                     }),
                                     timeout=timeout_duration
                                 )
+                                if not sent:
+                                    logger.error("Failed to send data to web socket")
+                                    ws_client.stop()
+                                    # Reinitialize the web socket client for next iteration
+                                    logger.info(
+                                        "Reinitializing web socket client for next iteration")
+                                    ws_client = get_web_socket_client()
+                                    fcm_service._set_ws_client(ws_client)
+                                    ws_client.start()
                             except asyncio.TimeoutError:
                                 logger.error("Timeout waiting for web socket to send data for %s seconds", timeout_duration)
                                 ws_client.stop()
