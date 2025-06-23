@@ -34,9 +34,10 @@ ABNORMAL_SKIP_CHECK_HOURS = int(
 ABNORMAL_USAGE_COUNT = 32 * ABNORMAL_SKIP_CHECK_HOURS
 NORMAL_MIN_USAGE_COUNT = 5 * ABNORMAL_SKIP_CHECK_HOURS
 ABNORMAL_MIN_POWER = 900
-OFF_GRID_WARNING_POWER = 2000
+OFF_GRID_WARNING_POWER = 2200
 OFF_GRID_WARNING_SOC = 87
 OFF_GRID_WARNING_SKIP_CHECK_COUNT = 60 // int(config["SLEEP_TIME"])
+MAX_BATTERY_POWER = 3000
 log_level = logging.DEBUG if config["IS_DEBUG"] == 'True' else logging.INFO
 
 logger = logging.getLogger(__file__)
@@ -135,8 +136,9 @@ dectect_off_grid_warning_skip_check_count = 0
 def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: int, soc: int, fcm_service: FCM):
     global dectect_off_grid_warning_skip_check_count
     # Nofify off grid warning if eps power is greater than OFF_GRID_WARNING_POWER and eps power is less than 2 times of pv power
-    # and battery percent (soc) is less than OFF_GRID_WARNING_SOC
-    if not is_grid_connected and eps_power >= OFF_GRID_WARNING_POWER and pv_power < eps_power / 2 and soc < OFF_GRID_WARNING_SOC:
+    # and battery percent (soc) is less than OFF_GRID_WARNING_SOC or battery power is greater than MAX_BATTERY_POWER
+    is_battery_power_high = eps_power - pv_power > MAX_BATTERY_POWER
+    if not is_grid_connected and eps_power >= OFF_GRID_WARNING_POWER and pv_power < eps_power / 2 and (soc < OFF_GRID_WARNING_SOC or is_battery_power_high):
         if dectect_off_grid_warning_skip_check_count > 0:
             dectect_off_grid_warning_skip_check_count = dectect_off_grid_warning_skip_check_count - 1
             return
@@ -146,7 +148,7 @@ def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: 
             eps_power,
             soc
         )
-        fcm_service.offgrid_warning_notify(OFF_GRID_WARNING_POWER, OFF_GRID_WARNING_SOC)
+        fcm_service.offgrid_warning_notify(OFF_GRID_WARNING_POWER, None if is_battery_power_high else OFF_GRID_WARNING_SOC)
         play_audio("warning_power_off_grid.mp3")
         # Skip next OFF_GRID_WARNING_SKIP_CHECK_COUNT time when detect off grid warning
         dectect_off_grid_warning_skip_check_count = OFF_GRID_WARNING_SKIP_CHECK_COUNT

@@ -265,11 +265,14 @@ class FCM():
             self.__post_send_notify(devices)
         self.__log_notification(notify_title, notify_body)
 
-    def offgrid_warning_notify(self, warning_power: float = 1500, warning_soc: int = 50):
+    def offgrid_warning_notify(self, warning_power: float = 1500, warning_soc: int | None = None):
         self.__fcm_threads = []
         devices = self.__get_devices()
         notify_title = "Cảnh báo: Tiêu thụ điện cao"
-        notify_body = f"Tiêu thụ điện cao hơn {warning_power}W khi đang mất điện lưới, nắng yếu và pin còn ít hơn {warning_soc}%, vui lòng chú ý."
+        if warning_soc is None:
+            notify_body = f"Tiêu thụ điện cao hơn {warning_power}W khi đang mất điện lưới và nắng yếu. Vui lòng chú ý!"
+        else:
+            notify_body = f"Tiêu thụ điện cao hơn {warning_power}W khi đang mất điện lưới, nắng yếu và pin còn ít hơn {warning_soc}%. Vui lòng chú ý!"
         if len(devices) == 0:
             self.__logger.info("WARN: No device to notify")
         else:
