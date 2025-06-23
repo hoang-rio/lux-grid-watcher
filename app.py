@@ -35,6 +35,7 @@ ABNORMAL_USAGE_COUNT = 32 * ABNORMAL_SKIP_CHECK_HOURS
 NORMAL_MIN_USAGE_COUNT = 5 * ABNORMAL_SKIP_CHECK_HOURS
 ABNORMAL_MIN_POWER = 900
 OFF_GRID_WARNING_POWER = 2000
+OFF_GRID_WARNING_SOC = 87
 OFF_GRID_WARNING_SKIP_CHECK_COUNT = 60 // int(config["SLEEP_TIME"])
 log_level = logging.DEBUG if config["IS_DEBUG"] == 'True' else logging.INFO
 
@@ -131,19 +132,21 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
 
 
 dectect_off_grid_warning_skip_check_count = 0
-def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: int, fcm_service: FCM):
+def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: int, soc: int, fcm_service: FCM):
     global dectect_off_grid_warning_skip_check_count
     # Nofify off grid warning if eps power is greater than OFF_GRID_WARNING_POWER and eps power is less than 2 times of pv power
-    if not is_grid_connected and eps_power >= OFF_GRID_WARNING_POWER and pv_power < eps_power / 2:
+    # and battery percent (soc) is less than OFF_GRID_WARNING_SOC
+    if not is_grid_connected and eps_power >= OFF_GRID_WARNING_POWER and pv_power < eps_power / 2 and soc < OFF_GRID_WARNING_SOC:
         if dectect_off_grid_warning_skip_check_count > 0:
             dectect_off_grid_warning_skip_check_count = dectect_off_grid_warning_skip_check_count - 1
             return
         logger.warning(
-            "_________Off grid warning detected with pv power: (%sW) and eps power: (%sW)_________",
+            "_________Off grid warning detected with pv power: (%sW), eps power: (%sW) and soc: (%s%)_________",
             pv_power,
-            eps_power
+            eps_power,
+            soc
         )
-        fcm_service.offgrid_warning_notify(OFF_GRID_WARNING_POWER)
+        fcm_service.offgrid_warning_notify(OFF_GRID_WARNING_POWER, OFF_GRID_WARNING_SOC)
         play_audio("warning_power_off_grid.mp3")
         # Skip next OFF_GRID_WARNING_SKIP_CHECK_COUNT time when detect off grid warning
         dectect_off_grid_warning_skip_check_count = OFF_GRID_WARNING_SKIP_CHECK_COUNT
@@ -205,7 +208,7 @@ def handle_grid_status(json_data: dict, fcm_service: FCM):
     else:
         logger.info("State did not change. Skip play notify audio")
     dectect_off_grid_warning(
-        is_grid_connected, json_data["p_pv"], json_data["p_eps"], fcm_service)
+        is_grid_connected, json_data["p_pv"], json_data["p_eps"], json_data["soc"], fcm_service)
 
 
 def insert_hourly_chart(db_connection: sqlite3.Connection, inverter_data: dict):
