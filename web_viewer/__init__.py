@@ -216,7 +216,7 @@ def create_runner():
         web.get("/notification-unread-count", notification_unread_count),
         web.static("/", path.join(path.dirname(__file__), "build"))
     ])
-    return web.AppRunner(app)
+    return web.AppRunner(app, access_log=None)
 
 async def start_server(host="127.0.0.1", port=1337):
     runner = create_runner()
