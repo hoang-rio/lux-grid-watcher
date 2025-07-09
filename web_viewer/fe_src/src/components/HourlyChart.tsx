@@ -133,11 +133,32 @@ const HourlyChart = forwardRef(
       })
     );
 
+    // Memoize min and max date for the date input
+    const [minDateStr, setMinDateStr] = useState(() => {
+      const minDate = new Date();
+      minDate.setDate(minDate.getDate() - 29);
+      return formatLocalDate(minDate);
+    });
+    const [maxDateStr, setMaxDateStr] = useState(() => {
+      const maxDate = new Date();
+      return formatLocalDate(maxDate);
+    });
+
+    // Helper to update min/max date strings
+    const updateMinMaxDateStr = useCallback(() => {
+      const minDate = new Date();
+      minDate.setDate(minDate.getDate() - 29);
+      setMinDateStr(formatLocalDate(minDate));
+      const maxDate = new Date();
+      setMaxDateStr(formatLocalDate(maxDate));
+    }, []);
+
     const onVisibilityChange = useCallback(() => {
       if (!document.hidden) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const todayStr = formatLocalDate(today);
+        updateMinMaxDateStr(); // Update min/max date when page becomes visible
         // Only run logic if today is selected
         if (isTodaySelectedRef.current === true) {
           const shouldFetch = selectedDate !== todayStr || isAutoUpdate;
@@ -150,7 +171,7 @@ const HourlyChart = forwardRef(
           }
         }
       }
-    }, [isAutoUpdate, fetchChart, selectedDate]);
+    }, [isAutoUpdate, fetchChart, selectedDate, updateMinMaxDateStr]);
 
     useEffect(() => {
       document.addEventListener("visibilitychange", onVisibilityChange);
@@ -162,7 +183,8 @@ const HourlyChart = forwardRef(
     useEffect(() => {
       // Fetch initial chart data when component mounts
       fetchChart();
-    }, [fetchChart]);
+      updateMinMaxDateStr(); // Also update min/max date on mount
+    }, [fetchChart, updateMinMaxDateStr]);
 
     useEffect(() => {
       const mq = window.matchMedia("(prefers-color-scheme: dark)");
@@ -189,17 +211,6 @@ const HourlyChart = forwardRef(
       const day = String(date.getDate()).padStart(2, "0");
       return `${year}-${month}-${day}`;
     }
-
-    // Memoize min and max date for the date input
-    const minDateStr = useMemo(() => {
-      const minDate = new Date();
-      minDate.setDate(minDate.getDate() - 29);
-      return formatLocalDate(minDate);
-    }, []);
-    const maxDateStr = useMemo(() => {
-      const maxDate = new Date();
-      return formatLocalDate(maxDate);
-    }, []);
 
     return (
       <div className={`card hourly-chart col ${className || ""}`}>
