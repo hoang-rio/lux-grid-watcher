@@ -42,6 +42,9 @@ const HourlyChart = forwardRef(
     const isTodaySelectedRef = useRef(true);
     const selectedDateRef = useRef(selectedDate);
 
+    // Track last updated day for min/max date
+    const lastDateStrRef = useRef(formatLocalDate(new Date()));
+
     const series = useMemo(() => {
       const pvSeries: SeriesItem[] = [];
       const batterySeries: SeriesItem[] = [];
@@ -158,7 +161,11 @@ const HourlyChart = forwardRef(
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const todayStr = formatLocalDate(today);
-        updateMinMaxDateStr(); // Update min/max date when page becomes visible
+        // Only update min/max date if today has changed
+        if (lastDateStrRef.current !== todayStr) {
+          updateMinMaxDateStr();
+          lastDateStrRef.current = todayStr;
+        }
         // Only run logic if today is selected
         if (isTodaySelectedRef.current === true) {
           const shouldFetch = selectedDate !== todayStr || isAutoUpdate;
@@ -184,6 +191,7 @@ const HourlyChart = forwardRef(
       // Fetch initial chart data when component mounts
       fetchChart();
       updateMinMaxDateStr(); // Also update min/max date on mount
+      lastDateStrRef.current = formatLocalDate(new Date());
     }, [fetchChart, updateMinMaxDateStr]);
 
     useEffect(() => {
