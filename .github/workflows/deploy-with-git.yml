@@ -75,6 +75,7 @@ jobs:
         if: env.BUILD_FE == 'true'
         working-directory: web_viewer/fe_src
         run: |
+          node --version
           yarn install
           yarn build
           rsync -havz --no-perms --no-owner --no-group --delete -e "ssh -i ../../${{env.SSH_KEY_FILE_PATH}} -p ${{secrets.SSH_DEPLOY_PORT}} -o StrictHostKeyChecking=no" --delete ../build ${{secrets.SSH_DEPLOY_USER}}@${{secrets.SSH_DEPLOY_HOST}}:${{secrets.SSH_DEPLOY_PATH}}/web_viewer/
