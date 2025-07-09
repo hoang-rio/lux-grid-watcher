@@ -64,10 +64,17 @@ jobs:
           key: ${{ runner.os }}-yarn-${{ hashFiles('web_viewer/fe_src/yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
+
+      - name: Set up Node.js 24.3.0
+        if: env.BUILD_FE == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.3.0
+
       - name: Build and deploy FE
         if: env.BUILD_FE == 'true'
+        working-directory: web_viewer/fe_src
         run: |
-          cd web_viewer/fe_src
           yarn install
           yarn build
           rsync -havz --no-perms --no-owner --no-group --delete -e "ssh -i ../../${{env.SSH_KEY_FILE_PATH}} -p ${{secrets.SSH_DEPLOY_PORT}} -o StrictHostKeyChecking=no" --delete ../build ${{secrets.SSH_DEPLOY_USER}}@${{secrets.SSH_DEPLOY_HOST}}:${{secrets.SSH_DEPLOY_PATH}}/web_viewer/
