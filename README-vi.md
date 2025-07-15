@@ -43,6 +43,12 @@ Tôi cũng đã phát triển một ứng dụng cho Android/iOS. Nếu bạn c�
 </picture>
 </center>
 
+## Giấy phép
+
+Dự án này được phát hành theo giấy phép MIT. Xem chi tiết trong tập tin [LICENSE](LICENSE).
+
 ## Bên thứ ba
 
 Cảm ơn [@celsworth](https://github.com/celsworth) với dự án tuyệt vời [celsworth/lxp-packet](https://github.com/celsworth/lxp-packet) *(đã bị xoá)* và [celsworth/lxp-bridge](https://github.com/celsworth/lxp-bridge) (theo giấy phép MIT)
+
+Dự án này có chứa mã nguồn từ thư viện `aiohttp` (https://github.com/aio-libs/aiohttp.git) được phát hành dưới giấy phép Apache License 2.0.

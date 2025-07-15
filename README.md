@@ -43,6 +43,12 @@ I also developed an app for Android/iOS. If you need it feel free to contact me
 </picture>
 </center>
 
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
 ## Third-party
 
 Thanks to [@celsworth](https://github.com/celsworth) by awesome project [celsworth/lxp-packet](https://github.com/celsworth/lxp-packet) *(has been deleted)* and [celsworth/lxp-bridge](https://github.com/celsworth/lxp-bridge) (under MIT License)
+
+This project includes code from `aiohttp` library (https://github.com/aio-libs/aiohttp.git) which is licensed under the Apache License 2.0.
