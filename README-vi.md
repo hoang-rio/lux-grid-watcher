@@ -18,7 +18,7 @@ Một script Python cho phép giám sát biến tần Luxpower SNA theo thời g
 * Yêu cầu Python 3
 * Tạo môi trường ảo Python với `python -m venv venv`
 * Kích hoạt môi trường ảo Python bằng `source venv/Scripts/activate` trên Windows dùng git-bash hoặc `source venv/bin/active` trên Unix/Linux
-* Cài đặt các thư viện phụ thuộc với `pip install -r requirements.txt` hoặc `./pip-binary-install.sh`
+* Cài đặt các thư viện phụ thuộc với `pip install -r requirements.txt` hoặc `./pip-binary-install.sh` trên thiết bị cấu hình yếu (ví dụ: bộ định tuyến OpenWrt)
 * Chạy ứng dụng với `python app.py`
 > Nếu bạn không thể cài đặt và chạy ứng dụng, bạn có thể sử dụng phương pháp chạy bằng docker bên dưới
 

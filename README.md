@@ -18,7 +18,7 @@ A python script allow watch Luxpower SNA inverter in realtime. Tested in Luxpowe
 * Python 3 required
 * Setup python venv with `python -m venv venv`
 * Active python venv `source venv/Scripts/activate` on git-bash Windows or `source venv/bin/active` on Unix/Linux
-* Install dependencies with `pip install -r requirements.txt` or `./pip-binary-install.sh`
+* Install dependencies with `pip install -r requirements.txt` or `./pip-binary-install.sh` on low-end device (example: OpenWrt router)
 * Run application with `python app.py`
 > If you can't install and run you can use docker method bellow
 
