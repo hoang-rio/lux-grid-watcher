@@ -20,6 +20,7 @@ const MonthlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
   const [chartData, setChartData] = useState([]);
   const [isDark, setIsDark] = useState(false);
   const isFetchingRef = useRef<boolean>(false);
+  const [isLoading, setIsLoading] = useState(true);
   const series = useMemo(() => {
     const solarSeries: SeriesItem[] = [];
     const batteryChargedSeries: SeriesItem[] = [];
@@ -70,12 +71,14 @@ const MonthlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
       return;
     }
     isFetchingRef.current = true;
+    setIsLoading(true);
     const res = await fetch(
       `${import.meta.env.VITE_API_BASE_URL}/monthly-chart`
     );
     const json = await res.json();
     setChartData(json);
     isFetchingRef.current = false;
+    setIsLoading(false);
   }, []);
 
   useImperativeHandle(
@@ -109,10 +112,10 @@ const MonthlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
     mq.addEventListener("change", (evt) => setIsDark(evt.matches));
   }, []);
 
-  if (chartData.length) {
-    return <BarChart series={series} isDark={isDark} />;
+  if (isLoading || !chartData) {
+    return <Loading />;
   }
-  return <Loading />;
+  return <BarChart series={series} isDark={isDark} />;
 });
 
 MonthlyChart.displayName = "MonthlyChart";

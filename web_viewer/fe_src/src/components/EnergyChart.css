@@ -22,9 +22,3 @@
 .chart-select button.active {
     background-color: #51ad77;
 }
-
-@media screen and (max-width: 768px) {
-    .energy-chart {
-        height: 460px;
-    }
-}

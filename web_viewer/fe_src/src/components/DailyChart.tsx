@@ -20,6 +20,7 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
   const [chartData, setChartData] = useState([]);
   const [isDark, setIsDark] = useState(false);
   const isFetchingRef = useRef<boolean>(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const series = useMemo(() => {
     const solarSeries: SeriesItem[] = [];
@@ -71,10 +72,12 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
       return;
     }
     isFetchingRef.current = true;
+    setIsLoading(true);
     const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/daily-chart`);
     const json = await res.json();
     setChartData(json);
     isFetchingRef.current = false;
+    setIsLoading(false);
   }, []);
 
   useImperativeHandle(
@@ -108,28 +111,29 @@ const DailyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
     return () => mq.removeEventListener("change", (evt) => setIsDark(evt.matches));
   }, []);
 
-  if (chartData.length) {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    return (
-      <BarChart
-        series={series}
-        isDark={isDark}
-        xaxis={{
-          type: "datetime",
-          labels: {
-            datetimeUTC: false,
-            format: "d",
-          },
-          min: startOfMonth.getTime(),
-          max: endOfMonth.getTime(),
-          stepSize: 1,
-        }}
-      />
-    );
+  if (isLoading || !chartData) {
+    return <Loading />;
   }
-  return <Loading />;
+
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  return (
+    <BarChart
+      series={series}
+      isDark={isDark}
+      xaxis={{
+        type: "datetime",
+        labels: {
+          datetimeUTC: false,
+          format: "d",
+        },
+        min: startOfMonth.getTime(),
+        max: endOfMonth.getTime(),
+        stepSize: 1,
+      }}
+    />
+  );
 });
 
 DailyChart.displayName = "DailyChart";
