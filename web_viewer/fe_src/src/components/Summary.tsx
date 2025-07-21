@@ -72,7 +72,7 @@ function Summary({ invertData }: IProps) {
   }, [fetchTotal, onVisibilityChange]);
 
   // Extract yield content rendering
-  const renderYieldContent = () => {
+  const renderYieldContent = useCallback(() => {
     switch (yieldDisplay) {
       case YieldDisplay.YIELD:
         return <DisplayYield total={total} ePVDay={invertData.e_pv_day} />;
@@ -81,7 +81,7 @@ function Summary({ invertData }: IProps) {
           <YieldChart
             label="today"
             totalYield={invertData.e_pv_day}
-            charge={invertData.e_chg_day}
+            charge={invertData.e_chg_day - invertData.e_rec_day}
             gridExport={invertData.e_to_grid_day}
           />
         );
@@ -97,7 +97,7 @@ function Summary({ invertData }: IProps) {
       default:
         return null;
     }
-  };
+  }, [yieldDisplay, total, invertData]);
 
   return (
     <div className="summary row">
