@@ -9,6 +9,9 @@
 ## About
 A python script allow watch Luxpower SNA inverter in realtime. Tested in Luxpower SNA 6K with old wifi dongle (BAxxxxxx wifi name)
 
+## Inverter setup
+See wiki from `lxp-bridge` [here](https://github.com/celsworth/lxp-bridge/wiki/Inverter-Setup). _(You can ignore AC charge setup)_
+
 ## Configuration
 * Copy `.env.example` to `.env`
 * Update configuration in `.env` with your info
