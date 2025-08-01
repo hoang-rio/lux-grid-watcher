@@ -12,4 +12,4 @@ services:
       - ../.env:/app/.env:ro
       - ../db:/app/db:rw
     ports:
-      - 88:88
+      - 8088:8088

@@ -1,4 +1,4 @@
-FROM node:24.3.0-alpine AS fe_builder
+FROM node:24.4.1-alpine AS fe_builder
 
 COPY web_viewer/fe_src /fe_builder/fe_src
 
