@@ -178,7 +178,8 @@ def handle_grid_status(json_data: dict, fcm_service: FCM):
         )
     else:
         logger.info(
-            "_________Inverter currently connected to GRID with\nStatus: \"%s\" (%s) at deviceTime: %s with fac: %s Hz and vacr: %s V_________",
+            """_________Inverter currently connected to GRID with________
+________Status: \"%s\" (%s) at deviceTime: %s with fac: %s Hz and vacr: %s V_________""",
             status_text,
             json_data["status"],
             json_data['deviceTime'],
