@@ -9,6 +9,7 @@ import json
 from logging import Logger, getLogger
 from dotenv import dotenv_values
 from typing import List, Optional
+from base64 import b64decode
 
 # Load config from .env and environment
 config: dict = {**dotenv_values(".env"), **environ}
@@ -200,8 +201,40 @@ async def notification_unread_count(_: web.Request):
         logger.error(f"Error in notification_unread_count: {e}")
         return web.json_response({"unread_count": 0}, headers=VITE_CORS_HEADER)
 
+# --- Basic Auth Middleware and Config ---
+AUTH_ENABLED = config.get("AUTH_ENABLED", "false").lower() == "true"
+AUTH_USERNAME = config.get("AUTH_USERNAME", "admin")
+AUTH_PASSWORD = config.get("AUTH_PASSWORD", "changeme")
+
+@web.middleware
+async def basic_auth_middleware(request, handler):
+    if not AUTH_ENABLED:
+        return await handler(request)
+    # Allow unauthenticated access to static files
+    if request.path.startswith("/static") or request.path.startswith("/build"):
+        return await handler(request)
+    # Allow unauthenticated access to /ws only if from loopback
+    if request.path == "/ws":
+        peer = request.transport.get_extra_info("peername")
+        if peer:
+            ip = peer[0]
+            if ip == "127.0.0.1" or ip == "::1":
+                return await handler(request)
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Basic "):
+        return web.Response(status=401, headers={"WWW-Authenticate": "Basic realm='WebViewer'"}, text="Unauthorized")
+    try:
+        encoded = auth_header.split(" ", 1)[1]
+        decoded = b64decode(encoded).decode()
+        username, password = decoded.split(":", 1)
+    except Exception:
+        return web.Response(status=401, headers={"WWW-Authenticate": "Basic realm='WebViewer'"}, text="Invalid auth header")
+    if username != AUTH_USERNAME or password != AUTH_PASSWORD:
+        return web.Response(status=401, headers={"WWW-Authenticate": "Basic realm='WebViewer'"}, text="Invalid credentials")
+    return await handler(request)
+
 def create_runner():
-    app = web.Application()
+    app = web.Application(middlewares=[basic_auth_middleware])
     app.add_routes([
         web.get("/", http_handler),
         web.get("/ws", websocket_handler),
