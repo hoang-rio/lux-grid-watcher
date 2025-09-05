@@ -18,14 +18,25 @@ function EnergyChart({ className }: IClassNameProps) {
   const [energyChartType, setEnergyChartType] = useState(EnergyChartType.Daily);
   const fetchChartRef = useRef<IFetchChart>(null);
   const now = new Date();
-  const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const lastYearMonthStr = `${now.getFullYear() - 1}-01`;
-  const [selectedMonth, setSelectedMonth] = useState(() => currentMonthStr);
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const years = [currentYear - 1, currentYear];
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
 
   // Month select handler
-  const handleMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedMonth(e.target.value);
-    // Optionally trigger chart update on month change
+  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newYear = Number(e.target.value);
+    setSelectedYear(newYear);
+    // If switching to current year and previous month is not valid, select current month
+    if (newYear === currentYear && selectedMonth > currentMonth) {
+      setSelectedMonth(currentMonth);
+    }
+    setTimeout(() => fetchChartRef?.current?.fetchChart(), 0);
+  };
+  const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedMonth(Number(e.target.value));
     setTimeout(() => fetchChartRef?.current?.fetchChart(), 0);
   };
 
@@ -76,24 +87,40 @@ function EnergyChart({ className }: IClassNameProps) {
       </div>
       {energyChartType === EnergyChartType.Daily && (
         <div className="month-select-row">
-          <label htmlFor="month-select" className="month-select-label">
+          <label className="month-select-label">
             {t("energyChart.selectMonth", "Month:")}
           </label>
-          <input
-            id="month-select"
-            type="month"
+          <select
+            className="month-select-input"
+            value={selectedYear}
+            onChange={handleYearChange}
+          >
+            {years.map((year) => (
+              <option key={year} value={year}>{year}</option>
+            ))}
+          </select>
+          <select
             className="month-select-input"
             value={selectedMonth}
             onChange={handleMonthChange}
-            min={lastYearMonthStr}
-            max={currentMonthStr}
-          />
+          >
+            {months.map((month) => {
+              // Only allow months up to current month for current year
+              if (selectedYear === currentYear && month > currentMonth) return null;
+              return (
+                <option key={month} value={month}>{String(month).padStart(2, "0")}</option>
+              );
+            })}
+          </select>
         </div>
       )}
       <div className="energy-chart-content flex-1 col">
         {energyChartType === EnergyChartType.Daily && (
           <Suspense fallback={<Loading />}>
-            <DailyChart ref={fetchChartRef} month={selectedMonth} />
+            <DailyChart
+              ref={fetchChartRef}
+              month={`${selectedYear}-${String(selectedMonth).padStart(2, "0")}`}
+            />
           </Suspense>
         )}
         {energyChartType === EnergyChartType.Monthly && (
