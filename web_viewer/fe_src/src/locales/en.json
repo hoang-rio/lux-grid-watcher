@@ -45,7 +45,8 @@
     "yearly": "Yearly",
     "title_daily": "Daily Chart",
     "title_monthly": "Monthly Chart",
-    "title_yearly": "Yearly Chart"
+    "title_yearly": "Yearly Chart",
+    "selectMonth": "Month:"
   },
   "yield": {
     "today": "Yield today",

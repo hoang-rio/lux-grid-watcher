@@ -11,14 +11,35 @@
     margin-top: 10px;
 }
 
+/* ...existing code... */
 .energy-chart-buttons > button {
     margin-right: 10px;
 }
 
-.chart-select button{
+.chart-select button {
     margin: 0 5px;
 }
 
 .chart-select button.active {
     background-color: #51ad77;
+}
+
+.month-select-row {
+    display: flex;
+    align-items: center;
+    margin-left: 16px;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.month-select-label {
+    margin-right: 8px;
+    font-weight: 500;
+}
+
+.month-select-input {
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
 }

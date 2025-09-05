@@ -115,14 +115,28 @@ async def daily_chart(_: web.Request):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        now = datetime.now()
+        request = _
+        month_str = request.rel_url.query.get('month')
+        if month_str:
+            # Expect format YYYY-MM
+            try:
+                year, month = map(int, month_str.split('-'))
+                query_date = datetime(year, month, 1)
+            except Exception:
+                query_date = datetime.now()
+                year = query_date.year
+                month = query_date.month
+        else:
+            query_date = datetime.now()
+            year = query_date.year
+            month = query_date.month
         daily_chart = cursor.execute(
             "SELECT * FROM daily_chart WHERE year = ? AND month = ?",
-            (now.year, now.month)
+            (year, month)
         ).fetchall()
         # Fill empty data to daily_chart from last item to last day of month
         if daily_chart:
-            last_day_of_month = (now.replace(day=1, hour=0, minute=0, second=0, microsecond=0) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+            last_day_of_month = (query_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
             last_item_date = datetime.strptime(daily_chart[-1][3], "%Y-%m-%d")
             while last_item_date < last_day_of_month:
                 last_item_date += timedelta(days=1)
