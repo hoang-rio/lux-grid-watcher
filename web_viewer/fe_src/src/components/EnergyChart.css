@@ -2,7 +2,11 @@
     margin-top: 10px;
     height: 480px;
 }
-
+@media screen and (max-width: 768px) {
+    .energy-chart {
+        height: 520px;
+    }
+}
 .energy-chart-title {
     font-weight: bold;
 }
