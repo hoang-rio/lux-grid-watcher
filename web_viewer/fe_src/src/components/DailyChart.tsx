@@ -141,7 +141,7 @@ const DailyChart = forwardRef((props: DailyChartProps, ref: ForwardedRef<IFetchC
         type: "datetime",
         labels: {
           datetimeUTC: false,
-          format: "d/M",
+          format: "d",
         },
         min: startOfMonth.getTime(),
         max: endOfMonth.getTime(),
