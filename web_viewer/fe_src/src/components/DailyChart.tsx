@@ -104,9 +104,16 @@ const DailyChart = forwardRef((props: DailyChartProps, ref: ForwardedRef<IFetchC
 
   const onVisiblityChange = useCallback(() => {
     if (!document.hidden) {
-      fetchChart();
+      // Only fetch if selected month is current month
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+      const [selectedYear, selectedMonth] = month.split("-").map(Number);
+      if (selectedYear === currentYear && selectedMonth === currentMonth) {
+        fetchChart();
+      }
     }
-  }, [fetchChart]);
+  }, [fetchChart, month]);
 
   useEffect(() => {
     fetchChart();
