@@ -40,6 +40,15 @@ function EnergyChart({ className }: IClassNameProps) {
     setTimeout(() => fetchChartRef?.current?.fetchChart(), 0);
   };
 
+  // Reset month/year when switching to Daily chart
+  const handleChartTypeChange = (type: EnergyChartType) => {
+    if (type === EnergyChartType.Daily) {
+      setSelectedYear(currentYear);
+      setSelectedMonth(currentMonth);
+    }
+    setEnergyChartType(type);
+  };
+
   return (
     <div className={`card col energy-chart ${className}`}>
       <div className="row justify-space-between">
@@ -58,7 +67,7 @@ function EnergyChart({ className }: IClassNameProps) {
               className={
                 energyChartType === EnergyChartType.Daily ? "active" : undefined
               }
-              onClick={() => setEnergyChartType(EnergyChartType.Daily)}
+              onClick={() => handleChartTypeChange(EnergyChartType.Daily)}
             >
               {t("energyChart.daily")}
             </button>
@@ -68,7 +77,7 @@ function EnergyChart({ className }: IClassNameProps) {
                   ? "active"
                   : undefined
               }
-              onClick={() => setEnergyChartType(EnergyChartType.Monthly)}
+              onClick={() => handleChartTypeChange(EnergyChartType.Monthly)}
             >
               {t("energyChart.monthly")}
             </button>
@@ -78,7 +87,7 @@ function EnergyChart({ className }: IClassNameProps) {
                   ? "active"
                   : undefined
               }
-              onClick={() => setEnergyChartType(EnergyChartType.Yearly)}
+              onClick={() => handleChartTypeChange(EnergyChartType.Yearly)}
             >
               {t("energyChart.yearly")}
             </button>
