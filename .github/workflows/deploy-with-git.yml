@@ -71,7 +71,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: ${{env.NODE_VERSION}}
-          cache: 'yarn'
 
       - name: Build and deploy FE
         if: env.BUILD_FE == 'true'

@@ -7,7 +7,7 @@ RUN yarn install
 # Build the frontend
 RUN yarn build
 
-FROM python:3.12.10-alpine
+FROM python:3.12.11-alpine
 
 COPY . /app
 # Copy the requirements file
@@ -16,6 +16,9 @@ COPY .env.example /app/.env
 WORKDIR /app
 # Copy the frontend build from the builder stage
 COPY --from=fe_builder /fe_builder/build /app/web_viewer/build
+
+# Upgrade system packages to address vulnerabilities
+RUN apk update && apk upgrade
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
