@@ -49,7 +49,7 @@ jobs:
 
           if [[ $NEED_RESTART_APP == true ]]; then
               if [[ $(echo $GIT_CHANGED_FILE | grep "aiohttp") != "" ]]; then
-                SSH_DEPLOY_COMMAND="$SSH_DEPLOY_COMMAND && git submodule update && ./pip-binary-install.sh"
+                SSH_DEPLOY_COMMAND="$SSH_DEPLOY_COMMAND && git submodule update"
               elif [[ $(echo $GIT_CHANGED_FILE | grep "requirements.txt") != "" ]]; then
                 SSH_DEPLOY_COMMAND="$SSH_DEPLOY_COMMAND && ./pip-binary-install.sh"
               fi
