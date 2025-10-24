@@ -278,8 +278,20 @@ def run_http_server():
     global loop
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(start_server(
-        host=config.get("HOST", "127.0.0.1"), port=int(config.get("PORT", 1337))))
+    host = config.get("HOST", "127.0.0.1")
+    port = int(config.get("PORT", 1337))
+    # Start primary server (IPv4 or hostname)
+    loop.run_until_complete(start_server(host=host, port=port))
+
+    # If HOST_IPV6 is configured, start a second server bound to that IPv6 address
+    # using the same port as requested.
+    host_ipv6 = config.get("HOST_IPV6")
+    if host_ipv6:
+        try:
+            ipv6_port = port  # explicitly use same port for both
+            loop.run_until_complete(start_server(host=host_ipv6, port=ipv6_port))
+        except Exception as e:
+            logger.error(f"Failed to start IPv6 server on {host_ipv6}:{port} - {e}")
     loop.run_forever()
 
 class WebViewer(threading.Thread):
