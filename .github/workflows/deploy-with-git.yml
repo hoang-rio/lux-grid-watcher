@@ -39,7 +39,7 @@ jobs:
           SSH_DEPLOY_COMMAND="cd ${{secrets.SSH_DEPLOY_PATH}} && git fetch && git reset --hard origin/main"
           NEED_RESTART_APP=true
           BUILD_FE=false
-          GIT_CHANGED_FILE=$(git log -1 --no-merges --name-only --format="")
+          GIT_CHANGED_FILE=$(git log -1 --name-only --format="%s")
           if [[ $(echo $GIT_CHANGED_FILE | grep "\.py") == "" && $(echo $GIT_CHANGED_FILE | grep "\.sh") == "" && $(echo $GIT_CHANGED_FILE | grep "aiohttp") == "" ]]; then
               NEED_RESTART_APP=false
           fi
