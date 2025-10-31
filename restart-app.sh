@@ -7,4 +7,4 @@ else
     kill $PID
 fi
 echo "Starting app.py..."
-nohup nice -n 100 python app.py &
+nohup nice -n 100 python app.py >> /dev/null 2>&1 &
