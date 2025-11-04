@@ -10,7 +10,7 @@ Tiếng Việt | [English](README.md)
 Một script Python cho phép giám sát biến tần Luxpower SNA theo thời gian thực. Đã thử nghiệm trên Luxpower SNA 6K với kết nối wifi loại cũ (tên wifi dạng BAxxxxxx)
 
 ## Thiết lập biến tần
-Xem hướng dẫn trên wiki của `lxp-bridge` [tại đây](https://github.com/celsworth/lxp-bridge/wiki/Inverter-Setup). _Bạn có thể bỏ qua phần thiết lập sạc AC_
+Xem hướng dẫn trên wiki của `lxp-bridge` [tại đây](https://github.com/celsworth/lxp-bridge/wiki/Inverter-Setup). _(Bạn có thể bỏ qua phần thiết lập sạc AC)_
 
 ## Cấu hình
 * Sao chép `.env.example` thành `.env`
