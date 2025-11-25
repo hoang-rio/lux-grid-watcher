@@ -117,5 +117,23 @@
     "fetchingUnreadCount": "Fetching unread notification count...",
     "failedFetchUnreadCount": "Failed to fetch unread notification count"
   },
+  "settings": {
+    "title": "Settings",
+    "abnormalUsageSection": "Abnormal usage section",
+    "abnormalSkipCheckHours": "Skip check hours (-1 to disable)",
+    "abnormalMinPower": "Minimum power threshold",
+    "offGridWarningSection": "Off grid warning power setting",
+    "offGridWarningPower": "Power threshold",
+    "offGridWarningSoc": "SOC threshold",
+    "maxBatteryPower": "Max battery power",
+    "offGridWarningEnabled": "Enable warning",
+    "save": "Save",
+    "saving": "Saving...",
+    "saveSuccess": "Settings saved successfully",
+    "saveError": "Failed to save settings",
+    "hours": "hours",
+    "watts": "W",
+    "percent": "%"
+  },
   "getStateError": "API get state error"
 }

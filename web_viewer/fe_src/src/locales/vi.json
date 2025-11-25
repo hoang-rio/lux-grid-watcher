@@ -117,5 +117,23 @@
     "fetchingUnreadCount": "Đang lấy số lượng thông báo chưa đọc...",
     "failedFetchUnreadCount": "Lấy số lượng thông báo chưa đọc thất bại"
   },
+  "settings": {
+    "title": "Cài đặt",
+    "abnormalUsageSection": "Phần sử dụng bất thường",
+    "abnormalSkipCheckHours": "Giờ bỏ qua kiểm tra (-1 để tắt)",
+    "abnormalMinPower": "Ngưỡng công suất tối thiểu",
+    "offGridWarningSection": "Cài đặt công suất cảnh báo tắt lưới",
+    "offGridWarningPower": "Ngưỡng công suất",
+    "offGridWarningSoc": "Ngưỡng SOC",
+    "maxBatteryPower": "Công suất pin tối đa",
+    "offGridWarningEnabled": "Bật cảnh báo",
+    "save": "Lưu",
+    "saving": "Đang lưu...",
+    "saveSuccess": "Cài đặt đã được lưu thành công",
+    "saveError": "Lưu cài đặt thất bại",
+    "hours": "giờ",
+    "watts": "W",
+    "percent": "%"
+  },
   "getStateError": "Lỗi lấy API trạng thái"
 }

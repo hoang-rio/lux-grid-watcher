@@ -215,6 +215,33 @@ async def notification_unread_count(_: web.Request):
         logger.error(f"Error in notification_unread_count: {e}")
         return web.json_response({"unread_count": 0}, headers=VITE_CORS_HEADER)
 
+async def get_settings(_: web.Request):
+    try:
+        import settings
+        return web.json_response(settings.settings, headers=VITE_CORS_HEADER)
+    except Exception as e:
+        logger.error(f"Error in get_settings: {e}")
+        return web.json_response({}, headers=VITE_CORS_HEADER)
+
+async def update_settings(request: web.Request):
+    try:
+        data = await request.json()
+        conn = get_db_connection()
+        import settings
+        for key, value in data.items():
+            settings.save_setting(key, value, conn)
+        return web.json_response({"success": True}, headers=VITE_CORS_HEADER)
+    except Exception as e:
+        logger.error(f"Error in update_settings: {e}")
+        return web.json_response({"success": False}, headers=VITE_CORS_HEADER)
+
+async def options_settings(_: web.Request):
+    return web.Response(headers={
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+    })
+
 # --- Basic Auth Middleware and Config ---
 AUTH_ENABLED = config.get("AUTH_ENABLED", "false").lower() == "true"
 AUTH_USERNAME = config.get("AUTH_USERNAME", "admin")
@@ -261,6 +288,9 @@ def create_runner():
         web.get("/notification-history", notification_history),
         web.post("/notification-mark-read", mark_notifications_read),
         web.get("/notification-unread-count", notification_unread_count),
+        web.get("/settings", get_settings),
+        web.post("/settings", update_settings),
+        web.options("/settings", options_settings),
         web.static("/", path.join(path.dirname(__file__), "build"))
     ])
     return web.AppRunner(app, access_log=None)

@@ -6,6 +6,7 @@ import Inverter from "./Inverter";
 import Grid from "./Grid";
 import Consumption from "./Consumption";
 import EPS from "./EPS";
+import SettingsPopover from "./SettingsPopover";
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Loading from "./Loading";
@@ -30,8 +31,11 @@ function SystemInformation({
   const [notifications, setNotifications] = useState<INotificationData[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false); // new state
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showSettings, setShowSettings] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const notificationButtonRef = useRef<HTMLDivElement>(null);
+  const settingsButtonRef = useRef<HTMLDivElement>(null);
+  const settingsPopoverRef = useRef<HTMLDivElement>(null);
   const notificationOpened = useRef(false); // Track if notification popover was opened
 
   // Added helper function to format datetime
@@ -102,6 +106,23 @@ function SystemInformation({
     }
   }, [showNotifications]);
 
+  useEffect(() => {
+    if (showSettings) {
+      const handleClickOutside = (event: MouseEvent) => {
+        // If click is inside settings button or popover, do nothing.
+        if (
+          (settingsButtonRef.current && settingsButtonRef.current.contains(event.target as Node)) ||
+          (settingsPopoverRef.current && settingsPopoverRef.current.contains(event.target as Node))
+        ) {
+          return;
+        }
+        setShowSettings(false);
+      };
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showSettings]);
+
   // Remove auto-open popover on new notification, just update unread count
   useEffect(() => {
     if (newNotification) {
@@ -158,6 +179,30 @@ function SystemInformation({
           <div className="system-title">
             <span className="system-title-text">{t("systemInformation")}</span>
             <span>{inverterData.deviceTime}</span>
+            <div className="settings-button" ref={settingsButtonRef}>
+              <button
+                onClick={() => setShowSettings((prev) => !prev)}
+                className={showSettings ? "active" : "inactive"}
+                title={t("settings.title")}
+              >
+                {/* Gear icon SVG */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  viewBox="0 0 24 24"
+                  strokeLinejoin="round"
+                  className="feather feather-settings"
+                >
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+              </button>
+            </div>
             <div className="notification-button" ref={notificationButtonRef}>
               <button
                 onClick={handleShowNotifications}
@@ -273,6 +318,9 @@ function SystemInformation({
               )}
             </div>
           </div>
+        )}
+        {showSettings && (
+          <SettingsPopover ref={settingsPopoverRef} onClose={() => setShowSettings(false)} />
         )}
       </div>
     </>

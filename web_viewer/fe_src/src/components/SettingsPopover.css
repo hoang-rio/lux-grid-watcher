@@ -1,0 +1,143 @@
+.settings-popover {
+    position: absolute;
+    top: 45px;
+    right: 40px;
+    transform: translateX(calc(-10% - 5px));
+    padding: 0;
+    border: 1px solid #ccc;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    width: 350px;
+    min-height: 400px;
+    cursor: default;
+}
+
+.settings-content {
+    padding: 8px;
+}
+
+.settings-section {
+    margin-bottom: 16px;
+}
+
+.settings-section h4 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.setting-item label {
+    flex: 1;
+    margin-right: 8px;
+}
+
+.setting-item input[type="number"] {
+    width: 80px;
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.setting-item input[type="checkbox"] {
+    margin-right: 4px;
+}
+
+.setting-item span {
+    margin-left: 4px;
+    font-size: 12px;
+    color: #666;
+    width: 30px;
+    display: inline-block;
+    text-align: left;
+}
+
+.settings-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 8px;
+    border-top: 1px solid #ddd;
+}
+
+.settings-actions button {
+    padding: 6px 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.settings-actions button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.settings-message {
+    margin-top: 8px;
+    font-size: 12px;
+    text-align: center;
+}
+
+.settings-message.success {
+    color: green;
+}
+
+.settings-message.error {
+    color: red;
+}
+
+.settings-popover .notification-popover-header {
+    position: relative;
+}
+
+.settings-popover .notification-popover-header h3 {
+    margin-right: 16px;
+}
+
+.settings-popover .settings-message {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    font-size: 11px;
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.settings-popover .close-popover {
+    position: absolute;
+    right: 8px;
+}
+
+@media screen and (max-width: 768px) {
+    .settings-popover {
+        width: 90vw;
+        max-width: 350px;
+        left: 50%;
+        transform: translateX(-50%);
+        right: auto;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .settings-popover {
+        background: #5c5c5c;
+        border: 1px solid #555;
+        box-shadow: 0 2px 8px rgba(255, 255, 255, 0.2);
+    }
+    .setting-item span {
+        color: #ccc;
+    }
+    .settings-message.success {
+        color: #90EE90;
+    }
+}

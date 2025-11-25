@@ -18,6 +18,31 @@
     font-weight: bold;
 }
 
+.settings-button {
+    position: absolute;
+    top: 0;
+    right: 40px;
+    margin: 5px;
+}
+
+.settings-button button {
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+    background-color: transparent;
+    color: green;
+}
+
+.settings-button button.active {
+    background-color: lightgray;
+}
+
+.settings-button button:not(.active):hover {
+    background-color: #f0f0f0; /* Light mode hover background */
+}
+
+
+
 .notification-button {
     position: absolute;
     top: 0;
@@ -271,6 +296,8 @@
     background-color: #ffd6d6;
 }
 
+
+
 .notification-popover {
     position: absolute;
     top: 45px;
@@ -300,6 +327,27 @@
     justify-content: space-between;
     margin-bottom: 8px;
     padding: 8px;
+}
+
+.settings-popover .notification-popover-header {
+    position: relative;
+}
+
+.settings-popover .notification-popover-header h3 {
+    margin-right: 16px;
+}
+
+.settings-popover .settings-message {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    font-size: 12px;
+}
+
+.settings-popover .close-popover {
+    position: absolute;
+    right: 8px;
 }
 
 .notification-popover-header h3 {
@@ -568,6 +616,26 @@
     .y-arrow+.y-arrow {
         margin-top: -6px;
     }
+
+
+
+    .notification-popover {
+        width: 90vw;
+        max-width: 300px;
+        left: 50%;
+        transform: translateX(-50%);
+        right: auto;
+    }
+
+    .system-title {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .system-title-text {
+        margin-bottom: 5px;
+    }
 }
 
 @media (prefers-color-scheme: light) {
@@ -577,6 +645,12 @@
 }
 
 @media (prefers-color-scheme: dark) {
+    .settings-button button.active {
+        background-color: #555;
+    }
+    .settings-button button:not(.active):hover {
+        background-color: #666;
+    }
     .notification-history {
         background: #5c5c5c;
         color: #eee;

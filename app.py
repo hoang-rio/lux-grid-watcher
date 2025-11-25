@@ -12,6 +12,7 @@ import json
 from play_audio import PlayAudio
 import asyncio
 from web_socket_client import WebSocketClient
+import settings
 
 DONGLE_MODE = "DONGLE"
 
@@ -29,15 +30,30 @@ config: dict = {
     **environ
 }
 
-ABNORMAL_SKIP_CHECK_HOURS = int(
-    config["ABNORMAL_SKIP_CHECK_HOURS"]) if "ABNORMAL_SKIP_CHECK_HOURS" in config else 3
-ABNORMAL_USAGE_COUNT = 32 * ABNORMAL_SKIP_CHECK_HOURS
-NORMAL_MIN_USAGE_COUNT = 5 * ABNORMAL_SKIP_CHECK_HOURS
-ABNORMAL_MIN_POWER = 900
-OFF_GRID_WARNING_POWER = 2200
-OFF_GRID_WARNING_SOC = 87
-OFF_GRID_WARNING_SKIP_CHECK_COUNT = 60 // int(config["SLEEP_TIME"])
-MAX_BATTERY_POWER = 3000
+# Settings will be loaded from DB
+def get_abnormal_skip_check_hours():
+    return int(settings.get_setting("ABNORMAL_SKIP_CHECK_HOURS", config.get("ABNORMAL_SKIP_CHECK_HOURS", 3)))
+
+def get_abnormal_usage_count():
+    return 32 * get_abnormal_skip_check_hours()
+
+def get_normal_min_usage_count():
+    return 5 * get_abnormal_skip_check_hours()
+
+def get_abnormal_min_power():
+    return int(settings.get_setting("ABNORMAL_MIN_POWER", 900))
+
+def get_off_grid_warning_power():
+    return int(settings.get_setting("OFF_GRID_WARNING_POWER", 2200))
+
+def get_off_grid_warning_soc():
+    return int(settings.get_setting("OFF_GRID_WARNING_SOC", 87))
+
+def get_max_battery_power():
+    return int(settings.get_setting("MAX_BATTERY_POWER", 3000))
+
+def get_off_grid_warning_enabled():
+    return settings.get_setting("OFF_GRID_WARNING_ENABLED", "true").lower() == "true"
 log_level = logging.DEBUG if config["IS_DEBUG"] == 'True' else logging.INFO
 
 logger = logging.getLogger(__file__)
@@ -78,13 +94,16 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
     now = datetime.now()
     # now = now.replace(minute=0, second=0, hour=6)
     sleep_time = int(config["SLEEP_TIME"])
+    abnormal_skip_check_hours = get_abnormal_skip_check_hours()
+    if abnormal_skip_check_hours == -1:
+        return  # Skip check
     if (sleep_time >= 60 and now.minute <= sleep_time / 60) or (now.minute == 0 and now.second <= sleep_time):
         global abnormal_skip_check_count
         if abnormal_skip_check_count > 0:
             abnormal_skip_check_count = abnormal_skip_check_count - 1
             return
         cursor = db_connection.cursor()
-        abnormal_check_start_time = now - timedelta(hours=ABNORMAL_SKIP_CHECK_HOURS)
+        abnormal_check_start_time = now - timedelta(hours=abnormal_skip_check_hours)
         from web_viewer import dict_factory
         cursor.row_factory = dict_factory
         all_items = cursor.execute(
@@ -96,16 +115,19 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
         min_power = 0
         max_power = 0
         consumption_count: dict = {}
+        abnormal_min_power = get_abnormal_min_power()
+        abnormal_usage_count = get_abnormal_usage_count()
+        normal_min_usage_count = get_normal_min_usage_count()
         for item in all_items:
             rounded_consumption = item["consumption"] - item["consumption"] % 200
             consumption_count[rounded_consumption] = consumption_count.get(rounded_consumption, 0) + 1
             if min_power == 0 or rounded_consumption < min_power:
                 min_power = rounded_consumption
-            if rounded_consumption > ABNORMAL_MIN_POWER and (max_power == 0 or consumption_count[rounded_consumption] > consumption_count.get(max_power, 0)):
+            if rounded_consumption > abnormal_min_power and (max_power == 0 or consumption_count[rounded_consumption] > consumption_count.get(max_power, 0)):
                 max_power = rounded_consumption
         abnormnal_count = consumption_count.get(max_power, 0)
         normnal_count = consumption_count.get(min_power, 0)
-        if max_power >= ABNORMAL_MIN_POWER and max_power > min_power and abnormnal_count > ABNORMAL_USAGE_COUNT and normnal_count > NORMAL_MIN_USAGE_COUNT and normnal_count < abnormnal_count:
+        if max_power >= abnormal_min_power and max_power > min_power and abnormnal_count > abnormal_usage_count and normnal_count > normal_min_usage_count and normnal_count < abnormnal_count:
             logger.warning(
                 "_________Abnormal usage detected from %s to %s with %s abnormal times and %s normal times (max_power: %s, min_power: %s)_________",
                 abnormal_check_start_time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -117,8 +139,8 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
             )
             fcm_service.warning_notify()
             play_audio("warning.mp3", 5)
-            # Skip next ABNORMAL_SKIP_CHECK_HOURS hours when detect abnormal usage
-            abnormal_skip_check_count = ABNORMAL_SKIP_CHECK_HOURS
+            # Skip next abnormal_skip_check_hours hours when detect abnormal usage
+            abnormal_skip_check_count = abnormal_skip_check_hours
         else:
             logger.info(
                 "_________No abnormal usage detected from %s to %s with %s abnormal times and %s normal times (max_power: %s, min_power: %s)_________",
@@ -134,11 +156,16 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
 
 dectect_off_grid_warning_skip_check_count = 0
 def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: int, soc: int, fcm_service: FCM):
+    if not get_off_grid_warning_enabled():
+        return
     global dectect_off_grid_warning_skip_check_count
     # Nofify off grid warning if eps power is greater than OFF_GRID_WARNING_POWER and eps power is less than 2 times of pv power
     # and battery percent (soc) is less than OFF_GRID_WARNING_SOC or battery power is greater than MAX_BATTERY_POWER
-    is_battery_power_high = eps_power - pv_power > MAX_BATTERY_POWER
-    if not is_grid_connected and eps_power >= OFF_GRID_WARNING_POWER and pv_power < eps_power / 2 and (soc < OFF_GRID_WARNING_SOC or is_battery_power_high):
+    off_grid_warning_power = get_off_grid_warning_power()
+    off_grid_warning_soc = get_off_grid_warning_soc()
+    max_battery_power = get_max_battery_power()
+    is_battery_power_high = eps_power - pv_power > max_battery_power
+    if not is_grid_connected and eps_power >= off_grid_warning_power and pv_power < eps_power / 2 and (soc < off_grid_warning_soc or is_battery_power_high):
         if dectect_off_grid_warning_skip_check_count > 0:
             dectect_off_grid_warning_skip_check_count = dectect_off_grid_warning_skip_check_count - 1
             return
@@ -148,10 +175,10 @@ def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: 
             eps_power,
             soc
         )
-        fcm_service.offgrid_warning_notify(OFF_GRID_WARNING_POWER, None if is_battery_power_high else OFF_GRID_WARNING_SOC)
+        fcm_service.offgrid_warning_notify(off_grid_warning_power, None if is_battery_power_high else off_grid_warning_soc)
         play_audio("warning_power_off_grid.mp3")
         # Skip next OFF_GRID_WARNING_SKIP_CHECK_COUNT time when detect off grid warning
-        dectect_off_grid_warning_skip_check_count = OFF_GRID_WARNING_SKIP_CHECK_COUNT
+        dectect_off_grid_warning_skip_check_count = 60 // int(config["SLEEP_TIME"])
     else:
         dectect_off_grid_warning_skip_check_count = 0
 
@@ -353,6 +380,7 @@ async def main():
                     config["DB_NAME"]) if "DB_NAME" in config else None
                 from migration import run_migration
                 run_migration(db_connection, logger)
+                settings.load_settings(db_connection)
                 from web_viewer import WebViewer
                 webViewer = WebViewer(logger)
                 webViewer.start()
@@ -388,10 +416,7 @@ async def main():
                                 logger.error("Timeout waiting for web socket to send data for %s seconds", timeout_duration)
                                 ws_client = await initialize_web_socket_client(fcm_service, ws_client)
                             insert_daily_chart(db_connection, inverter_data)
-                            if ABNORMAL_SKIP_CHECK_HOURS > -1:  # Skip check if ABNORMAL_SKIP_CHECK_HOURS is -1
-                                dectect_abnormal_usage(db_connection, fcm_service)
-                            else:
-                                logger.info("Skip abnormal usage check")
+                            dectect_abnormal_usage(db_connection, fcm_service)
                 except Exception as e:
                     logger.exception("Got error when get dongle input %s", e)
                 logger.info("Wating for %s second before next check",
