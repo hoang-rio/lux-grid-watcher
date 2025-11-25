@@ -6,11 +6,12 @@ import Inverter from "./Inverter";
 import Grid from "./Grid";
 import Consumption from "./Consumption";
 import EPS from "./EPS";
-import SettingsPopover from "./SettingsPopover";
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react";
 import Loading from "./Loading";
 import * as logUtil from "../utils/logUtil";
+
+const SettingsPopover = lazy(() => import("./SettingsPopover"));
 
 interface Props {
   inverterData: IInverterData;
@@ -320,7 +321,21 @@ function SystemInformation({
           </div>
         )}
         {showSettings && (
-          <SettingsPopover ref={settingsPopoverRef} onClose={() => setShowSettings(false)} />
+          <Suspense fallback={
+            <div className="settings-popover">
+              <div className="notification-popover-content">
+                <div className="notification-popover-header">
+                  <h3>{t('settings.title')}</h3>
+                  <button className="close-popover" onClick={() => setShowSettings(false)}>
+                    ×
+                  </button>
+                </div>
+                <Loading />
+              </div>
+            </div>
+          }>
+            <SettingsPopover ref={settingsPopoverRef} onClose={() => setShowSettings(false)} />
+          </Suspense>
         )}
       </div>
     </>

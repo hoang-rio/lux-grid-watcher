@@ -91,8 +91,18 @@
     background: #ffeaea;
 }
 
-.system-graph {
-    position: relative;
+.settings-popover {
+    position: absolute;
+    top: 45px;
+    right: 40px;
+    transform: translateX(calc(-10% - 5px));
+    padding: 0;
+    border: 1px solid #ccc;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    width: 350px;
+    min-height: 400px;
+    cursor: default;
 }
 
 .pv {
@@ -250,6 +260,7 @@
 }
 
 .system-graph {
+    position: relative;
     width: 1103px;
     margin: auto;
 }
@@ -650,6 +661,11 @@
     }
     .settings-button button:not(.active):hover {
         background-color: #666;
+    }
+    .settings-popover {
+        background: #5c5c5c;
+        border: 1px solid #555;
+        box-shadow: 0 2px 8px rgba(255, 255, 255, 0.2);
     }
     .notification-history {
         background: #5c5c5c;
