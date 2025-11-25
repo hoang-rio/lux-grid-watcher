@@ -21,6 +21,7 @@ interface Settings {
 const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onClose }, ref) => {
   const { t } = useTranslation();
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [originalSettings, setOriginalSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
@@ -45,6 +46,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
       };
       const merged = { ...defaults, ...data };
       setSettings(merged);
+      setOriginalSettings(merged);
     } catch (err) {
       logUtil.error('Failed to fetch settings', err);
       setMessage({text: t('settings.saveError'), type: 'error'});
@@ -67,6 +69,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
       });
       const data = await res.json();
       if (data.success) {
+        setOriginalSettings(settings);
         setMessage({text: t('settings.saveSuccess'), type: 'success'});
       } else {
         setMessage({text: t('settings.saveError'), type: 'error'});
@@ -83,6 +86,11 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
     if (settings) {
       setSettings({ ...settings, [key]: value });
     }
+  };
+
+  const hasChanges = () => {
+    if (!settings || !originalSettings) return false;
+    return Object.keys(settings).some((key) => settings[key as keyof Settings] !== originalSettings[key as keyof Settings]);
   };
 
   if (loading) {
@@ -224,7 +232,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
             </p>
           </div>
           <div className="settings-actions">
-            <button onClick={handleSave} disabled={saving}>
+            <button onClick={handleSave} disabled={saving || !hasChanges()}>
               {saving ? t("settings.saving") : t("settings.save")}
             </button>
           </div>
