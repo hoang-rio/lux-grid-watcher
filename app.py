@@ -159,16 +159,24 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
 
 dectect_off_grid_warning_skip_check_count = 0
 def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: int, soc: int, fcm_service: FCM):
-    if not get_off_grid_warning_enabled():
+    if not get_off_grid_warning_enabled() or is_grid_connected:
+        return
+    if pv_power > eps_power:
+        # No need to check off grid warning if pv power is greater than eps power
         return
     global dectect_off_grid_warning_skip_check_count
-    # Nofify off grid warning if eps power is greater than OFF_GRID_WARNING_POWER and eps power is less than 2 times of pv power
-    # and battery percent (soc) is less than OFF_GRID_WARNING_SOC or battery power is greater than MAX_BATTERY_POWER
+    # Notify off grid warning if eps power >= OFF_GRID_WARNING_POWER and pv power < eps power / 2
+    # and (battery percent (soc) < OFF_GRID_WARNING_SOC or battery discharge > MAX_BATTERY_POWER)
     off_grid_warning_power = get_off_grid_warning_power()
     off_grid_warning_soc = get_off_grid_warning_soc()
     max_battery_power = get_max_battery_power()
-    is_battery_power_high = eps_power - pv_power > max_battery_power
-    if not is_grid_connected and eps_power >= off_grid_warning_power and pv_power < eps_power / 2 and (soc < off_grid_warning_soc or is_battery_power_high):
+
+    high_load = eps_power >= off_grid_warning_power
+    insufficient_pv = pv_power < eps_power / 2
+    low_battery = soc < off_grid_warning_soc
+    high_battery_discharge = eps_power - pv_power > max_battery_power
+
+    if high_load and insufficient_pv and (low_battery or high_battery_discharge):
         if dectect_off_grid_warning_skip_check_count > 0:
             dectect_off_grid_warning_skip_check_count = dectect_off_grid_warning_skip_check_count - 1
             return
@@ -178,7 +186,7 @@ def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: 
             eps_power,
             soc
         )
-        fcm_service.offgrid_warning_notify(off_grid_warning_power, None if is_battery_power_high else off_grid_warning_soc)
+        fcm_service.offgrid_warning_notify(off_grid_warning_power, None if high_battery_discharge else off_grid_warning_soc)
         play_audio("warning_power_off_grid.mp3")
         # Skip next OFF_GRID_WARNING_SKIP_CHECK_COUNT time when detect off grid warning
         dectect_off_grid_warning_skip_check_count = 60 // int(config["SLEEP_TIME"])

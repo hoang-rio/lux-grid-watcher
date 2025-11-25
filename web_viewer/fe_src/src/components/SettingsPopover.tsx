@@ -109,96 +109,123 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
     <div className="settings-popover" ref={ref}>
       <div className="notification-popover-content">
         <div className="notification-popover-header">
-          <h3>{t('settings.title')}</h3>
-          {message && <div className={`settings-message ${message.type}`}>{message.text}</div>}
+          <h3>{t("settings.title")}</h3>
+          {message && (
+            <div className={`settings-message ${message.type}`}>
+              {message.text}
+            </div>
+          )}
           <button className="close-popover" onClick={onClose}>
             ×
           </button>
         </div>
         <div className="settings-content">
           <div className="settings-section">
-            <h4>{t('settings.abnormalUsageSection')}</h4>
+            <h4>{t("settings.abnormalUsageSection")}</h4>
             <div className="setting-item">
               <label>
                 <input
                   type="checkbox"
-                  checked={settings.ABNORMAL_DETECTION_ENABLED === 'true'}
-                  onChange={(e) => updateSetting('ABNORMAL_DETECTION_ENABLED', e.target.checked ? 'true' : 'false')}
+                  checked={settings.ABNORMAL_DETECTION_ENABLED === "true"}
+                  onChange={(e) =>
+                    updateSetting(
+                      "ABNORMAL_DETECTION_ENABLED",
+                      e.target.checked ? "true" : "false"
+                    )
+                  }
                 />
-                {t('settings.abnormalDetectionEnabled')}
+                {t("settings.abnormalDetectionEnabled")}
               </label>
             </div>
             <div className="setting-item">
-              <label>{t('settings.abnormalSkipCheckHours')}</label>
+              <label>{t("settings.abnormalSkipCheckHours")}</label>
               <input
                 type="number"
                 min="1"
                 max="5"
                 value={settings.ABNORMAL_CHECK_COOLDOWN_HOURS}
-                onChange={(e) => updateSetting('ABNORMAL_CHECK_COOLDOWN_HOURS', e.target.value)}
-                disabled={settings.ABNORMAL_DETECTION_ENABLED !== 'true'}
+                onChange={(e) =>
+                  updateSetting("ABNORMAL_CHECK_COOLDOWN_HOURS", e.target.value)
+                }
+                disabled={settings.ABNORMAL_DETECTION_ENABLED !== "true"}
               />
-              <span>{t('settings.hours')}</span>
+              <span>{t("settings.hours")}</span>
             </div>
             <div className="setting-item">
-              <label>{t('settings.abnormalMinPower')}</label>
+              <label>{t("settings.abnormalMinPower")}</label>
               <input
                 type="number"
                 min="500"
                 max="1500"
                 value={settings.ABNORMAL_MIN_POWER}
-                onChange={(e) => updateSetting('ABNORMAL_MIN_POWER', e.target.value)}
-                disabled={settings.ABNORMAL_DETECTION_ENABLED !== 'true'}
+                onChange={(e) =>
+                  updateSetting("ABNORMAL_MIN_POWER", e.target.value)
+                }
+                disabled={settings.ABNORMAL_DETECTION_ENABLED !== "true"}
               />
-              <span>{t('settings.watts')}</span>
+              <span>{t("settings.watts")}</span>
             </div>
           </div>
           <div className="settings-section">
-            <h4>{t('settings.offGridWarningSection')}</h4>
+            <h4>{t("settings.offGridWarningSection")}</h4>
             <div className="setting-item">
               <label>
                 <input
                   type="checkbox"
-                  checked={settings.OFF_GRID_WARNING_ENABLED === 'true'}
-                  onChange={(e) => updateSetting('OFF_GRID_WARNING_ENABLED', e.target.checked ? 'true' : 'false')}
+                  checked={settings.OFF_GRID_WARNING_ENABLED === "true"}
+                  onChange={(e) =>
+                    updateSetting(
+                      "OFF_GRID_WARNING_ENABLED",
+                      e.target.checked ? "true" : "false"
+                    )
+                  }
                 />
-                {t('settings.offGridWarningEnabled')}
+                {t("settings.offGridWarningEnabled")}
               </label>
             </div>
             <div className="setting-item">
-              <label>{t('settings.offGridWarningPower')}</label>
+              <label>{t("settings.offGridWarningPower")}</label>
               <input
                 type="number"
                 value={settings.OFF_GRID_WARNING_POWER}
-                onChange={(e) => updateSetting('OFF_GRID_WARNING_POWER', e.target.value)}
-                disabled={settings.OFF_GRID_WARNING_ENABLED !== 'true'}
+                onChange={(e) =>
+                  updateSetting("OFF_GRID_WARNING_POWER", e.target.value)
+                }
+                disabled={settings.OFF_GRID_WARNING_ENABLED !== "true"}
               />
-              <span>{t('settings.watts')}</span>
+              <span>{t("settings.watts")}</span>
             </div>
             <div className="setting-item">
-              <label>{t('settings.offGridWarningSoc')}</label>
+              <label>{t("settings.offGridWarningSoc")}</label>
               <input
                 type="number"
                 value={settings.OFF_GRID_WARNING_SOC}
-                onChange={(e) => updateSetting('OFF_GRID_WARNING_SOC', e.target.value)}
-                disabled={settings.OFF_GRID_WARNING_ENABLED !== 'true'}
+                onChange={(e) =>
+                  updateSetting("OFF_GRID_WARNING_SOC", e.target.value)
+                }
+                disabled={settings.OFF_GRID_WARNING_ENABLED !== "true"}
               />
-              <span>{t('settings.percent')}</span>
+              <span>{t("settings.percent")}</span>
             </div>
             <div className="setting-item">
-              <label>{t('settings.maxBatteryPower')}</label>
+              <label>{t("settings.maxBatteryPower")}</label>
               <input
                 type="number"
                 value={settings.MAX_BATTERY_POWER}
-                onChange={(e) => updateSetting('MAX_BATTERY_POWER', e.target.value)}
-                disabled={settings.OFF_GRID_WARNING_ENABLED !== 'true'}
+                onChange={(e) =>
+                  updateSetting("MAX_BATTERY_POWER", e.target.value)
+                }
+                disabled={settings.OFF_GRID_WARNING_ENABLED !== "true"}
               />
-              <span>{t('settings.watts')}</span>
+              <span>{t("settings.watts")}</span>
             </div>
+            <p className="setting-descrtiption">
+              {t("settings.offGridWarningDescription")}
+            </p>
           </div>
           <div className="settings-actions">
             <button onClick={handleSave} disabled={saving}>
-              {saving ? t('settings.saving') : t('settings.save')}
+              {saving ? t("settings.saving") : t("settings.save")}
             </button>
           </div>
         </div>

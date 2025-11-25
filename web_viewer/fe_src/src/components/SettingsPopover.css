@@ -118,6 +118,12 @@
     right: 8px;
 }
 
+.settings-popover .setting-descrtiption {
+    font-size: 13px;
+    color: #888;
+    margin: 4px 0 0 0;
+}
+
 @media screen and (max-width: 768px) {
     .settings-popover {
         width: 90vw;
@@ -139,5 +145,11 @@
     }
     .settings-message.success {
         color: #90EE90;
+    }
+    .settings-message.success.error {
+        color: #FF7F7F;
+    }
+    .settings-popover .setting-descrtiption {
+        color: #bbb;
     }
 }
