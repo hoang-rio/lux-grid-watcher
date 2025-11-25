@@ -9,7 +9,8 @@ interface SettingsPopoverProps {
 }
 
 interface Settings {
-  ABNORMAL_SKIP_CHECK_HOURS: string;
+  ABNORMAL_DETECTION_ENABLED: string;
+  ABNORMAL_CHECK_COOLDOWN_HOURS: string;
   ABNORMAL_MIN_POWER: string;
   OFF_GRID_WARNING_POWER: string;
   OFF_GRID_WARNING_SOC: string;
@@ -34,7 +35,8 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
       const data = await res.json();
       // Set defaults if missing
       const defaults = {
-        ABNORMAL_SKIP_CHECK_HOURS: '3',
+        ABNORMAL_DETECTION_ENABLED: 'true',
+        ABNORMAL_CHECK_COOLDOWN_HOURS: '3',
         ABNORMAL_MIN_POWER: '900',
         OFF_GRID_WARNING_POWER: '2200',
         OFF_GRID_WARNING_SOC: '87',
@@ -117,13 +119,24 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
           <div className="settings-section">
             <h4>{t('settings.abnormalUsageSection')}</h4>
             <div className="setting-item">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={settings.ABNORMAL_DETECTION_ENABLED === 'true'}
+                  onChange={(e) => updateSetting('ABNORMAL_DETECTION_ENABLED', e.target.checked ? 'true' : 'false')}
+                />
+                {t('settings.abnormalDetectionEnabled')}
+              </label>
+            </div>
+            <div className="setting-item">
               <label>{t('settings.abnormalSkipCheckHours')}</label>
               <input
                 type="number"
-                min="-1"
+                min="1"
                 max="5"
-                value={settings.ABNORMAL_SKIP_CHECK_HOURS}
-                onChange={(e) => updateSetting('ABNORMAL_SKIP_CHECK_HOURS', e.target.value)}
+                value={settings.ABNORMAL_CHECK_COOLDOWN_HOURS}
+                onChange={(e) => updateSetting('ABNORMAL_CHECK_COOLDOWN_HOURS', e.target.value)}
+                disabled={settings.ABNORMAL_DETECTION_ENABLED !== 'true'}
               />
               <span>{t('settings.hours')}</span>
             </div>
@@ -135,6 +148,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
                 max="1500"
                 value={settings.ABNORMAL_MIN_POWER}
                 onChange={(e) => updateSetting('ABNORMAL_MIN_POWER', e.target.value)}
+                disabled={settings.ABNORMAL_DETECTION_ENABLED !== 'true'}
               />
               <span>{t('settings.watts')}</span>
             </div>

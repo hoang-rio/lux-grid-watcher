@@ -120,7 +120,8 @@
   "settings": {
     "title": "Settings",
     "abnormalUsageSection": "Abnormal usage section",
-    "abnormalSkipCheckHours": "Skip check hours (-1 to disable)",
+    "abnormalDetectionEnabled": "Enable abnormal usage detection",
+    "abnormalSkipCheckHours": "Cooldown hours after abnormal detection",
     "abnormalMinPower": "Minimum power threshold",
     "offGridWarningSection": "Off grid warning power setting",
     "offGridWarningPower": "Power threshold",

@@ -31,14 +31,17 @@ config: dict = {
 }
 
 # Settings will be loaded from DB
-def get_abnormal_skip_check_hours():
-    return int(settings.get_setting("ABNORMAL_SKIP_CHECK_HOURS", config.get("ABNORMAL_SKIP_CHECK_HOURS", 3)))
+def get_abnormal_detection_enabled():
+    return settings.get_setting("ABNORMAL_DETECTION_ENABLED", config.get("ABNORMAL_DETECTION_ENABLED", "true")).lower() == "true"
+
+def get_abnormal_check_cooldown_hours():
+    return int(settings.get_setting("ABNORMAL_CHECK_COOLDOWN_HOURS", config.get("ABNORMAL_CHECK_COOLDOWN_HOURS", 3)))
 
 def get_abnormal_usage_count():
-    return 32 * get_abnormal_skip_check_hours()
+    return 32 * get_abnormal_check_cooldown_hours()
 
 def get_normal_min_usage_count():
-    return 5 * get_abnormal_skip_check_hours()
+    return 5 * get_abnormal_check_cooldown_hours()
 
 def get_abnormal_min_power():
     return int(settings.get_setting("ABNORMAL_MIN_POWER", 900))
@@ -91,19 +94,19 @@ def play_audio(audio_file: str, repeat=3):
 # Number of hours to skip check when detect abnormal usage
 abnormal_skip_check_count = 0
 def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
+    if not get_abnormal_detection_enabled():
+        return  # Skip check if abnormal detection is disabled
     now = datetime.now()
     # now = now.replace(minute=0, second=0, hour=6)
     sleep_time = int(config["SLEEP_TIME"])
-    abnormal_skip_check_hours = get_abnormal_skip_check_hours()
-    if abnormal_skip_check_hours == -1:
-        return  # Skip check
+    abnormal_check_cooldown_hours = get_abnormal_check_cooldown_hours()
     if (sleep_time >= 60 and now.minute <= sleep_time / 60) or (now.minute == 0 and now.second <= sleep_time):
         global abnormal_skip_check_count
         if abnormal_skip_check_count > 0:
             abnormal_skip_check_count = abnormal_skip_check_count - 1
             return
         cursor = db_connection.cursor()
-        abnormal_check_start_time = now - timedelta(hours=abnormal_skip_check_hours)
+        abnormal_check_start_time = now - timedelta(hours=abnormal_check_cooldown_hours)
         from web_viewer import dict_factory
         cursor.row_factory = dict_factory
         all_items = cursor.execute(
@@ -139,8 +142,8 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
             )
             fcm_service.warning_notify()
             play_audio("warning.mp3", 5)
-            # Skip next abnormal_skip_check_hours hours when detect abnormal usage
-            abnormal_skip_check_count = abnormal_skip_check_hours
+            # Skip next abnormal_check_cooldown_hours hours when detect abnormal usage
+            abnormal_skip_check_count = abnormal_check_cooldown_hours
         else:
             logger.info(
                 "_________No abnormal usage detected from %s to %s with %s abnormal times and %s normal times (max_power: %s, min_power: %s)_________",

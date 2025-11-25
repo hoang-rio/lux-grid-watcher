@@ -120,7 +120,8 @@
   "settings": {
     "title": "Cài đặt",
     "abnormalUsageSection": "Phần sử dụng bất thường",
-    "abnormalSkipCheckHours": "Giờ bỏ qua kiểm tra (-1 để tắt)",
+    "abnormalDetectionEnabled": "Bật phát hiện sử dụng bất thường",
+    "abnormalSkipCheckHours": "Thời gian tạm dừng kiểm tra sau khi phát hiện bất thường",
     "abnormalMinPower": "Ngưỡng công suất tối thiểu",
     "offGridWarningSection": "Cài đặt công suất cảnh báo tắt lưới",
     "offGridWarningPower": "Ngưỡng công suất",

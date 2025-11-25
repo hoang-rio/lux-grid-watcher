@@ -19,7 +19,8 @@ MIGRATIONS_SQL = [
     "ALTER TABLE daily_chart ADD COLUMN updated TEXT",
     "CREATE TABLE IF NOT EXISTS notification_history (id INTEGER PRIMARY KEY AUTOINCREMENT, notified_at TEXT, title TEXT, body TEXT)",
     "ALTER TABLE notification_history ADD COLUMN read INTEGER DEFAULT 0",
-    "CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)"
+    "CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)",
+    "UPDATE settings SET key = 'ABNORMAL_CHECK_COOLDOWN_HOURS' WHERE key = 'ABNORMAL_SKIP_CHECK_HOURS'"
 ]
 def execute_migration_sql(id: int, sql: str, cursor: sqlite3.Cursor) -> None:
     global logger
