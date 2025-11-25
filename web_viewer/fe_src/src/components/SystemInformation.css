@@ -628,11 +628,17 @@
         margin-top: -6px;
     }
 
-
-
     .notification-popover {
         width: 90vw;
-        max-width: 300px;
+        max-width: 350px;
+        left: 50%;
+        transform: translateX(-50%);
+        right: auto;
+    }
+
+    .settings-popover {
+        width: 90vw;
+        max-width: 350px;
         left: 50%;
         transform: translateX(-50%);
         right: auto;
