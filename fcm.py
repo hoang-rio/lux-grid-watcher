@@ -11,6 +11,7 @@ from web_socket_client import WebSocketClient
 
 SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"]
 
+CHANNEL_GENERAL = "000"
 CHANNEL_ON_GRID = "111"
 CHANNEL_OFF_GRID = "222"
 CHANNEL_WARN = "333"
@@ -36,7 +37,10 @@ class FCMThread(Thread):
         self.__device = device
         self.__is_grid_connected = is_grid_connected
         self.__channel_id = channel_id
-        self.__sound = "warning" if channel_id == CHANNEL_WARN else "has_grid" if is_grid_connected else "lost_grid"
+        if channel_id == CHANNEL_GENERAL:
+            self.__sound = ""
+        else:
+            self.__sound = "warning" if channel_id == CHANNEL_WARN else "has_grid" if is_grid_connected else "lost_grid"
 
     def _get_access_token(self):
         """Retrieve a valid access token that can be used to authorize requests.
@@ -69,6 +73,7 @@ class FCMThread(Thread):
                     "data": {
                         "title": title,
                         "body": body,
+                        "channel_id": self.__channel_id,
                         "is_grid_connected": "1" if is_grid_connected else "0",
                         "is_warning": "1" if self.__channel_id == CHANNEL_WARN else "0"
                     },
@@ -83,13 +88,13 @@ class FCMThread(Thread):
                             "default_vibrate_timings": False,
                             "vibrate_timings": ["0.1s", "1s", "0.1s", "1s", "0.1s"],
                             "default_light_settings": True,
-                            "sound": f"{self.__sound}.mp3"
+                            "sound": f"{self.__sound}.mp3" if self.__sound != "" else "default",
                         },
                     },
                     "apns": {
                         "payload": {
                             "aps": {
-                                "sound": f"{self.__sound}.aiff",
+                                "sound": f"{self.__sound}.aiff" if self.__sound != "" else "default",
                                 "badge": 0
                             }
                         },
@@ -232,7 +237,7 @@ class FCM():
                     notify_body,
                     device,
                     True,
-                    CHANNEL_WARN
+                    CHANNEL_GENERAL
                 )
                 self.__fcm_threads.append(t)
                 t.start()
