@@ -16,6 +16,8 @@ interface Settings {
   OFF_GRID_WARNING_SOC: string;
   MAX_BATTERY_POWER: string;
   OFF_GRID_WARNING_ENABLED: string;
+  BATTERY_FULL_NOTIFY_ENABLED: string;
+  BATTERY_FULL_NOTIFY_BODY: string;
 }
 
 const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onClose }, ref) => {
@@ -42,7 +44,9 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
         OFF_GRID_WARNING_POWER: '2200',
         OFF_GRID_WARNING_SOC: '87',
         MAX_BATTERY_POWER: '3000',
-        OFF_GRID_WARNING_ENABLED: 'true'
+        OFF_GRID_WARNING_ENABLED: 'true',
+        BATTERY_FULL_NOTIFY_ENABLED: 'true',
+        BATTERY_FULL_NOTIFY_BODY: 'Pin đã sạc đầy 100%. Có thể bật bình nóng lạnh để tối ưu sử dụng.'
       };
       const merged = { ...defaults, ...data };
       setSettings(merged);
@@ -128,6 +132,35 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
           </button>
         </div>
         <div className="settings-content">
+          <div className="settings-section">
+            <h4>{t("settings.batterySection")}</h4>
+            <div className="setting-item">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={settings.BATTERY_FULL_NOTIFY_ENABLED === "true"}
+                  onChange={(e) =>
+                    updateSetting(
+                      "BATTERY_FULL_NOTIFY_ENABLED",
+                      e.target.checked ? "true" : "false"
+                    )
+                  }
+                />
+                {t("settings.batteryFullNotifyEnabled")}
+              </label>
+            </div>
+            <div className="setting-item setting-item-block">
+              <label>{t("settings.batteryFullNotifyBody")}</label>
+              <textarea
+                value={settings.BATTERY_FULL_NOTIFY_BODY}
+                onChange={(e) =>
+                  updateSetting("BATTERY_FULL_NOTIFY_BODY", e.target.value)
+                }
+                disabled={settings.BATTERY_FULL_NOTIFY_ENABLED !== "true"}
+                rows={3}
+              />
+            </div>
+          </div>
           <div className="settings-section">
             <h4>{t("settings.abnormalUsageSection")}</h4>
             <div className="setting-item">

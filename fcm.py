@@ -213,6 +213,32 @@ class FCM():
             self.__post_send_notify(devices)
         self.__log_notification(notify_title, notify_body)
 
+    def battery_full_notify(self, body="Pin đã sạc đầy 100%. Có thể bật bình nóng lạnh để tối ưu sử dụng."):
+        self.__fcm_threads = []
+        devices = self.__get_devices()
+        notify_title = "Pin đã đầy"
+        notify_body = body
+        if len(devices) == 0:
+            self.__logger.info("BATTERY_FULL: No device to notify")
+        else:
+            self.__logger.info(
+                f"BATTERY_FULL: Start send notifcation to {len(devices)} devices"
+            )
+            for device in devices:
+                t = FCMThread(
+                    self.__logger,
+                    self.__config,
+                    notify_title,
+                    notify_body,
+                    device,
+                    True,
+                    CHANNEL_WARN
+                )
+                self.__fcm_threads.append(t)
+                t.start()
+            self.__post_send_notify(devices)
+        self.__log_notification(notify_title, notify_body)
+
     def offgrid_notify(self):
         self.__fcm_threads = []
         devices = self.__get_devices()

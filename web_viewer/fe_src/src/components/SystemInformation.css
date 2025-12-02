@@ -103,6 +103,7 @@
     width: 350px;
     min-height: 400px;
     cursor: default;
+    z-index: 1;
 }
 
 .pv {

@@ -57,6 +57,12 @@ def get_max_battery_power():
 
 def get_off_grid_warning_enabled():
     return settings.get_setting("OFF_GRID_WARNING_ENABLED", "true").lower() == "true"
+
+def get_battery_full_notify_enabled():
+    return settings.get_setting("BATTERY_FULL_NOTIFY_ENABLED", "true").lower() == "true"
+
+def get_battery_full_notify_body():
+    return settings.get_setting("BATTERY_FULL_NOTIFY_BODY", "Pin đã sạc đầy 100%. Có thể bật bình nóng lạnh để tối ưu sử dụng.")
 log_level = logging.DEBUG if config["IS_DEBUG"] == 'True' else logging.INFO
 
 logger = logging.getLogger(__file__)
@@ -158,6 +164,7 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
 
 
 dectect_off_grid_warning_skip_check_count = 0
+last_battery_full_notify_date = None
 def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: int, soc: int, fcm_service: FCM):
     if not get_off_grid_warning_enabled() or is_grid_connected:
         return
@@ -192,6 +199,18 @@ def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: 
         dectect_off_grid_warning_skip_check_count = 60 // int(config["SLEEP_TIME"])
     else:
         dectect_off_grid_warning_skip_check_count = 0
+
+def detect_battery_full(soc: int, fcm_service: FCM):
+    if not get_battery_full_notify_enabled():
+        return
+    global last_battery_full_notify_date
+    now = datetime.now()
+    today = now.date()
+    if soc == 100 and (last_battery_full_notify_date is None or last_battery_full_notify_date != today):
+        logger.info("_________Battery full detected with soc: %s%%_________", soc)
+        body = get_battery_full_notify_body()
+        fcm_service.battery_full_notify(body)
+        last_battery_full_notify_date = today
 
 def handle_grid_status(json_data: dict, fcm_service: FCM):
     # is_grid_connected = True
@@ -250,6 +269,7 @@ ________Status: \"%s\" (%s) at deviceTime: %s with fac: %s Hz and vacr: %s V____
         logger.info("State did not change. Skip play notify audio")
     dectect_off_grid_warning(
         is_grid_connected, json_data["p_pv"], json_data["p_eps"], json_data["soc"], fcm_service)
+    detect_battery_full(json_data["soc"], fcm_service)
 
 
 def insert_hourly_chart(db_connection: sqlite3.Connection, inverter_data: dict):

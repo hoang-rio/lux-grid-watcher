@@ -10,6 +10,7 @@
     width: 350px;
     min-height: 400px;
     cursor: default;
+    z-index: 1;
 }
 
 .settings-content {
@@ -56,6 +57,28 @@
     width: 30px;
     display: inline-block;
     text-align: left;
+}
+
+.setting-item-block {
+    display: block;
+}
+
+.setting-item-block label {
+    display: block;
+    margin-bottom: 8px;
+    margin-right: 0;
+    flex: none;
+}
+
+.setting-item-block textarea {
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 14px;
 }
 
 .settings-actions {
