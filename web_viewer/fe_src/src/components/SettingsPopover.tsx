@@ -265,11 +265,11 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
               {t("settings.offGridWarningDescription")}
             </p>
           </div>
-          <div className="settings-actions">
-            <button onClick={handleSave} disabled={saving || !hasChanges()}>
-              {saving ? t("settings.saving") : t("settings.save")}
-            </button>
-          </div>
+        </div>
+        <div className="settings-actions">
+          <button onClick={handleSave} disabled={saving || !hasChanges()}>
+            {saving ? t("settings.saving") : t("settings.save")}
+          </button>
         </div>
       </div>
     </div>
