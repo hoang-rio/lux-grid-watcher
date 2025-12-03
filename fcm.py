@@ -75,7 +75,7 @@ class FCMThread(Thread):
                         "body": body,
                         "channel_id": self.__channel_id,
                         "is_grid_connected": "1" if is_grid_connected else "0",
-                        "is_warning": "1" if self.__channel_id == CHANNEL_WARN else "0"
+                        "is_warning": "1" if self.__channel_id == CHANNEL_WARN or self.__channel_id == CHANNEL_GENERAL else "0"
                     },
                     "android": {
                         "priority": "HIGH",
@@ -84,7 +84,7 @@ class FCMThread(Thread):
                             "channel_id": self.__channel_id,
                             "notification_priority": "PRIORITY_MAX",
                             "visibility": "PUBLIC",
-                            "default_sound": False,
+                            "default_sound": self.__channel_id == CHANNEL_GENERAL,
                             "default_vibrate_timings": False,
                             "vibrate_timings": ["0.1s", "1s", "0.1s", "1s", "0.1s"],
                             "default_light_settings": True,
