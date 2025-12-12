@@ -7,7 +7,7 @@ RUN yarn install
 # Build the frontend
 RUN yarn build
 
-FROM python:3.12.11-alpine
+FROM python:3.12.12-alpine
 
 COPY . /app
 # Copy the requirements file
