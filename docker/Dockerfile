@@ -17,9 +17,6 @@ WORKDIR /app
 # Copy the frontend build from the builder stage
 COPY --from=fe_builder /fe_builder/build /app/web_viewer/build
 
-# Upgrade system packages to address vulnerabilities
-RUN apk update && apk upgrade
-
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 # Expose the port the app runs on
