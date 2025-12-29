@@ -110,7 +110,7 @@ function App() {
 
   useEffect(() => {
     selfCloseRef.current = false;
-    if (!socketRef.current) {
+    if (!socketRef.current && !document.hidden) {
       connectSocket();
     }
     window.addEventListener("beforeunload", closeSocket);
@@ -135,6 +135,8 @@ function App() {
         connectSocket();
       }
     };
+    // Check initial state on mount and handle accordingly
+    handleVisibilityChange();
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
