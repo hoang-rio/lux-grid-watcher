@@ -135,8 +135,6 @@ function App() {
         connectSocket();
       }
     };
-    // Check initial state on mount and handle accordingly
-    handleVisibilityChange();
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
