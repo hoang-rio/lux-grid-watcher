@@ -16,14 +16,14 @@ const MAX_RECONNECT_COUNT = 5;
 function App() {
   const { t, i18n } = useTranslation();
   const [inverterData, setInverterData] = useState<IInverterData>();
-  const socketRef = useRef<WebSocket>();
+  const socketRef = useRef<WebSocket>(undefined);
   const selfCloseRef = useRef<boolean>(false);
   const reconnectCountRef = useRef<number>(0);
   const [isSocketConnected, setIsSocketConnected] = useState<boolean>(false);
   const hourlyChartfRef = useRef<IUpdateChart>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isFetchingRef = useRef(false);
-  const deviceTimeRef = useRef<string>();
+  const deviceTimeRef = useRef<string>("");
 
   // Changed to hold notification object or null
   const [newNotification, setNewNotification] =
