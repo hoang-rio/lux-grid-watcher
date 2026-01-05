@@ -69,14 +69,18 @@ describe('EnergyChart', () => {
   it('updates selectedYear and selectedMonth when page becomes visible and current has changed', async () => {
     // Mock Date constructor
     const originalDate = globalThis.Date;
-    const mockDate = vi.fn((...args: any[]) => {
-      if (args.length === 0) {
-        return new originalDate('2023-12-01');
+    let mockDateValue = '2023-12-01';
+    class MockDate extends Date {
+      constructor(...args: any[]) {
+        if (args.length === 0) {
+          super(mockDateValue);
+        } else {
+          super(...(args as [any, any, any, any, any, any, any]));
+        }
       }
-      return new (originalDate as any)(...args);
-    });
-    mockDate.now = originalDate.now;
-    vi.stubGlobal('Date', mockDate);
+      static now = originalDate.now;
+    }
+    vi.stubGlobal('Date', MockDate);
 
     render(<EnergyChart className="test" />);
 
@@ -88,12 +92,7 @@ describe('EnergyChart', () => {
     expect(monthSelect).toBeInTheDocument();
 
     // Change mock to next month
-    mockDate.mockImplementation((...args: any[]) => {
-      if (args.length === 0) {
-        return new originalDate('2024-01-01');
-      }
-      return new (originalDate as any)(...args);
-    });
+    mockDateValue = '2024-01-01';
 
     // Simulate page becoming hidden then visible
     await act(async () => {
@@ -118,14 +117,17 @@ describe('EnergyChart', () => {
   it('does not update selectedYear and selectedMonth if user selected different values', async () => {
     // Mock Date constructor
     const originalDate = globalThis.Date;
-    const mockDate = vi.fn((...args: any[]) => {
-      if (args.length === 0) {
-        return new originalDate('2023-12-01');
+    class MockDate extends Date {
+      constructor(...args: any[]) {
+        if (args.length === 0) {
+          super('2023-12-01');
+        } else {
+          super(...(args as [any, any, any, any, any, any, any]));
+        }
       }
-      return new (originalDate as any)(...args);
-    });
-    mockDate.now = originalDate.now;
-    vi.stubGlobal('Date', mockDate);
+      static now = originalDate.now;
+    }
+    vi.stubGlobal('Date', MockDate);
 
     render(<EnergyChart className="test" />);
 
@@ -133,15 +135,7 @@ describe('EnergyChart', () => {
     const yearSelect = screen.getByDisplayValue('2023');
     fireEvent.change(yearSelect, { target: { value: '2022' } });
 
-    // Change mock to next month
-    mockDate.mockImplementation((...args: any[]) => {
-      if (args.length === 0) {
-        return new originalDate('2024-01-01');
-      }
-      return new (originalDate as any)(...args);
-    });
-
-    // Page visibility change
+    // Page visibility change (date hasn't changed)
     await act(async () => {
       Object.defineProperty(document, 'hidden', { value: true });
       document.dispatchEvent(new Event('visibilitychange'));
