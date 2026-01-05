@@ -4,9 +4,9 @@ import { IClassNameProps, IFetchChart } from "../Intefaces";
 import "./EnergyChart.css";
 import Loading from "./Loading";
 
-const DailyChart = lazy(() => import( "./DailyChart"));
-const MonthlyChart = lazy(() => import("./MonthlyChart"));
-const YearlyChart = lazy(() => import("./YearlyChart"));
+const DailyChart = lazy(() => import("./BarCharts/DailyChart"));
+const MonthlyChart = lazy(() => import("./BarCharts/MonthlyChart"));
+const YearlyChart = lazy(() => import("./BarCharts/YearlyChart"));
 
 enum EnergyChartType {
   Daily,

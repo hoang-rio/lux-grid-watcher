@@ -9,32 +9,20 @@ import {
   useRef,
   useState,
 } from "react";
-// ...existing code...
 import { useTranslation } from "react-i18next";
-import { IFetchChart, SeriesItem } from "../Intefaces";
-import Loading from "./Loading";
-import { roundTo } from "./utils";
+import { IFetchChart, SeriesItem } from "../../Intefaces";
+import Loading from "../Loading";
+import { roundTo } from "../utils";
 import BarChart from "./BarChart";
 
-interface DailyChartProps {
-  month?: string;
-}
-
-const DailyChart = forwardRef((props: DailyChartProps, ref: ForwardedRef<IFetchChart>) => {
+const YearlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
   const { t } = useTranslation();
-  const [chartData, setChartData] = useState([]);
-  const [isDark, setIsDark] = useState(
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-  );
+  const [state, setState] = useState({
+    isLoading: true,
+    chartData: [],
+    isDark: window.matchMedia("(prefers-color-scheme: dark)").matches,
+  });
   const isFetchingRef = useRef<boolean>(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Accept month prop
-  const month = props.month || (() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  })();
-
   const series = useMemo(() => {
     const solarSeries: SeriesItem[] = [];
     const batteryChargedSeries: SeriesItem[] = [];
@@ -43,8 +31,8 @@ const DailyChart = forwardRef((props: DailyChartProps, ref: ForwardedRef<IFetchC
     const gridExportSeries: SeriesItem[] = [];
     const consumptionSeries: SeriesItem[] = [];
 
-    chartData.forEach((item) => {
-      const time = new Date(item[3]).getTime();
+    state.chartData.forEach((item) => {
+      const time = item[3];
       solarSeries.push({ x: time, y: roundTo(item[4]) });
       batteryChargedSeries.push({ x: time, y: roundTo(item[5]) });
       batterDischargedSeries.push({ x: time, y: roundTo(item[6]) });
@@ -78,24 +66,22 @@ const DailyChart = forwardRef((props: DailyChartProps, ref: ForwardedRef<IFetchC
         data: consumptionSeries,
       },
     ];
-  }, [chartData, t]);
+  }, [state.chartData, t]);
 
   const fetchChart = useCallback(async () => {
     if (isFetchingRef.current) {
       return;
     }
     isFetchingRef.current = true;
-    setIsLoading(true);
-    let url = `${import.meta.env.VITE_API_BASE_URL}/daily-chart`;
-    if (month) {
-      url += `?month=${month}`;
-    }
-    const res = await fetch(url);
+    setState((prev) => ({ ...prev, isLoading: true }));
+    const res = await fetch(
+      `${import.meta.env.VITE_API_BASE_URL}/yearly-chart`
+    );
     const json = await res.json();
-    setChartData(json);
+    setState((prev) => ({ ...prev, chartData: json }));
     isFetchingRef.current = false;
-    setIsLoading(false);
-  }, [month]);
+    setState((prev) => ({ ...prev, isLoading: false }));
+  }, []);
 
   useImperativeHandle(
     ref,
@@ -106,16 +92,9 @@ const DailyChart = forwardRef((props: DailyChartProps, ref: ForwardedRef<IFetchC
 
   const onVisiblityChange = useCallback(() => {
     if (!document.hidden) {
-      // Only fetch if selected month is current month
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth() + 1;
-      const [selectedYear, selectedMonth] = month.split("-").map(Number);
-      if (selectedYear === currentYear && selectedMonth === currentMonth) {
-        fetchChart();
-      }
+      fetchChart();
     }
-  }, [fetchChart, month]);
+  }, [fetchChart]);
 
   useEffect(() => {
     const doFetchChart = async () => {
@@ -123,41 +102,22 @@ const DailyChart = forwardRef((props: DailyChartProps, ref: ForwardedRef<IFetchC
     };
     doFetchChart();
     document.addEventListener("visibilitychange", onVisiblityChange);
-    return () => document.removeEventListener("visibilitychange", onVisiblityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", onVisiblityChange);
   }, [fetchChart, onVisiblityChange]);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    // This callback will fire if the preferred color scheme changes without a reload
-    mq.addEventListener("change", (evt) => setIsDark(evt.matches));
-    return () => mq.removeEventListener("change", (evt) => setIsDark(evt.matches));
+    // This callback will fire if the perferred color scheme changes without a reload
+    mq.addEventListener("change", (evt) => setState((prev) => ({ ...prev, isDark: evt.matches })));
   }, []);
 
-  if (isLoading || !chartData) {
+  if (state.isLoading || !state.chartData) {
     return <Loading />;
   }
-
-  const [year, monthNum] = month.split("-").map(Number);
-  const startOfMonth = new Date(year, monthNum - 1, 1);
-  const endOfMonth = new Date(year, monthNum, 0);
-  return (
-    <BarChart
-      series={series}
-      isDark={isDark}
-      xaxis={{
-        type: "datetime",
-        labels: {
-          datetimeUTC: false,
-          format: "d",
-        },
-        min: startOfMonth.getTime(),
-        max: endOfMonth.getTime(),
-        stepSize: 1,
-      }}
-    />
-  );
+  return <BarChart series={series} isDark={state.isDark} />;
 });
 
-DailyChart.displayName = "DailyChart";
+YearlyChart.displayName = "YearlyChart";
 
-export default memo(DailyChart);
+export default memo(YearlyChart);
