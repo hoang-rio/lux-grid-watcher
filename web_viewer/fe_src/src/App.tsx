@@ -76,6 +76,7 @@ function App() {
       }
       reconnectCountRef.current++;
       logUtil.log(i18n.t("socket.reconnecting"), reconnectCountRef.current);
+      // eslint-disable-next-line react-hooks/immutability
       connectSocket();
     });
 

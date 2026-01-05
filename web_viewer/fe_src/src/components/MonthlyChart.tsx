@@ -18,7 +18,9 @@ import BarChart from "./BarChart";
 const MonthlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
   const { t } = useTranslation();
   const [chartData, setChartData] = useState([]);
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
   const isFetchingRef = useRef<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
   const series = useMemo(() => {
@@ -95,7 +97,10 @@ const MonthlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
   }, [fetchChart]);
 
   useEffect(() => {
-    fetchChart();
+    const doFetchChart = async () => {
+      await fetchChart();
+    }
+    doFetchChart();
     document.addEventListener("visibilitychange", onVisiblityChange);
     return () =>
       document.removeEventListener("visibilitychange", onVisiblityChange);
@@ -103,11 +108,6 @@ const MonthlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-
-    if (mq.matches) {
-      setIsDark(true);
-    }
-
     // This callback will fire if the perferred color scheme changes without a reload
     mq.addEventListener("change", (evt) => setIsDark(evt.matches));
   }, []);

@@ -23,7 +23,9 @@ interface DailyChartProps {
 const DailyChart = forwardRef((props: DailyChartProps, ref: ForwardedRef<IFetchChart>) => {
   const { t } = useTranslation();
   const [chartData, setChartData] = useState([]);
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
   const isFetchingRef = useRef<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -116,18 +118,16 @@ const DailyChart = forwardRef((props: DailyChartProps, ref: ForwardedRef<IFetchC
   }, [fetchChart, month]);
 
   useEffect(() => {
-    fetchChart();
+    const doFetchChart = async () => {
+      await fetchChart();
+    };
+    doFetchChart();
     document.addEventListener("visibilitychange", onVisiblityChange);
     return () => document.removeEventListener("visibilitychange", onVisiblityChange);
   }, [fetchChart, onVisiblityChange]);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-
-    if (mq.matches) {
-      setIsDark(true);
-    }
-
     // This callback will fire if the preferred color scheme changes without a reload
     mq.addEventListener("change", (evt) => setIsDark(evt.matches));
     return () => mq.removeEventListener("change", (evt) => setIsDark(evt.matches));

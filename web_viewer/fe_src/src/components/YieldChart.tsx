@@ -13,7 +13,7 @@ interface IProps {
 }
 function YieldChart({ totalYield, charge, gridExport, label }: IProps) {
   const { t } = useTranslation();
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(window.matchMedia("(prefers-color-scheme: dark)").matches);
   let load, loadPercent, chargePercent, exportPercent;
   if (!totalYield) {
     load = 0;
@@ -28,11 +28,6 @@ function YieldChart({ totalYield, charge, gridExport, label }: IProps) {
   }
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-
-    if (mq.matches) {
-      setIsDark(true);
-    }
-
     // This callback will fire if the preferred color scheme changes without a reload
     mq.addEventListener("change", (evt) => setIsDark(evt.matches));
   }, []);

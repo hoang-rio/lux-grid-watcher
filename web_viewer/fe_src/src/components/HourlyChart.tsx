@@ -23,7 +23,9 @@ const HourlyChart = forwardRef(
     const GRID_SERIE_NAME = t("chart.grid");
 
     const [chartData, setChartData] = useState<never[][]>([]);
-    const [isDark, setIsDark] = useState(false);
+    const [isDark, setIsDark] = useState(
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+    );
     const isFetchingRef = useRef<boolean>(false);
     const [isAutoUpdate, setIsAutoUpdate] = useState(true);
     const [selectedDayStart, setSelectedDayStart] = useState(() => {
@@ -31,6 +33,13 @@ const HourlyChart = forwardRef(
       now.setHours(0, 0, 0, 0);
       return now;
     });
+    // Helper to format date as YYYY-MM-DD in local time
+    function formatLocalDate(date: Date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
     // Use string for selectedDate to avoid timezone issues
     const [selectedDate, setSelectedDate] = useState(() => {
       const now = new Date();
@@ -188,19 +197,17 @@ const HourlyChart = forwardRef(
     }, [onVisibilityChange]);
 
     useEffect(() => {
+      const doInitialAction = async () => {
+        await fetchChart();
+        updateMinMaxDateStr(); // Also update min/max date on mount
+      }
       // Fetch initial chart data when component mounts
-      fetchChart();
-      updateMinMaxDateStr(); // Also update min/max date on mount
+      doInitialAction();
       lastDateStrRef.current = formatLocalDate(new Date());
     }, [fetchChart, updateMinMaxDateStr]);
 
     useEffect(() => {
       const mq = window.matchMedia("(prefers-color-scheme: dark)");
-
-      if (mq.matches) {
-        setIsDark(true);
-      }
-
       // This callback will fire if the perferred color scheme changes without a reload
       mq.addEventListener("change", (evt) => setIsDark(evt.matches));
     }, []);
@@ -211,14 +218,6 @@ const HourlyChart = forwardRef(
       }
       setIsAutoUpdate(!isAutoUpdate);
     }, [isAutoUpdate, fetchChart]);
-
-    // Helper to format date as YYYY-MM-DD in local time
-    function formatLocalDate(date: Date) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
-    }
 
     return (
       <div className={`card hourly-chart col ${className || ""}`}>
