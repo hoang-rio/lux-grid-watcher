@@ -1,10 +1,10 @@
-import { lazy, memo, Suspense, useRef, useState } from "react";
+import { lazy, memo, Suspense, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IClassNameProps, IFetchChart } from "../Intefaces";
 import "./EnergyChart.css";
 import Loading from "./Loading";
 
-const DailyChart = lazy(() => import("./BarCharts/DailyChart"));
+const DailyChart = lazy(() => import( "./BarCharts/DailyChart"));
 const MonthlyChart = lazy(() => import("./BarCharts/MonthlyChart"));
 const YearlyChart = lazy(() => import("./BarCharts/YearlyChart"));
 
@@ -18,12 +18,46 @@ function EnergyChart({ className }: IClassNameProps) {
   const [energyChartType, setEnergyChartType] = useState(EnergyChartType.Daily);
   const fetchChartRef = useRef<IFetchChart>(null);
   const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
-  const years = [currentYear - 1, currentYear];
-  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const [currentYear, setCurrentYear] = useState(now.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(now.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const years = [...new Set([currentYear - 1, currentYear, selectedYear])].sort((a, b) => b - a);
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const lastCurrentYear = useRef(currentYear);
+  const lastCurrentMonth = useRef(currentMonth);
+  const selectedYearRef = useRef(selectedYear);
+  const selectedMonthRef = useRef(selectedMonth);
+
+  useEffect(() => {
+    selectedYearRef.current = selectedYear;
+  }, [selectedYear]);
+
+  useEffect(() => {
+    selectedMonthRef.current = selectedMonth;
+  }, [selectedMonth]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        const now = new Date();
+        const newYear = now.getFullYear();
+        const newMonth = now.getMonth() + 1;
+        if (newYear !== lastCurrentYear.current || newMonth !== lastCurrentMonth.current) {
+          setCurrentYear(newYear);
+          setCurrentMonth(newMonth);
+          if (selectedYearRef.current === lastCurrentYear.current && selectedMonthRef.current === lastCurrentMonth.current) {
+            setSelectedYear(newYear);
+            setSelectedMonth(newMonth);
+          }
+          lastCurrentYear.current = newYear;
+          lastCurrentMonth.current = newMonth;
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
   // Month select handler
   const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
