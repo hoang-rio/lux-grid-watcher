@@ -77,6 +77,7 @@ function App() {
   const closeSSE = useCallback(() => {
     logUtil.log(i18n.t("sse.closing"));
     document.title = `[${i18n.t("offline")}] ${i18n.t("webTitle")}`;
+    setIsSSEConnected(false);
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
       eventSourceRef.current = undefined;
