@@ -36,7 +36,7 @@ jobs:
           chmod 600 ${{env.SSH_KEY_FILE_PATH}}
       - name: Deploy BE with git
         run: |
-          SSH_DEPLOY_COMMAND="cd ${{secrets.SSH_DEPLOY_PATH}} && git fetch && git reset --hard origin/main"
+          SSH_DEPLOY_COMMAND="cd ${{secrets.SSH_DEPLOY_PATH}} && git fetch && git reset --hard origin/${{github.ref_name}}"
           NEED_RESTART_APP=true
           BUILD_FE=false
           GIT_CHANGED_FILE=$(git log -1 --name-only --format="%s")
