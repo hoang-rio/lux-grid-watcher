@@ -20,14 +20,15 @@
   "yearly": "Hàng năm",
   "serverOffline": "Máy chủ đang ngoại tuyến. Tải lại trang khi bạn chắc chắn rằng máy chủ đang trực tuyến",
   "loading": "Đang tải...",
-  "socket": {
-    "connecting": "[Socket] Đang kết nối đến máy chủ...",
-    "connected": "[Socket] Đã kết nối đến máy chủ",
-    "stopReconnect": "[Socket] Dừng kết nối lại do đã đạt MAX_RECONNECT_COUNT: %s",
-    "reconnecting": "[Socket] Kết nối đã đóng. Đang kết nối lại (%s)...",
-    "error": "[Socket] Lỗi socket",
-    "closing": "[Socket] Đang đóng socket...",
-    "closed": "[Socket] Đã đóng socket"
+  "sse": {
+    "connecting": "[SSE] Đang kết nối đến máy chủ...",
+    "connected": "[SSE] Đã kết nối đến máy chủ",
+    "stopReconnect": "[SSE] Dừng kết nối lại do đã đạt MAX_RECONNECT_COUNT: %s",
+    "reconnecting": "[SSE] Kết nối đã đóng. Đang kết nối lại (%s)...",
+    "error": "[SSE] Lỗi SSE",
+    "closing": "[SSE] Đang đóng kết nối SSE...",
+    "closed": "[SSE] Đã đóng kết nối SSE",
+    "connectionLost": "[SSE] Mất kết nối - không nhận được dữ liệu trong 60 giây"
   },
   "offline": "Ngoại tuyến",
   "normal": "Bình thường",

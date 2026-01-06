@@ -30,39 +30,69 @@ def get_db_connection() -> sqlite3.Connection:
 def dict_factory(cursor, row):
     return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
 
-# WebSocket state
-ws_clients: List[web.WebSocketResponse] = []
+# SSE state
+sse_clients: List[web.StreamResponse] = []
 last_inverter_data: str = '{"inverter_data": {}}'
 
 async def http_handler(_: web.Request):
     index_file_path = path.join(path.dirname(__file__), 'build', 'index.html')
     return web.FileResponse(index_file_path, headers={"expires": "0", "cache-control": "no-cache"})
 
+async def sse_handler(request):
+    global sse_clients
+    response = web.StreamResponse()
+    response.headers['Content-Type'] = 'text/event-stream'
+    response.headers['Cache-Control'] = 'no-cache'
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Cache-Control'
+    await response.prepare(request)
+    sse_clients.append(response)
+    logger.debug(f"SSE_CLIENTS count: {len(sse_clients)}")
+    try:
+        # Keep the connection open with keep-alive
+        await response.write(b': keep-alive\n\n')
+        # Keep the connection alive indefinitely
+        # The connection will be closed when client disconnects or server shuts down
+        while True:
+            await asyncio.sleep(30)  # Send keep-alive every 30 seconds
+            try:
+                await response.write(b': keep-alive\n\n')
+            except Exception:
+                # Client disconnected
+                break
+    except Exception as e:
+        logger.error(f"SSE connection error: {e}")
+    finally:
+        if response in sse_clients:
+            sse_clients.remove(response)
+    return response
+
+async def broadcast_sse(data: str):
+    global sse_clients
+    for client in sse_clients[:]:
+        try:
+            await client.write(f"data: {data}\n\n".encode('utf-8'))
+        except Exception as e:
+            logger.error(f"Error sending to SSE client: {e}")
+            if client in sse_clients:
+                sse_clients.remove(client)
+
 async def websocket_handler(request):
     global last_inverter_data
     ws = web.WebSocketResponse()
     await ws.prepare(request)
-    ws_clients.append(ws)
     try:
         async for msg in ws:
             logger.debug("[WS Server] received message")
             logger.debug(msg)
-            logger.debug(f"WS_CLIENTS count: {len(ws_clients)}")
             if msg.type == aiohttp.WSMsgType.TEXT:
                 if "inverter_data" in msg.data:
                     last_inverter_data = msg.data
-                for ws_client in ws_clients[:]:
-                    if ws_client != ws and not ws_client.closed:
-                        await ws_client.send_str(msg.data)
-                    elif ws_client.closed:
-                        ws_clients.remove(ws_client)
-            elif msg.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.ERROR):
-                ws_clients.remove(ws)
-                if msg.type == aiohttp.WSMsgType.ERROR:
-                    logger.error(f"WS connection closed with exception {ws.exception()}")
+                await broadcast_sse(msg.data)
+            elif msg.type == aiohttp.WSMsgType.ERROR:
+                logger.error(f"WS connection closed with exception {ws.exception()}")
     finally:
-        if ws in ws_clients:
-            ws_clients.remove(ws)
+        pass
     return ws
 
 VITE_CORS_HEADER = {'Access-Control-Allow-Origin': '*'}
@@ -249,18 +279,20 @@ AUTH_PASSWORD = config.get("AUTH_PASSWORD", "changeme")
 
 @web.middleware
 async def basic_auth_middleware(request, handler):
-    if not AUTH_ENABLED:
-        return await handler(request)
-    # Allow unauthenticated access to static files
-    if request.path.startswith("/static") or request.path.startswith("/build"):
-        return await handler(request)
-    # Allow unauthenticated access to /ws only if from loopback
+    # Allow access to /ws only if from loopback
     if request.path == "/ws":
         peer = request.transport.get_extra_info("peername")
         if peer:
             ip = peer[0]
             if ip == "127.0.0.1" or ip == "::1":
                 return await handler(request)
+            else:
+                return web.Response(status=403, text="Forbidden")
+    if not AUTH_ENABLED:
+        return await handler(request)
+    # Allow unauthenticated access to static files
+    if request.path.startswith("/static") or request.path.startswith("/build"):
+        return await handler(request)
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Basic "):
         return web.Response(status=401, headers={"WWW-Authenticate": "Basic realm='WebViewer'"}, text="Unauthorized")
@@ -279,6 +311,7 @@ def create_runner():
     app.add_routes([
         web.get("/", http_handler),
         web.get("/ws", websocket_handler),
+        web.get("/events", sse_handler),
         web.get("/state", state),
         web.get("/hourly-chart", hourly_chart),
         web.get("/daily-chart", daily_chart),

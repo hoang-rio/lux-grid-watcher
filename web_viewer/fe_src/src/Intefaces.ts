@@ -48,7 +48,7 @@ export interface IInverterData {
 
 export interface ICProps {
   inverterData: IInverterData;
-  isSocketConnected: boolean;
+  isSSEConnected: boolean;
 }
 
 export interface SeriesItem {

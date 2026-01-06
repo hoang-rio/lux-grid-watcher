@@ -16,10 +16,9 @@ const MAX_RECONNECT_COUNT = 5;
 function App() {
   const { t, i18n } = useTranslation();
   const [inverterData, setInverterData] = useState<IInverterData>();
-  const socketRef = useRef<WebSocket>(undefined);
-  const selfCloseRef = useRef<boolean>(false);
+  const eventSourceRef = useRef<EventSource>(undefined);
   const reconnectCountRef = useRef<number>(0);
-  const [isSocketConnected, setIsSocketConnected] = useState<boolean>(false);
+  const [isSSEConnected, setIsSSEConnected] = useState<boolean>(false);
   const hourlyChartfRef = useRef<IUpdateChart>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isFetchingRef = useRef(false);
@@ -29,28 +28,24 @@ function App() {
   const [newNotification, setNewNotification] =
     useState<INotificationData | null>(null);
 
-  const connectSocket = useCallback(() => {
-    if (
-      socketRef.current &&
-      (socketRef.current.CONNECTING || !socketRef.current.CLOSED)
-    ) {
+  const connectSSE = useCallback(() => {
+    if (eventSourceRef.current) {
       return;
     }
-    logUtil.log(i18n.t("socket.connecting"));
-    const socket = new WebSocket(`${import.meta.env.VITE_API_BASE_URL}/ws`);
-    socketRef.current = socket;
+    logUtil.log(i18n.t("sse.connecting"));
+    const eventSource = new EventSource(`${import.meta.env.VITE_API_BASE_URL}/events`);
+    eventSourceRef.current = eventSource;
 
-    socket.addEventListener("open", () => {
-      selfCloseRef.current = false;
+    eventSource.onopen = () => {
       reconnectCountRef.current = 0;
-      logUtil.log(i18n.t("socket.connected"));
+      logUtil.log(i18n.t("sse.connected"));
       if (deviceTimeRef.current) {
         document.title = `[${deviceTimeRef.current}] ${i18n.t("webTitle")}`;
       }
-      setIsSocketConnected(true);
-    });
+      setIsSSEConnected(true);
+    };
 
-    socket.addEventListener("message", (event) => {
+    eventSource.onmessage = (event) => {
       const jsonData = JSON.parse(event.data);
       if (jsonData.event === "new_notification") {
         setNewNotification(jsonData.data);
@@ -59,36 +54,33 @@ function App() {
         hourlyChartfRef.current?.updateItem(jsonData.hourly_chart_item);
         setIsLoading(false);
       }
-    });
+    };
 
-    socket.addEventListener("close", () => {
+    eventSource.onerror = (event) => {
       document.title = `[${i18n.t("offline")}] ${i18n.t("webTitle")}`;
-      setIsSocketConnected(false);
-      if (selfCloseRef.current || socketRef.current?.CONNECTING) {
-        logUtil.log(i18n.t("socket.closed"));
-        socketRef.current = undefined;
-        reconnectCountRef.current = 0;
-        return;
-      }
+      setIsSSEConnected(false);
+      logUtil.error(i18n.t("sse.error"), event);
+      eventSource.close();
+      eventSourceRef.current = undefined;
       if (reconnectCountRef.current >= MAX_RECONNECT_COUNT) {
-        logUtil.warn(i18n.t("socket.stopReconnect"), MAX_RECONNECT_COUNT);
+        logUtil.warn(i18n.t("sse.stopReconnect"), MAX_RECONNECT_COUNT);
         return;
       }
-      reconnectCountRef.current++;
-      logUtil.log(i18n.t("socket.reconnecting"), reconnectCountRef.current);
-      // eslint-disable-next-line react-hooks/immutability
-      connectSocket();
-    });
 
-    socket.addEventListener("error", (event) => {
-      logUtil.error(i18n.t("socket.error"), event);
-    });
+      reconnectCountRef.current++;
+      logUtil.log(i18n.t("sse.reconnecting"), reconnectCountRef.current);
+      // eslint-disable-next-line react-hooks/immutability
+      setTimeout(() => connectSSE(), 1000 * reconnectCountRef.current);
+    };
   }, [i18n]);
 
-  const closeSocket = useCallback(() => {
-    logUtil.log(i18n.t("socket.closing"));
-    selfCloseRef.current = true;
-    socketRef.current?.close();
+  const closeSSE = useCallback(() => {
+    logUtil.log(i18n.t("sse.closing"));
+    document.title = `[${i18n.t("offline")}] ${i18n.t("webTitle")}`;
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = undefined;
+    }
   }, [i18n]);
 
   const fetchState = useCallback(async () => {
@@ -110,16 +102,15 @@ function App() {
   }, [i18n]);
 
   useEffect(() => {
-    selfCloseRef.current = false;
-    if (!socketRef.current && !document.hidden) {
-      connectSocket();
+    if (!eventSourceRef.current && !document.hidden) {
+      connectSSE();
     }
-    window.addEventListener("beforeunload", closeSocket);
+    window.addEventListener("beforeunload", closeSSE);
     return () => {
-      window.removeEventListener("beforeunload", closeSocket);
-      closeSocket();
+      window.removeEventListener("beforeunload", closeSSE);
+      closeSSE();
     };
-  }, [connectSocket, closeSocket]);
+  }, [connectSSE, closeSSE]);
 
   useEffect(() => {
     fetchState();
@@ -128,19 +119,19 @@ function App() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        // When the page is hidden, close the socket to reduce activity
-        closeSocket();
+        // When the page is hidden, close the SSE connection to reduce activity
+        closeSSE();
       } else {
         // When back to foreground, fetch state and reconnect
         fetchState();
-        connectSocket();
+        connectSSE();
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [connectSocket, closeSocket, fetchState]);
+  }, [connectSSE, closeSSE, fetchState]);
 
   useEffect(() => {
     if (!inverterData?.deviceTime) return;
@@ -166,8 +157,8 @@ function App() {
         <Summary invertData={inverterData} />
         <SystemInformation
           inverterData={inverterData}
-          isSocketConnected={isSocketConnected}
-          onReconnect={connectSocket}
+          isSSEConnected={isSSEConnected}
+          onReconnect={connectSSE}
           newNotification={newNotification}
         />
         <div className="row chart">

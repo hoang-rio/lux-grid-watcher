@@ -3,7 +3,7 @@ import GeneralValue from "./GeneralValue";
 import PVPowerValue from "./PVPowerValue";
 import { useTranslation } from 'react-i18next';
 
-function SolarPV({ inverterData, isSocketConnected }: ICProps) {
+function SolarPV({ inverterData, isSSEConnected }: ICProps) {
   const { t } = useTranslation();
   return (
     <div className="pv flex-1">
@@ -11,31 +11,31 @@ function SolarPV({ inverterData, isSocketConnected }: ICProps) {
         <div className="col align-center">
           <GeneralValue
             className="show-small"
-            value={isSocketConnected ? inverterData.p_pv : 0}
+            value={isSSEConnected ? inverterData.p_pv : 0}
             unit=" W"
           />
           <img src="/assets/icon_solor_yielding.png" />
         </div>
         <div
           className={`y-arrow ${
-            inverterData.p_pv == 0 || !isSocketConnected ? "none" : ""
+            inverterData.p_pv == 0 || !isSSEConnected ? "none" : ""
           }`}
         ></div>
       </div>
       <div className="pv-texts power flex-1">
         <PVPowerValue
           label={t('PV1')}
-          pValue={isSocketConnected ? inverterData.p_pv_1 : 0}
-          vValue={isSocketConnected ? inverterData.v_pv_1 : 0}
+          pValue={isSSEConnected ? inverterData.p_pv_1 : 0}
+          vValue={isSSEConnected ? inverterData.v_pv_1 : 0}
         />
         <PVPowerValue
           label={t('PV2')}
-          pValue={isSocketConnected ? inverterData.p_pv_2 : 0}
-          vValue={isSocketConnected ? inverterData.v_pv_2 : 0}
+          pValue={isSSEConnected ? inverterData.p_pv_2 : 0}
+          vValue={isSSEConnected ? inverterData.v_pv_2 : 0}
         />
         <PVPowerValue
           label={t('totalPV')}
-          pValue={isSocketConnected ? inverterData.p_pv : 0}
+          pValue={isSSEConnected ? inverterData.p_pv : 0}
         />
       </div>
     </div>

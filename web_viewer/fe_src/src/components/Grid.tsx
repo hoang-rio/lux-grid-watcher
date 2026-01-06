@@ -2,26 +2,26 @@ import { useMemo } from "react";
 import { ICProps } from "../Intefaces";
 import GeneralValue from "./GeneralValue";
 
-export default function Grid({ inverterData, isSocketConnected }: ICProps) {
+export default function Grid({ inverterData, isSSEConnected }: ICProps) {
   // Destructure inverterData for cleaner access
   const { vacr, vacs, vact, p_to_user, p_to_grid, fac } = inverterData;
 
   // Compute vac with refactored logic
   const vac = useMemo(() => {
-    if (!isSocketConnected) return 0;
+    if (!isSSEConnected) return 0;
     const computedVac = (vacr || vacs || vact) / 10;
     return computedVac > 300 ? 0 : computedVac;
-  }, [isSocketConnected, vacr, vacs, vact]);
+  }, [isSSEConnected, vacr, vacs, vact]);
 
   // Compute power and frequency values
-  const powerValue = useMemo(() => (isSocketConnected ? (p_to_user || p_to_grid) : 0), [isSocketConnected, p_to_user, p_to_grid]);
-  const frequencyValue = useMemo(() => (isSocketConnected ? fac / 100 : 0), [fac, isSocketConnected]);
+  const powerValue = useMemo(() => (isSSEConnected ? (p_to_user || p_to_grid) : 0), [isSSEConnected, p_to_user, p_to_grid]);
+  const frequencyValue = useMemo(() => (isSSEConnected ? fac / 100 : 0), [fac, isSSEConnected]);
 
   // Determine arrow direction based on inverterData
   const arrowDirection = useMemo(() => {
-    if (!isSocketConnected) return "none";
+    if (!isSSEConnected) return "none";
     return p_to_grid > 0 ? "right" : (p_to_user > 0 ? "left" : "none");
-  }, [isSocketConnected, p_to_grid, p_to_user]);
+  }, [isSSEConnected, p_to_grid, p_to_user]);
 
   return (
     <div className="grid flex-1 row align-center justify-flex-end">

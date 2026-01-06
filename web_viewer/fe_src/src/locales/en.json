@@ -20,14 +20,15 @@
   "yearly": "Yearly",
   "serverOffline": "Server is offline. Reload page when you make sure that server is online",
   "loading": "Loading...",
-  "socket": {
-    "connecting": "[Socket] Connecting to server...",
-    "connected": "[Socket] Connected to server",
-    "stopReconnect": "[Socket] Stop reconnect by reached MAX_RECONNECT_COUNT: %s",
-    "reconnecting": "[Socket] Connection closed. Reconnecting (%s)...",
-    "error": "[Socket] Socket error",
-    "closing": "[Socket] Closing socket...",
-    "closed": "[Socket] Socket closed"
+  "sse": {
+    "connecting": "[SSE] Connecting to server...",
+    "connected": "[SSE] Connected to server",
+    "stopReconnect": "[SSE] Stop reconnect by reached MAX_RECONNECT_COUNT: %s",
+    "reconnecting": "[SSE] Connection closed. Reconnecting (%s)...",
+    "error": "[SSE] SSE error",
+    "closing": "[SSE] Closing SSE connection...",
+    "closed": "[SSE] SSE connection closed",
+    "connectionLost": "[SSE] Connection lost - no data received for 60 seconds"
   },
   "offline": "Offline",
   "normal": "Normal",
