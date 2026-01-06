@@ -40,7 +40,7 @@ jobs:
           NEED_RESTART_APP=true
           BUILD_FE=false
           GIT_CHANGED_FILE=$(git log -1 --name-only --format="%s")
-          if [[ $(echo $GIT_CHANGED_FILE | grep "\.py") == "" && $(echo $GIT_CHANGED_FILE | grep "\.sh") == "" && $(echo $GIT_CHANGED_FILE | grep "aiohttp") == "" ]]; then
+          if [[ ${{github.event_name != 'workflow_dispatch'}} && $(echo $GIT_CHANGED_FILE | grep "\.py") == "" && $(echo $GIT_CHANGED_FILE | grep "\.sh") == "" && $(echo $GIT_CHANGED_FILE | grep "aiohttp") == "" ]]; then
               NEED_RESTART_APP=false
           fi
           if [[ $(echo $GIT_CHANGED_FILE | grep "fe_src") != "" ]]; then
