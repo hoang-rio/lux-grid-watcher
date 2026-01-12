@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { ICProps } from "../Intefaces";
 import GeneralValue from "./GeneralValue";
 
-function Battery({ inverterData, isSocketConnected }: ICProps) {
+function Battery({ inverterData, isSSEConnected }: ICProps) {
   const iconColor = useMemo(() => {
     if (inverterData.soc < 10 || inverterData.v_bat < 40) return "red";
     if (inverterData.soc < 50) return "yellow";
@@ -15,18 +15,18 @@ function Battery({ inverterData, isSocketConnected }: ICProps) {
         <div className="battery-texts">
           <GeneralValue
             value={
-              isSocketConnected
+              isSSEConnected
                 ? inverterData.p_discharge || inverterData.p_charge
                 : 0
             }
             unit=" W"
           />
           <GeneralValue
-            value={isSocketConnected ? inverterData.soc : 0}
+            value={isSSEConnected ? inverterData.soc : 0}
             unit="%"
           />
           <GeneralValue
-            value={isSocketConnected ? inverterData.v_bat : 0}
+            value={isSSEConnected ? inverterData.v_bat : 0}
             unit=" Vdc"
           />
         </div>
@@ -34,7 +34,7 @@ function Battery({ inverterData, isSocketConnected }: ICProps) {
           <GeneralValue
             className="show-small"
             value={
-              isSocketConnected
+              isSSEConnected
                 ? inverterData.p_discharge || inverterData.p_charge
                 : 0
             }
@@ -43,17 +43,17 @@ function Battery({ inverterData, isSocketConnected }: ICProps) {
           <img
             className="battery-icon"
             src={`/assets/icon_battery_${
-              isSocketConnected ? Math.round(inverterData.soc / 2 / 10) : 0
+              isSSEConnected ? Math.round(inverterData.soc / 2 / 10) : 0
             }_${iconColor}.png`}
           />
           <GeneralValue
             className="show-small"
-            value={isSocketConnected ? inverterData.soc : 0}
+            value={isSSEConnected ? inverterData.soc : 0}
             unit="%"
           />
           <GeneralValue
             className="show-small"
-            value={isSocketConnected ? inverterData.v_bat : 0}
+            value={isSSEConnected ? inverterData.v_bat : 0}
             unit=" Vdc"
           />
         </div>
@@ -62,7 +62,7 @@ function Battery({ inverterData, isSocketConnected }: ICProps) {
             <div
               key={"batter-arrow-" + index}
               className={`x-arrow ${
-                isSocketConnected
+                isSSEConnected
                   ? inverterData.p_discharge > 0
                     ? "right"
                     : inverterData.p_charge > 0

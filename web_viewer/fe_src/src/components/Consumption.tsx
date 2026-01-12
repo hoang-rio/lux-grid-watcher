@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 export default function Consumption({
   inverterData,
-  isSocketConnected,
+  isSSEConnected,
 }: ICProps) {
   const { t } = useTranslation();
   const pConsumption =
@@ -18,7 +18,7 @@ export default function Consumption({
               <div
                 key={"comsumption-arrow-" + index}
                 className={`y-arrow ${
-                  isSocketConnected
+                  isSSEConnected
                     ? pConsumption > 0
                       ? "down"
                       : "none"
@@ -30,13 +30,13 @@ export default function Consumption({
           <img src="/assets/icon_consumption.png" />
           <GeneralValue
             className="show-small"
-            value={isSocketConnected ? pConsumption : 0}
+            value={isSSEConnected ? pConsumption : 0}
             unit=" W"
           />
         </div>
         <div className="consumption-texts">
           <GeneralValue
-            value={isSocketConnected ? pConsumption : 0}
+            value={isSSEConnected ? pConsumption : 0}
             unit=" W"
           />
           <div className="description">{t("consumptionPower")}</div>

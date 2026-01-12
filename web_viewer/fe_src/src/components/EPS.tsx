@@ -2,9 +2,9 @@ import { ICProps } from "../Intefaces";
 import GeneralValue from "./GeneralValue";
 import { useTranslation } from "react-i18next";
 
-export default function EPS({ inverterData, isSocketConnected }: ICProps) {
+export default function EPS({ inverterData, isSSEConnected }: ICProps) {
   const { t } = useTranslation();
-  const epsValue = isSocketConnected ? inverterData.p_eps : 0;
+  const epsValue = isSSEConnected ? inverterData.p_eps : 0;
 
   const renderEPSContent = (className?: string) => {
     return epsValue === 0 ? (

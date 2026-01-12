@@ -1,14 +1,14 @@
 import { ICProps, IInverterData } from "../Intefaces";
 
 // Extracted helper function for arrow class determination
-const getArrowClass = (inverterData: IInverterData, isSocketConnected: boolean) => {
-  if (!isSocketConnected) return "none";
+const getArrowClass = (inverterData: IInverterData, isSSEConnected: boolean) => {
+  if (!isSSEConnected) return "none";
   if (inverterData.p_inv > 0) return "right";
   if (inverterData.p_rec > 0) return "left";
   return "none";
 };
 
-function Inverter({ inverterData, isSocketConnected }: ICProps) {
+function Inverter({ inverterData, isSSEConnected }: ICProps) {
   return (
     <div className="inverter flex-1">
       <div className="row align-center">
@@ -17,7 +17,7 @@ function Inverter({ inverterData, isSocketConnected }: ICProps) {
           {Array.from({ length: 4 }).map((_, index) => (
             <div
               key={`inverter-arrow-${index}`}
-              className={`x-arrow ${getArrowClass(inverterData, isSocketConnected)}`}
+              className={`x-arrow ${getArrowClass(inverterData, isSSEConnected)}`}
             ></div>
           ))}
         </div>
@@ -27,4 +27,3 @@ function Inverter({ inverterData, isSocketConnected }: ICProps) {
 }
 
 export default Inverter;
-

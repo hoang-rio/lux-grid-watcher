@@ -15,7 +15,7 @@ const SettingsPopover = lazy(() => import("./SettingsPopover"));
 
 interface Props {
   inverterData: IInverterData;
-  isSocketConnected: boolean;
+  isSSEConnected: boolean;
   onReconnect: () => void;
   // Changed to accept an INotificationData object or null
   newNotification?: INotificationData | null;
@@ -23,7 +23,7 @@ interface Props {
 
 function SystemInformation({
   inverterData,
-  isSocketConnected,
+  isSSEConnected,
   onReconnect,
   newNotification,
 }: Props) {
@@ -150,7 +150,7 @@ function SystemInformation({
   }, []);
 
   const status = useMemo(() => {
-    if (!isSocketConnected) {
+    if (!isSSEConnected) {
       return "offline";
     }
     if (inverterData.status === 1) {
@@ -166,7 +166,7 @@ function SystemInformation({
     }
     return "normal";
   }, [
-    isSocketConnected,
+    isSSEConnected,
     inverterData.status,
     inverterData.internal_fault,
     inverterData.status_text,
@@ -249,7 +249,7 @@ function SystemInformation({
                 className="system-status-reconnect"
                 onClick={onReconnect}
                 title={t("reconnect")}
-                disabled={isSocketConnected}
+                disabled={isSSEConnected}
               >
                 {t("reconnect")}
               </button>
@@ -258,33 +258,33 @@ function SystemInformation({
               <div className="flex-1"></div>
               <SolarPV
                 inverterData={inverterData}
-                isSocketConnected={isSocketConnected}
+                isSSEConnected={isSSEConnected}
               />
               <div className="flex-1"></div>
             </div>
             <div className="row">
               <Battery
                 inverterData={inverterData}
-                isSocketConnected={isSocketConnected}
+                isSSEConnected={isSSEConnected}
               />
               <Inverter
                 inverterData={inverterData}
-                isSocketConnected={isSocketConnected}
+                isSSEConnected={isSSEConnected}
               />
               <Grid
                 inverterData={inverterData}
-                isSocketConnected={isSocketConnected}
+                isSSEConnected={isSSEConnected}
               />
             </div>
             <div className="row">
               <div className="flex-1"></div>
               <EPS
                 inverterData={inverterData}
-                isSocketConnected={isSocketConnected}
+                isSSEConnected={isSSEConnected}
               />
               <Consumption
                 inverterData={inverterData}
-                isSocketConnected={isSocketConnected}
+                isSSEConnected={isSSEConnected}
               />
             </div>
           </div>
