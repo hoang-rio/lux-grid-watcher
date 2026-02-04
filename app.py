@@ -63,6 +63,9 @@ def get_battery_full_notify_enabled():
 
 def get_battery_full_notify_body():
     return settings.get_setting("BATTERY_FULL_NOTIFY_BODY", "Pin đã sạc đầy 100%. Có thể bật bình nóng lạnh để tối ưu sử dụng.")
+
+def get_abnormal_notify_body():
+    return settings.get_setting("ABNORMAL_NOTIFY_BODY", "Tiêu thụ điện bất thường, vui lòng kiểm tra xem vòi nước đã khoá chưa.")
 log_level = logging.DEBUG if config["IS_DEBUG"] == 'True' else logging.INFO
 
 logger = logging.getLogger(__file__)
@@ -146,7 +149,8 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
                 max_power,
                 min_power
             )
-            fcm_service.warning_notify()
+            warning_body = get_abnormal_notify_body()
+            fcm_service.abnormal_notify(warning_body)
             play_audio("warning.mp3", 5)
             # Skip next abnormal_check_cooldown_hours hours when detect abnormal usage
             abnormal_skip_check_count = abnormal_check_cooldown_hours

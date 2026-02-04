@@ -18,6 +18,7 @@ interface Settings {
   OFF_GRID_WARNING_ENABLED: string;
   BATTERY_FULL_NOTIFY_ENABLED: string;
   BATTERY_FULL_NOTIFY_BODY: string;
+  ABNORMAL_NOTIFY_BODY: string;
 }
 
 const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onClose }, ref) => {
@@ -47,7 +48,8 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
         MAX_BATTERY_POWER: '3000',
         OFF_GRID_WARNING_ENABLED: 'true',
         BATTERY_FULL_NOTIFY_ENABLED: 'true',
-        BATTERY_FULL_NOTIFY_BODY: 'Pin đã sạc đầy 100%. Có thể bật bình nóng lạnh để tối ưu sử dụng.'
+        BATTERY_FULL_NOTIFY_BODY: 'Pin đã sạc đầy 100%. Có thể bật bình nóng lạnh để tối ưu sử dụng.',
+        ABNORMAL_NOTIFY_BODY: 'Tiêu thụ điện bất thường, vui lòng kiểm tra xem vòi nước đã khoá chưa.'
       };
       const merged = { ...defaults, ...data };
       setSettings(merged);
@@ -151,7 +153,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
               </label>
             </div>
             <div className="setting-item setting-item-block">
-              <label>{t("settings.batteryFullNotifyBody")}</label>
+              <label>{t("settings.notifyBody")}</label>
               <textarea
                 value={settings.BATTERY_FULL_NOTIFY_BODY}
                 onChange={(e) =>
@@ -206,6 +208,17 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
                 disabled={settings.ABNORMAL_DETECTION_ENABLED !== "true"}
               />
               <span>{t("settings.watts")}</span>
+            </div>
+            <div className="setting-item setting-item-block">
+              <label>{t("settings.notifyBody")}</label>
+              <textarea
+                value={settings.ABNORMAL_NOTIFY_BODY}
+                onChange={(e) =>
+                  updateSetting("ABNORMAL_NOTIFY_BODY", e.target.value)
+                }
+                disabled={settings.ABNORMAL_DETECTION_ENABLED !== "true"}
+                rows={3}
+              />
             </div>
           </div>
           <div className="settings-section">

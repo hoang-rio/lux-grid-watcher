@@ -132,7 +132,7 @@
     "offGridWarningEnabled": "Enable warning",
     "batterySection": "Battery settings",
     "batteryFullNotifyEnabled": "Enable battery full notification",
-    "batteryFullNotifyBody": "Notification body",
+    "notifyBody": "Notification body",
     "save": "Save",
     "saving": "Saving...",
     "saveSuccess": "Settings saved successfully",

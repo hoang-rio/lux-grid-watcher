@@ -270,11 +270,11 @@ class FCM():
             self.__post_send_notify(devices)
         self.__log_notification(notify_title, notify_body)
 
-    def warning_notify(self):
+    def abnormal_notify(self, body: str = "Tiêu thụ điện bất thường, vui lòng kiểm tra xem vòi nước đã khoá chưa."):
         self.__fcm_threads = []
         devices = self.__get_devices()
         notify_title = "Cảnh báo: Tiêu thụ điện bất thường"
-        notify_body = "Tiêu thụ điện bất thường, vui lòng kiểm tra xem vòi nước đã khoá chưa."
+        notify_body = body
         if len(devices) == 0:
             self.__logger.info("WARN: No device to notify")
         else:
