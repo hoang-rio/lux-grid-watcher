@@ -1,8 +1,9 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import "./Footer.css";
 
 function Footer() {
+  const currentYear = useMemo(() => new Date().getFullYear(), []);
   const { t, i18n } = useTranslation();
 
   const languages = [
@@ -18,10 +19,11 @@ function Footer() {
 
   return (
     <div className="card text-center footer">
-      &copy; 2024{" "}
+      &copy; 2024 - {currentYear}{" "}
       <a
         href="https://hoangnguyendong.dev"
         target="_blank"
+        
         className="footer-link"
       >
         Hoàng Rio
