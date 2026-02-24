@@ -30,42 +30,9 @@ config: dict = {
     **environ
 }
 
-# Settings will be loaded from DB
-def get_abnormal_detection_enabled():
-    return settings.get_setting("ABNORMAL_DETECTION_ENABLED", config.get("ABNORMAL_DETECTION_ENABLED", "true")).lower() == "true"
+# Initialize settings module with config for fallback
+settings.init_config(config)
 
-def get_abnormal_check_cooldown_hours():
-    return int(settings.get_setting("ABNORMAL_CHECK_COOLDOWN_HOURS", config.get("ABNORMAL_CHECK_COOLDOWN_HOURS", 3)))
-
-def get_abnormal_usage_count():
-    return 32 * get_abnormal_check_cooldown_hours()
-
-def get_normal_min_usage_count():
-    return 5 * get_abnormal_check_cooldown_hours()
-
-def get_abnormal_min_power():
-    return int(settings.get_setting("ABNORMAL_MIN_POWER", 900))
-
-def get_off_grid_warning_power():
-    return int(settings.get_setting("OFF_GRID_WARNING_POWER", 2200))
-
-def get_off_grid_warning_soc():
-    return int(settings.get_setting("OFF_GRID_WARNING_SOC", 87))
-
-def get_max_battery_power():
-    return int(settings.get_setting("MAX_BATTERY_POWER", 3000))
-
-def get_off_grid_warning_enabled():
-    return settings.get_setting("OFF_GRID_WARNING_ENABLED", "true").lower() == "true"
-
-def get_battery_full_notify_enabled():
-    return settings.get_setting("BATTERY_FULL_NOTIFY_ENABLED", "true").lower() == "true"
-
-def get_battery_full_notify_body():
-    return settings.get_setting("BATTERY_FULL_NOTIFY_BODY", "Pin đã sạc đầy 100%. Có thể bật bình nóng lạnh để tối ưu sử dụng.")
-
-def get_abnormal_notify_body():
-    return settings.get_setting("ABNORMAL_NOTIFY_BODY", "Tiêu thụ điện bất thường, vui lòng kiểm tra xem vòi nước đã khoá chưa.")
 log_level = logging.DEBUG if config["IS_DEBUG"] == 'True' else logging.INFO
 
 logger = logging.getLogger(__file__)
@@ -103,12 +70,12 @@ def play_audio(audio_file: str, repeat=3):
 # Number of hours to skip check when detect abnormal usage
 abnormal_skip_check_count = 0
 def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
-    if not get_abnormal_detection_enabled():
+    if not settings.get_abnormal_detection_enabled():
         return  # Skip check if abnormal detection is disabled
     now = datetime.now()
     # now = now.replace(minute=0, second=0, hour=6)
     sleep_time = int(config["SLEEP_TIME"])
-    abnormal_check_cooldown_hours = get_abnormal_check_cooldown_hours()
+    abnormal_check_cooldown_hours = settings.get_abnormal_check_cooldown_hours()
     if (sleep_time >= 60 and now.minute <= sleep_time / 60) or (now.minute == 0 and now.second <= sleep_time):
         global abnormal_skip_check_count
         if abnormal_skip_check_count > 0:
@@ -127,9 +94,9 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
         min_power = 0
         max_power = 0
         consumption_count: dict = {}
-        abnormal_min_power = get_abnormal_min_power()
-        abnormal_usage_count = get_abnormal_usage_count()
-        normal_min_usage_count = get_normal_min_usage_count()
+        abnormal_min_power = settings.get_abnormal_min_power()
+        abnormal_usage_count = settings.get_abnormal_usage_count()
+        normal_min_usage_count = settings.get_normal_min_usage_count()
         for item in all_items:
             rounded_consumption = item["consumption"] - item["consumption"] % 200
             consumption_count[rounded_consumption] = consumption_count.get(rounded_consumption, 0) + 1
@@ -149,7 +116,7 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
                 max_power,
                 min_power
             )
-            warning_body = get_abnormal_notify_body()
+            warning_body = settings.get_abnormal_notify_body()
             fcm_service.abnormal_notify(warning_body)
             play_audio("warning.mp3", 5)
             # Skip next abnormal_check_cooldown_hours hours when detect abnormal usage
@@ -170,7 +137,7 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
 dectect_off_grid_warning_skip_check_count = 0
 last_battery_full_notify_date = None
 def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: int, soc: int, fcm_service: FCM):
-    if not get_off_grid_warning_enabled() or is_grid_connected:
+    if not settings.get_off_grid_warning_enabled() or is_grid_connected:
         return
     if pv_power > eps_power:
         # No need to check off grid warning if pv power is greater than eps power
@@ -178,9 +145,9 @@ def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: 
     global dectect_off_grid_warning_skip_check_count
     # Notify off grid warning if eps power >= OFF_GRID_WARNING_POWER and pv power < eps power / 2
     # and (battery percent (soc) < OFF_GRID_WARNING_SOC or battery discharge > MAX_BATTERY_POWER)
-    off_grid_warning_power = get_off_grid_warning_power()
-    off_grid_warning_soc = get_off_grid_warning_soc()
-    max_battery_power = get_max_battery_power()
+    off_grid_warning_power = settings.get_off_grid_warning_power()
+    off_grid_warning_soc = settings.get_off_grid_warning_soc()
+    max_battery_power = settings.get_max_battery_power()
 
     high_load = eps_power >= off_grid_warning_power
     insufficient_pv = pv_power < eps_power / 2
@@ -205,14 +172,14 @@ def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: 
         dectect_off_grid_warning_skip_check_count = 0
 
 def detect_battery_full(soc: int, fcm_service: FCM):
-    if not get_battery_full_notify_enabled():
+    if not settings.get_battery_full_notify_enabled():
         return
     global last_battery_full_notify_date
     now = datetime.now()
     today = now.date()
     if soc == 100 and (last_battery_full_notify_date is None or last_battery_full_notify_date != today):
         logger.info("_________Battery full detected with soc: %s%%_________", soc)
-        body = get_battery_full_notify_body()
+        body = settings.get_battery_full_notify_body()
         fcm_service.battery_full_notify(body)
         last_battery_full_notify_date = today
 
