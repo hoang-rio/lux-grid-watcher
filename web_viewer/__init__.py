@@ -12,6 +12,8 @@ from typing import List, Optional
 from base64 import b64decode
 from html import escape
 
+from api_storage import read_grid_state, register_device_token
+
 # Load config from .env and environment
 config: dict = {**dotenv_values(".env"), **environ}
 
@@ -105,6 +107,66 @@ async def state(_: web.Request):
     except Exception:
         data = {}
     return web.json_response(data, headers=VITE_CORS_HEADER)
+
+
+async def mobile_state(_: web.Request):
+    try:
+        state_file = config.get("STATE_FILE", "grid_connect_state.ini")
+        history_file = config.get("HISTORY_FILE", "history.json")
+        return web.json_response(
+            read_grid_state(state_file, history_file),
+            headers=VITE_CORS_HEADER,
+        )
+    except Exception as error:
+        logger.error(f"Error in mobile_state: {error}")
+        return web.json_response(
+            {"is_connected": False, "history": []},
+            headers=VITE_CORS_HEADER,
+        )
+
+
+async def register_fcm(request: web.Request):
+    try:
+        token = ""
+        if request.can_read_body:
+            content_type = request.content_type.lower() if request.content_type else ""
+            if content_type == "application/json":
+                payload = await request.json()
+                if isinstance(payload, dict):
+                    token = str(payload.get("token", ""))
+            else:
+                payload = await request.post()
+                token = str(payload.get("token", ""))
+
+        result = register_device_token(
+            config.get("DEVICE_IDS_JSON_FILE", "devices.json"),
+            token,
+        )
+        status = 200 if result["is_success"] else 400
+        return web.json_response(result, status=status, headers=VITE_CORS_HEADER)
+    except Exception as error:
+        logger.error(f"Error in register_fcm: {error}")
+        return web.json_response(
+            {
+                "is_success": False,
+                "message": f"Got exception {error}",
+                "device_count": 0,
+            },
+            status=500,
+            headers=VITE_CORS_HEADER,
+        )
+
+
+
+# Reusable CORS handler for OPTIONS endpoints
+def cors_options_handler(allowed_methods: str = "GET, POST, OPTIONS"):
+    async def handler(_: web.Request):
+        return web.Response(headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": allowed_methods,
+            "Access-Control-Allow-Headers": "Content-Type",
+        })
+    return handler
 
 async def hourly_chart(request: web.Request):
     try:
@@ -325,6 +387,8 @@ async def basic_auth_middleware(request, handler):
 
     if not auth_enabled:
         return await handler(request)
+    if request.method == "OPTIONS":
+        return await handler(request)
     # Allow unauthenticated access to static files
     if request.path.startswith("/static") or request.path.startswith("/build"):
         return await handler(request)
@@ -348,6 +412,9 @@ def create_runner():
         web.get("/ws", websocket_handler),
         web.get("/events", sse_handler),
         web.get("/state", state),
+        web.get("/mobile/state", mobile_state),
+        web.post("/fcm/register", register_fcm),
+        web.options("/fcm/register", cors_options_handler("POST, OPTIONS")),
         web.get("/hourly-chart", hourly_chart),
         web.get("/daily-chart", daily_chart),
         web.get("/monthly-chart", monthly_chart),
@@ -358,7 +425,7 @@ def create_runner():
         web.get("/notification-unread-count", notification_unread_count),
         web.get("/settings", get_settings),
         web.post("/settings", update_settings),
-        web.options("/settings", options_settings),
+        web.options("/settings", cors_options_handler("GET, POST, OPTIONS")),
         web.static("/", path.join(path.dirname(__file__), "build"))
     ])
     return web.AppRunner(app, access_log=None)
