@@ -19,6 +19,9 @@ interface Settings {
   BATTERY_FULL_NOTIFY_ENABLED: string;
   BATTERY_FULL_NOTIFY_BODY: string;
   ABNORMAL_NOTIFY_BODY: string;
+  AUTH_ENABLED: string;
+  AUTH_USERNAME: string;
+  AUTH_PASSWORD: string;
 }
 
 const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onClose }, ref) => {
@@ -28,6 +31,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
+  const [passwordConfirm, setPasswordConfirm] = useState<string>('');
 
   useEffect(() => {
     fetchSettings();
@@ -50,6 +54,9 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
         BATTERY_FULL_NOTIFY_ENABLED: 'true',
         BATTERY_FULL_NOTIFY_BODY: 'Pin đã sạc đầy 100%. Có thể bật bình nóng lạnh để tối ưu sử dụng.',
         ABNORMAL_NOTIFY_BODY: 'Tiêu thụ điện bất thường, vui lòng kiểm tra xem vòi nước đã khoá chưa.'
+        ,AUTH_ENABLED: 'false'
+        ,AUTH_USERNAME: 'admin'
+        ,AUTH_PASSWORD: 'changeme'
       };
       const merged = { ...defaults, ...data };
       setSettings(merged);
@@ -66,18 +73,45 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
     if (!settings) return;
     setSaving(true);
     setMessage(null);
+    // If auth enabled, ensure username and password present and confirmation match
+    if (settings.AUTH_ENABLED === 'true') {
+      if (!settings.AUTH_USERNAME || settings.AUTH_USERNAME.trim() === '') {
+        setMessage({text: t('settings.authUsernameRequired'), type: 'error'});
+        setSaving(false);
+        return;
+      }
+      if (!settings.AUTH_PASSWORD || settings.AUTH_PASSWORD === '') {
+        setMessage({text: t('settings.authPasswordRequired'), type: 'error'});
+        setSaving(false);
+        return;
+      }
+      if (settings.AUTH_PASSWORD !== passwordConfirm) {
+        setMessage({text: t('settings.authPasswordMismatch'), type: 'error'});
+        setSaving(false);
+        return;
+      }
+    }
     try {
+      // Do not send password confirmation to backend
+      const payload = { ...settings } as any;
+      delete payload.AUTH_PASSWORD_CONFIRM;
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success) {
+        const prevAuthEnabled = originalSettings ? originalSettings.AUTH_ENABLED === 'true' : false;
         setOriginalSettings(settings);
         setMessage({text: t('settings.saveSuccess'), type: 'success'});
+        // If auth changed from disabled -> enabled, reload page to ensure auth middleware and client state take effect
+        if (!prevAuthEnabled && settings.AUTH_ENABLED === 'true') {
+          // small delay to allow UI message to show briefly
+          setTimeout(() => window.location.reload(), 300);
+        }
       } else {
         setMessage({text: t('settings.saveError'), type: 'error'});
       }
@@ -91,6 +125,14 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
 
   const updateSetting = (key: keyof Settings, value: string) => {
     if (settings) {
+      // If enabling auth, reset password fields so user must re-enter
+      if (key === 'AUTH_ENABLED' && value === 'true' && settings.AUTH_ENABLED !== 'true') {
+        // When enabling auth from disabled state, require re-entering the password
+        // but keep the existing username so user doesn't have to retype it.
+        setPasswordConfirm('');
+        setSettings({ ...settings, AUTH_ENABLED: value, AUTH_PASSWORD: '' });
+        return;
+      }
       setSettings({ ...settings, [key]: value });
     }
   };
@@ -222,6 +264,53 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
             </div>
           </div>
           <div className="settings-section">
+            <h4>{t("settings.authSection")}</h4>
+            <div className="setting-item">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={settings.AUTH_ENABLED === "true"}
+                  onChange={(e) =>
+                    updateSetting(
+                      "AUTH_ENABLED",
+                      e.target.checked ? "true" : "false"
+                    )
+                  }
+                />
+                {t("settings.authEnabled")}
+              </label>
+            </div>
+            <div className="setting-item">
+              <label>{t("settings.authUsername")}</label>
+              <input
+                type="text"
+                value={settings.AUTH_USERNAME}
+                onChange={(e) => updateSetting("AUTH_USERNAME", e.target.value)}
+                disabled={settings.AUTH_ENABLED !== "true"}
+              />
+            </div>
+            <div className="setting-item">
+              <label>{t("settings.authPassword")}</label>
+              <input
+                type="password"
+                value={settings.AUTH_PASSWORD}
+                onChange={(e) => updateSetting("AUTH_PASSWORD", e.target.value)}
+                disabled={settings.AUTH_ENABLED !== "true"}
+              />
+            </div>
+            <div className="setting-item">
+              <label>{t("settings.authPasswordConfirm")}</label>
+              <input
+                type="password"
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                disabled={settings.AUTH_ENABLED !== "true"}
+              />
+            </div>
+            <p className="setting-descrtiption">
+              {t("settings.authDescription")}
+            </p>
+
             <h4>{t("settings.offGridWarningSection")}</h4>
             <div className="setting-item">
               <label>
@@ -280,7 +369,13 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
           </div>
         </div>
         <div className="settings-actions">
-          <button onClick={handleSave} disabled={saving || !hasChanges()}>
+          <button onClick={handleSave} disabled={
+            saving || !hasChanges() || (settings.AUTH_ENABLED === 'true' && (
+              !settings.AUTH_USERNAME || settings.AUTH_USERNAME.trim() === '' ||
+              !settings.AUTH_PASSWORD || settings.AUTH_PASSWORD === '' ||
+              settings.AUTH_PASSWORD !== passwordConfirm
+            ))
+          }>
             {saving ? t("settings.saving") : t("settings.save")}
           </button>
         </div>

@@ -10,6 +10,7 @@ from logging import Logger, getLogger
 from dotenv import dotenv_values
 from typing import List, Optional
 from base64 import b64decode
+from html import escape
 
 # Load config from .env and environment
 config: dict = {**dotenv_values(".env"), **environ}
@@ -272,11 +273,33 @@ async def options_settings(_: web.Request):
         'Access-Control-Allow-Headers': 'Content-Type',
     })
 
-# --- Basic Auth Middleware and Config ---
-AUTH_ENABLED = config.get("AUTH_ENABLED", "false").lower() == "true"
-AUTH_USERNAME = config.get("AUTH_USERNAME", "admin")
-AUTH_PASSWORD = config.get("AUTH_PASSWORD", "changeme")
 
+def _auth_html_response(status: int, title: str, message: str, include_www_authenticate: bool = False) -> web.Response:
+        """Return a small friendly HTML response for auth errors."""
+        safe_title = escape(title)
+        safe_message = escape(message)
+        body = f"""
+        <!doctype html>
+        <html>
+            <head>
+                <meta charset="utf-8" />
+                <meta name="viewport" content="width=device-width,initial-scale=1" />
+                <title>{safe_title}</title>
+                <style>body{{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;line-height:1.4;margin:24px;color:#222}}h2{{margin-top:0}}.hint{{color:#666;font-size:0.9em}}</style>
+            </head>
+            <body>
+                <h2>{safe_title}</h2>
+                <p>{safe_message}</p>
+                <p class="hint">If you are the device owner you can update authentication in the <strong>Settings</strong> panel of this web viewer.</p>
+            </body>
+        </html>
+        """
+        headers = {}
+        if include_www_authenticate:
+                headers["WWW-Authenticate"] = "Basic realm='WebViewer'"
+        return web.Response(status=status, text=body, content_type='text/html', headers=headers)
+
+# --- Basic Auth Middleware (reads auth settings dynamically) ---
 @web.middleware
 async def basic_auth_middleware(request, handler):
     # Allow access to /ws only if from loopback
@@ -287,23 +310,35 @@ async def basic_auth_middleware(request, handler):
             if ip == "127.0.0.1" or ip == "::1":
                 return await handler(request)
             else:
-                return web.Response(status=403, text="Forbidden")
-    if not AUTH_ENABLED:
+                return _auth_html_response(403, "Forbidden", "Access to the websocket endpoint is restricted to localhost.")
+    # Read auth settings from persistent `settings` (updated by web UI).
+    try:
+        import settings as app_settings
+        auth_enabled = app_settings.get_setting("AUTH_ENABLED", config.get("AUTH_ENABLED", "false")).lower() == "true"
+        auth_username = app_settings.get_setting("AUTH_USERNAME", config.get("AUTH_USERNAME", "admin"))
+        auth_password = app_settings.get_setting("AUTH_PASSWORD", config.get("AUTH_PASSWORD", "changeme"))
+    except Exception:
+        # Fallback to env/config if settings module not available for any reason
+        auth_enabled = config.get("AUTH_ENABLED", "false").lower() == "true"
+        auth_username = config.get("AUTH_USERNAME", "admin")
+        auth_password = config.get("AUTH_PASSWORD", "changeme")
+
+    if not auth_enabled:
         return await handler(request)
     # Allow unauthenticated access to static files
     if request.path.startswith("/static") or request.path.startswith("/build"):
         return await handler(request)
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Basic "):
-        return web.Response(status=401, headers={"WWW-Authenticate": "Basic realm='WebViewer'"}, text="Unauthorized")
+        return _auth_html_response(401, "Authentication required", "This web viewer is protected. Please provide HTTP Basic credentials.", include_www_authenticate=True)
     try:
         encoded = auth_header.split(" ", 1)[1]
         decoded = b64decode(encoded).decode()
         username, password = decoded.split(":", 1)
     except Exception:
-        return web.Response(status=401, headers={"WWW-Authenticate": "Basic realm='WebViewer'"}, text="Invalid auth header")
-    if username != AUTH_USERNAME or password != AUTH_PASSWORD:
-        return web.Response(status=401, headers={"WWW-Authenticate": "Basic realm='WebViewer'"}, text="Invalid credentials")
+        return _auth_html_response(401, "Invalid authentication", "Invalid Authorization header. Please provide valid HTTP Basic credentials.", include_www_authenticate=True)
+    if username != auth_username or password != auth_password:
+        return _auth_html_response(401, "Invalid credentials", "The username or password you provided is incorrect.", include_www_authenticate=True)
     return await handler(request)
 
 def create_runner():
