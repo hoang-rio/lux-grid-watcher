@@ -34,6 +34,10 @@ Bạn có thể tự xây dựng ứng dụng thông báo cho Android/iOS và ch
 
 Tôi cũng đã phát triển một ứng dụng cho Android/iOS. Nếu bạn cần, cứ thoải mái liên hệ với tôi.
 
+Web server tích hợp cũng cung cấp API cho ứng dụng di động:
+* `POST /fcm/register` với JSON hoặc form body `token=<firebase_device_token>` để lưu token thiết bị
+* `GET /mobile/state` để lấy trạng thái điện lưới hiện tại và lịch sử thay đổi trạng thái
+
 ## Trình xem web
 * Biên dịch giao diện với lệnh `cd web_viewer/fe_src && yarn install && yarn build` (Bỏ qua bước này nếu bạn chạy bằng docker)
 * Bây giờ bạn có thể xem giao diện web LuxPower theo thời gian thực tại http://localhost:88, giao diện sẽ tương tự như hình ảnh bên dưới (URL này có thể thay đổi bằng cách chỉnh sửa biến `PORT` trong tập tin `.env`)

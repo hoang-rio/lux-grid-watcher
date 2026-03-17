@@ -1,12 +1,12 @@
 import logging
 from os import path
-import json
 import requests
 from google.oauth2 import service_account
 import google.auth.transport.requests
 from threading import Thread
 import sqlite3
 
+from api_storage import load_device_tokens, save_device_tokens
 from web_socket_client import WebSocketClient
 
 SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"]
@@ -137,14 +137,10 @@ class FCM():
         self.__ws_client = ws_client
 
     def __get_devices(self):
-        if path.exists(self.__config["DEVICE_IDS_JSON_FILE"]):
-            with open(self.__config["DEVICE_IDS_JSON_FILE"], "r") as fr:
-                return json.loads(fr.read())
-        return []
+        return load_device_tokens(self.__config["DEVICE_IDS_JSON_FILE"])
 
     def __save_device(self, devices: list[str]):
-        with open(self.__config["DEVICE_IDS_JSON_FILE"], "w") as fw:
-            fw.write(json.dumps(devices))
+        save_device_tokens(self.__config["DEVICE_IDS_JSON_FILE"], devices)
 
     def __post_send_notify(self, devices: list[str]):
         valid_devices: list[str] = []
