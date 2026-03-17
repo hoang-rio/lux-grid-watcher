@@ -22,7 +22,10 @@ function EnergyChart({ className }: IClassNameProps) {
   const [currentMonth, setCurrentMonth] = useState(now.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
-  const years = [...new Set([currentYear - 1, currentYear, selectedYear])].sort((a, b) => b - a);
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
+  const years = (availableYears && availableYears.length)
+    ? availableYears
+    : [...new Set([currentYear - 1, currentYear, selectedYear])].sort((a, b) => b - a);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
   const lastCurrentYear = useRef(currentYear);
   const lastCurrentMonth = useRef(currentMonth);
@@ -57,6 +60,32 @@ function EnergyChart({ className }: IClassNameProps) {
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Fetch available years from backend for Month/Year selects
+  useEffect(() => {
+    let mounted = true;
+    const fetchYears = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/monthly-chart`);
+        const json = await res.json();
+        if (!mounted) return;
+        if (json && Array.isArray(json.years) && json.years.length) {
+          // ensure numbers and sorted desc
+          const ys = json.years.map((y: unknown) => Number(y)).filter(Boolean).sort((a: number, b: number) => b - a);
+          setAvailableYears(ys);
+          // if selectedYear not in list, set to first available
+          if (!ys.includes(selectedYear)) {
+            setSelectedYear(ys[0]);
+          }
+        }
+      } catch {
+        // ignore and keep fallback years
+      }
+    };
+    fetchYears();
+    return () => { mounted = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Month select handler
