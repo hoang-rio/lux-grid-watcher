@@ -62,31 +62,17 @@ function EnergyChart({ className }: IClassNameProps) {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
-  // Fetch available years from backend for Month/Year selects
-  useEffect(() => {
-    let mounted = true;
-    const fetchYears = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/monthly-chart`);
-        const json = await res.json();
-        if (!mounted) return;
-        if (json && Array.isArray(json.years) && json.years.length) {
-          // ensure numbers and sorted desc
-          const ys = json.years.map((y: unknown) => Number(y)).filter(Boolean).sort((a: number, b: number) => b - a);
-          setAvailableYears(ys);
-          // if selectedYear not in list, set to first available
-          if (!ys.includes(selectedYear)) {
-            setSelectedYear(ys[0]);
-          }
-        }
-      } catch {
-        // ignore and keep fallback years
+  const handleYearsAvailable = (yrs: number[]) => {
+    try {
+      const ys = yrs.map((y: unknown) => Number(y)).filter(Boolean).sort((a: number, b: number) => b - a);
+      if (ys.length) {
+        setAvailableYears(ys);
+        if (!ys.includes(selectedYear)) setSelectedYear(ys[0]);
       }
-    };
-    fetchYears();
-    return () => { mounted = false; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    } catch {
+      // ignore
+    }
+  };
 
   // Month select handler
   const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -201,7 +187,7 @@ function EnergyChart({ className }: IClassNameProps) {
         )}
         {energyChartType === EnergyChartType.Monthly && (
           <Suspense fallback={<Loading />}>
-            <MonthlyChart ref={fetchChartRef} year={selectedYear} />
+            <MonthlyChart ref={fetchChartRef} year={selectedYear} onYearsAvailable={handleYearsAvailable} />
           </Suspense>
         )}
         {energyChartType === EnergyChartType.Yearly && (

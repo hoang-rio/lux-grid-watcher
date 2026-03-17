@@ -17,6 +17,7 @@ import BarChart from "./BarChart";
 
 interface MonthlyChartProps {
   year?: number;
+  onYearsAvailable?: (years: number[]) => void;
 }
 
 const MonthlyChart = forwardRef((props: MonthlyChartProps, ref: ForwardedRef<IFetchChart>) => {
@@ -74,6 +75,8 @@ const MonthlyChart = forwardRef((props: MonthlyChartProps, ref: ForwardedRef<IFe
     ];
   }, [chartData, t]);
 
+  const firstYearsReported = useRef(false);
+
   const fetchChart = useCallback(async () => {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
@@ -84,6 +87,30 @@ const MonthlyChart = forwardRef((props: MonthlyChartProps, ref: ForwardedRef<IFe
       const res = await fetch(url);
       const json = await res.json();
       setChartData(json && json.chart ? json.chart : json || []);
+      // report available years to parent once on first successful fetch
+      if (
+        !firstYearsReported.current &&
+        json &&
+        Array.isArray(json.years) &&
+        json.years.length
+      ) {
+        try {
+          const yearsNums = json.years
+            .map((y: unknown) => Number(y))
+            .filter(Boolean);
+          if (
+            yearsNums.length &&
+            typeof props.onYearsAvailable === "function"
+          ) {
+            props.onYearsAvailable(
+              yearsNums.sort((a: number, b: number) => b - a),
+            );
+            firstYearsReported.current = true;
+          }
+        } catch {
+          // ignore parsing errors
+        }
+      }
     } catch {
       // swallow, component will show empty chart
       setChartData([]);
@@ -91,6 +118,7 @@ const MonthlyChart = forwardRef((props: MonthlyChartProps, ref: ForwardedRef<IFe
       isFetchingRef.current = false;
       setIsLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year]);
 
   useImperativeHandle(ref, (): IFetchChart => ({ fetchChart }));
