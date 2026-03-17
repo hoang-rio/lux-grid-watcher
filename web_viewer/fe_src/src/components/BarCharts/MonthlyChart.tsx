@@ -15,14 +15,20 @@ import Loading from "../Loading";
 import { roundTo } from "../utils";
 import BarChart from "./BarChart";
 
-const MonthlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
+interface MonthlyChartProps {
+  year?: number;
+}
+
+const MonthlyChart = forwardRef((props: MonthlyChartProps, ref: ForwardedRef<IFetchChart>) => {
+  const { year } = props;
   const { t } = useTranslation();
-  const [chartData, setChartData] = useState([]);
+  const [chartData, setChartData] = useState<[]>([]);
   const [isDark, setIsDark] = useState(
     window.matchMedia("(prefers-color-scheme: dark)").matches
   );
   const isFetchingRef = useRef<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
+
   const series = useMemo(() => {
     const solarSeries: SeriesItem[] = [];
     const batteryChargedSeries: SeriesItem[] = [];
@@ -69,52 +75,47 @@ const MonthlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
   }, [chartData, t]);
 
   const fetchChart = useCallback(async () => {
-    if (isFetchingRef.current) {
-      return;
-    }
+    if (isFetchingRef.current) return;
     isFetchingRef.current = true;
     setIsLoading(true);
-    const res = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL}/monthly-chart`
-    );
-    const json = await res.json();
-    setChartData(json);
-    isFetchingRef.current = false;
-    setIsLoading(false);
-  }, []);
+    try {
+      const useYear = year ?? new Date().getFullYear();
+      const url = `${import.meta.env.VITE_API_BASE_URL}/monthly-chart?year=${useYear}`;
+      const res = await fetch(url);
+      const json = await res.json();
+      setChartData(json && json.chart ? json.chart : json || []);
+    } catch {
+      // swallow, component will show empty chart
+      setChartData([]);
+    } finally {
+      isFetchingRef.current = false;
+      setIsLoading(false);
+    }
+  }, [year]);
 
-  useImperativeHandle(
-    ref,
-    (): IFetchChart => ({
-      fetchChart: fetchChart,
-    })
-  );
+  useImperativeHandle(ref, (): IFetchChart => ({ fetchChart }));
 
   const onVisiblityChange = useCallback(() => {
-    if (!document.hidden) {
-      fetchChart();
-    }
+    if (!document.hidden) fetchChart();
   }, [fetchChart]);
 
   useEffect(() => {
-    const doFetchChart = async () => {
+    const doFetch = async () => {
       await fetchChart();
-    }
-    doFetchChart();
+    };
+    doFetch();
     document.addEventListener("visibilitychange", onVisiblityChange);
-    return () =>
-      document.removeEventListener("visibilitychange", onVisiblityChange);
+    return () => document.removeEventListener("visibilitychange", onVisiblityChange);
   }, [fetchChart, onVisiblityChange]);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    // This callback will fire if the perferred color scheme changes without a reload
-    mq.addEventListener("change", (evt) => setIsDark(evt.matches));
+    const handler = (evt: MediaQueryListEvent) => setIsDark(evt.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
 
-  if (isLoading || !chartData) {
-    return <Loading />;
-  }
+  if (isLoading || !chartData) return <Loading />;
   return <BarChart series={series} isDark={isDark} />;
 });
 

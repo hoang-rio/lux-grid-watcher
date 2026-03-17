@@ -93,7 +93,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
     }
     try {
       // Do not send password confirmation to backend
-      const payload = { ...settings } as any;
+      const payload = { ...settings } as unknown as Record<string, string>;
       delete payload.AUTH_PASSWORD_CONFIRM;
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
         method: 'POST',

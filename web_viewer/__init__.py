@@ -245,19 +245,30 @@ async def daily_chart(_: web.Request):
         logger.error(f"Error in daily_chart: {e}")
         return web.json_response([], headers=VITE_CORS_HEADER)
 
-async def monthly_chart(_: web.Request):
+async def monthly_chart(request: web.Request):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         now = datetime.now()
+        year_param = request.rel_url.query.get("year")
+        try:
+            year = int(year_param) if year_param else now.year
+        except Exception:
+            year = now.year
+
         monthly_chart = cursor.execute(
             "SELECT id, id, id, month || '/' || year as month, SUM(pv), SUM(battery_charged), SUM(battery_discharged), SUM(grid_import), SUM(grid_export), SUM(consumption) FROM daily_chart WHERE year = ? GROUP BY month",
-            (now.year,)
+            (year,)
         ).fetchall()
-        return web.json_response(monthly_chart, headers=VITE_CORS_HEADER)
+
+        # Provide available years for UI selection
+        years_rows = cursor.execute("SELECT DISTINCT year FROM daily_chart ORDER BY year DESC").fetchall()
+        years = [int(r[0]) for r in years_rows]
+
+        return web.json_response({"chart": monthly_chart, "years": years}, headers=VITE_CORS_HEADER)
     except Exception as e:
         logger.error(f"Error in monthly_chart: {e}")
-        return web.json_response([], headers=VITE_CORS_HEADER)
+        return web.json_response({"chart": [], "years": []}, headers=VITE_CORS_HEADER)
 
 async def yearly_chart(_: web.Request):
     try:

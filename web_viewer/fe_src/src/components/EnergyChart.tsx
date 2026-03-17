@@ -128,10 +128,12 @@ function EnergyChart({ className }: IClassNameProps) {
           </div>
         </div>
       </div>
-      {energyChartType === EnergyChartType.Daily && (
+      {(energyChartType === EnergyChartType.Daily || energyChartType === EnergyChartType.Monthly) && (
         <div className="month-select-row">
           <label className="month-select-label">
-            {t("energyChart.selectMonth", "Month:")}
+            {energyChartType === EnergyChartType.Daily
+              ? t("energyChart.selectMonth", "Month:")
+              : t("energyChart.selectYear", "Year:")}
           </label>
           <select
             className="month-select-input"
@@ -142,19 +144,21 @@ function EnergyChart({ className }: IClassNameProps) {
               <option key={year} value={year}>{year}</option>
             ))}
           </select>
-          <select
-            className="month-select-input"
-            value={selectedMonth}
-            onChange={handleMonthChange}
-          >
-            {months.map((month) => {
-              // Only allow months up to current month for current year
-              if (selectedYear === currentYear && month > currentMonth) return null;
-              return (
-                <option key={month} value={month}>{String(month).padStart(2, "0")}</option>
-              );
-            })}
-          </select>
+          {energyChartType === EnergyChartType.Daily && (
+            <select
+              className="month-select-input"
+              value={selectedMonth}
+              onChange={handleMonthChange}
+            >
+              {months.map((month) => {
+                // Only allow months up to current month for current year
+                if (selectedYear === currentYear && month > currentMonth) return null;
+                return (
+                  <option key={month} value={month}>{String(month).padStart(2, "0")}</option>
+                );
+              })}
+            </select>
+          )}
         </div>
       )}
       <div className="energy-chart-content flex-1 col">
@@ -168,7 +172,7 @@ function EnergyChart({ className }: IClassNameProps) {
         )}
         {energyChartType === EnergyChartType.Monthly && (
           <Suspense fallback={<Loading />}>
-            <MonthlyChart ref={fetchChartRef} />
+            <MonthlyChart ref={fetchChartRef} year={selectedYear} />
           </Suspense>
         )}
         {energyChartType === EnergyChartType.Yearly && (

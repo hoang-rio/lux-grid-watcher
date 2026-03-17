@@ -47,7 +47,8 @@
     "title_daily": "Biểu đồ hàng ngày",
     "title_monthly": "Biểu đồ hàng tháng",
     "title_yearly": "Biểu đồ hàng năm",
-    "selectMonth": "Tháng:"
+    "selectMonth": "Tháng:",
+    "selectYear": "Năm:"
   },
   "yield": {
     "today": "Sản lượng hôm nay",
