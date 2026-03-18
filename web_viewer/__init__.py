@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime, timedelta
 import sqlite3
+import ssl
 import threading
 from aiohttp.aiohttp import web
 from aiohttp import aiohttp
@@ -29,6 +30,45 @@ def get_db_connection() -> sqlite3.Connection:
             raise RuntimeError("DB_NAME not set in config")
         _db_conn = sqlite3.connect(db_name, check_same_thread=False)
     return _db_conn
+
+
+def get_ssl_context() -> Optional[ssl.SSLContext]:
+    """Create an SSLContext for HTTPS if configured.
+
+    Expects the following env vars:
+      - HTTPS_ENABLED (true/false)
+      - HTTPS_CERT_FILE (path to PEM cert file)
+      - HTTPS_KEY_FILE (path to PEM key file)
+      - HTTPS_CERT_PASSWORD (optional password for key)
+    """
+    if config.get("HTTPS_ENABLED", "false").lower() != "true":
+        return None
+
+    cert_file = config.get("HTTPS_CERT_FILE")
+    key_file = config.get("HTTPS_KEY_FILE")
+    key_password = config.get("HTTPS_CERT_PASSWORD")
+
+    if not cert_file or not key_file:
+        logger.warning("HTTPS_ENABLED=true but HTTPS_CERT_FILE or HTTPS_KEY_FILE is not set; HTTPS will not start")
+        return None
+
+    if not path.exists(cert_file):
+        logger.warning("HTTPS certificate file does not exist: %s; HTTPS will not start", cert_file)
+        return None
+
+    if not path.exists(key_file):
+        logger.warning("HTTPS key file does not exist: %s; HTTPS will not start", key_file)
+        return None
+
+    try:
+        ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        ctx.load_cert_chain(certfile=cert_file, keyfile=key_file, password=key_password)
+        logger.info("HTTPS enabled using cert=%s key=%s", cert_file, key_file)
+        return ctx
+    except Exception as e:
+        logger.error("Failed to create SSL context for HTTPS: %s", e)
+        return None
+
 
 def dict_factory(cursor, row):
     return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
@@ -441,11 +481,11 @@ def create_runner():
     ])
     return web.AppRunner(app, access_log=None)
 
-async def start_server(host="127.0.0.1", port=1337):
+async def start_server(host="127.0.0.1", port=1337, ssl_context: Optional[ssl.SSLContext] = None):
     runner = create_runner()
     logger.info(f"Start server on {host}:{port}")
     await runner.setup()
-    site = web.TCPSite(runner, host, port)
+    site = web.TCPSite(runner, host, port, ssl_context=ssl_context)
     await site.start()
 
 loop: Optional[asyncio.AbstractEventLoop] = None
@@ -455,19 +495,42 @@ def run_http_server():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     host = config.get("HOST", "127.0.0.1")
-    port = int(config.get("PORT", 1337))
-    # Start primary server (IPv4 or hostname)
-    loop.run_until_complete(start_server(host=host, port=port))
+    http_port = int(config.get("PORT", 1337))
+    ssl_context = get_ssl_context()
 
-    # If HOST_IPV6 is configured, start a second server bound to that IPv6 address
-    # using the same port as requested.
+    # Start HTTP server (always on the configured PORT)
+    loop.run_until_complete(start_server(host=host, port=http_port, ssl_context=None))
+
+    # If HTTPS is enabled and we successfully created an SSL context, start an HTTPS listener on a configured port.
+    https_port = None
+    https_port_config = config.get("HTTPS_PORT")
+    if ssl_context is not None:
+        if https_port_config:
+            try:
+                https_port = int(https_port_config)
+            except Exception:
+                logger.error("Invalid HTTPS_PORT value '%s'; HTTPS listener will not start.", https_port_config)
+                https_port = None
+
+        if https_port is None:
+            logger.info("HTTPS_ENABLED set but HTTPS_PORT is not configured; HTTPS listener will not start.")
+        elif https_port == http_port:
+            logger.warning("HTTPS_PORT is the same as PORT (%s); HTTPS will not start to avoid port conflict.", http_port)
+            https_port = None
+        else:
+            loop.run_until_complete(start_server(host=host, port=https_port, ssl_context=ssl_context))
+
+    # If HOST_IPV6 is configured, also bind to that address for whichever ports are in use.
     host_ipv6 = config.get("HOST_IPV6")
     if host_ipv6:
         try:
-            ipv6_port = port  # explicitly use same port for both
-            loop.run_until_complete(start_server(host=host_ipv6, port=ipv6_port))
+            ipv6_http_port = http_port
+            loop.run_until_complete(start_server(host=host_ipv6, port=ipv6_http_port, ssl_context=None))
+
+            if ssl_context is not None and https_port is not None:
+                loop.run_until_complete(start_server(host=host_ipv6, port=https_port, ssl_context=ssl_context))
         except Exception as e:
-            logger.error(f"Failed to start IPv6 server on {host_ipv6}:{port} - {e}")
+            logger.error(f"Failed to start IPv6 server on {host_ipv6}:{http_port} - {e}")
     loop.run_forever()
 
 class WebViewer(threading.Thread):

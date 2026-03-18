@@ -39,8 +39,9 @@ The built-in web server also exposes mobile-friendly APIs:
 * `GET /mobile/state` to read the current grid connection state and state-change history
 
 ## Web Viewer
-* Build FE with command `cd web_viewer/fe_src && yarn install && yarn build` (Ignore this step if you runing via docker)
-* Now you can see LuxPower realtime web viewer in http://locahost:88, UI layout will be similar with the image bellow (This url can be change by modify `PORT` variable in `.env` file)
+* Build FE with command `cd web_viewer/fe_src && yarn install && yarn build` (Ignore this step if you run via docker)
+* Now you can see LuxPower realtime web viewer in http://localhost:88 (or another port if you changed `PORT` in `.env`).
+* HTTPS is also supported; enable it by setting `HTTPS_ENABLED=true` and providing `HTTPS_PORT`, `HTTPS_CERT_FILE`, and `HTTPS_KEY_FILE` in `.env`.
 
 <center>
 <picture style="max-width: 800px">

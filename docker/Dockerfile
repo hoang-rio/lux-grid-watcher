@@ -19,8 +19,9 @@ COPY --from=fe_builder /fe_builder/build /app/web_viewer/build
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-# Expose the port the app runs on
+# Expose the ports the app runs on
 EXPOSE 88
+EXPOSE 8443
 
 VOLUME [ "/app/.env", "/app/db/web.db" ]
 

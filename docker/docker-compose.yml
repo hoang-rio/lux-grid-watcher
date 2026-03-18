@@ -13,3 +13,4 @@ services:
       - ../db:/app/db:rw
     ports:
       - 8088:8088
+      - 8443:8443

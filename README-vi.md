@@ -40,7 +40,8 @@ Web server tích hợp cũng cung cấp API cho ứng dụng di động:
 
 ## Trình xem web
 * Biên dịch giao diện với lệnh `cd web_viewer/fe_src && yarn install && yarn build` (Bỏ qua bước này nếu bạn chạy bằng docker)
-* Bây giờ bạn có thể xem giao diện web LuxPower theo thời gian thực tại http://localhost:88, giao diện sẽ tương tự như hình ảnh bên dưới (URL này có thể thay đổi bằng cách chỉnh sửa biến `PORT` trong tập tin `.env`)
+* Bây giờ bạn có thể xem giao diện web LuxPower theo thời gian thực tại http://localhost:88 (hoặc ở cổng khác nếu bạn thay đổi `PORT` trong `.env`).
+* HTTPS cũng được hỗ trợ; bật bằng cách đặt `HTTPS_ENABLED=true` và cung cấp `HTTPS_PORT`, `HTTPS_CERT_FILE`, `HTTPS_KEY_FILE` trong `.env`.
 
 <center>
 <picture style="max-width: 800px">
