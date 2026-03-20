@@ -81,8 +81,8 @@
     "soc": "SOC",
     "power": "Công suất (W)",
     "socPercentage": "SOC (%)",
-    "batteryCharging": "{{seriesName}} đang sạc:",
-    "batteryDischarging": "{{seriesName}} đang xả:"
+    "batteryCharging": "Sạc {{seriesName}}:",
+    "batteryDischarging": "Xả {{seriesName}}:"
   },
   "consumptionPower": "Công suất tiêu thụ",
   "allowAutoUpdate": "Cho phép cập nhật tự động",
