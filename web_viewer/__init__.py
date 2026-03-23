@@ -19,6 +19,10 @@ from api_storage import read_grid_state, register_device_token
 # Load config from .env and environment
 config: dict = {**dotenv_values(".env"), **environ}
 
+# Comma-separated CIDR list that are allowed to access admin features (settings + notification modification).
+# Configured via `ADMIN_ALLOWED_CIDR` environment variable.
+ADMIN_ALLOWED_CIDR = config.get("ADMIN_ALLOWED_CIDR", "")
+
 logger: Logger = getLogger(__file__)
 
 _db_conn: Optional[sqlite3.Connection] = None
@@ -73,6 +77,65 @@ def get_ssl_context() -> Optional[ssl.SSLContext]:
 
 def dict_factory(cursor, row):
     return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
+
+
+def _peer_ip_from_transport(transport) -> Optional[str]:
+    if not transport:
+        return None
+    peer = transport.get_extra_info("peername")
+    if not peer:
+        return None
+    # peer may be (ip, port) or (ip, port, flowinfo, scopeid)
+    try:
+        return peer[0]
+    except Exception:
+        return None
+
+
+def _ip_in_cidrs(ip: str | None, cidr_list: str) -> bool:
+    """Return True if ip is contained in any CIDR in cidr_list (comma-separated)."""
+    if not ip:
+        return False
+    if not cidr_list:
+        return False
+    import ipaddress
+
+    try:
+        ip_addr = ipaddress.ip_address(ip)
+    except Exception:
+        return False
+
+    for cidr in [c.strip() for c in str(cidr_list).split(",") if c.strip()]:
+        try:
+            if ip_addr in ipaddress.ip_network(cidr, strict=False):
+                return True
+        except Exception:
+            logger.warning("Invalid ADMIN_ALLOWED_CIDR entry: %s", cidr)
+    return False
+
+
+def _deny_if_not_allowed_cidr(request: web.Request, path_prefix: str, allowed_methods: tuple = ("OPTIONS",), web_only: bool = False, response_body=None):
+    """Return a web.Response denying access (403) when request matches path_prefix and method is not allowed and remote IP not in ADMIN_ALLOWED_CIDR.
+
+    If web_only is True, enforcement only runs when request likely originates from a browser (has Origin or Referer header).
+    """
+    if not request.path.startswith(path_prefix):
+        return None
+    # Allow allowed methods through
+    if request.method.upper() in (m.upper() for m in allowed_methods):
+        return None
+    # If enforcement only for web clients, only apply when Origin or Referer header present
+    if web_only:
+        if not (request.headers.get("Origin") or request.headers.get("Referer")):
+            return None
+    peer = request.transport
+    remote_ip = _peer_ip_from_transport(peer)
+    if _ip_in_cidrs(remote_ip, ADMIN_ALLOWED_CIDR):
+        return None
+    body = response_body
+    if body is None:
+        body = {"success": False, "message": "Forbidden"}
+    return web.json_response(body, status=403, headers=VITE_CORS_HEADER)
 
 # SSE state
 sse_clients: List[web.StreamResponse] = []
@@ -388,6 +451,18 @@ async def options_settings(_: web.Request):
     })
 
 
+async def has_admin_access(request: web.Request):
+    """Return whether the requesting client IP is allowed to access admin features.
+
+    Controlled only via the `ADMIN_ALLOWED_CIDR` environment variable. Returns
+    JSON with boolean key `has_admin_access`.
+    """
+    peer = request.transport
+    remote_ip = _peer_ip_from_transport(peer)
+    allowed = _ip_in_cidrs(remote_ip, ADMIN_ALLOWED_CIDR)
+    return web.json_response({"has_admin_access": allowed}, headers=VITE_CORS_HEADER)
+
+
 def _auth_html_response(status: int, title: str, message: str, include_www_authenticate: bool = False) -> web.Response:
         """Return a small friendly HTML response for auth errors."""
         safe_title = escape(title)
@@ -418,13 +493,11 @@ def _auth_html_response(status: int, title: str, message: str, include_www_authe
 async def basic_auth_middleware(request, handler):
     # Allow access to /ws only if from loopback
     if request.path == "/ws":
-        peer = request.transport.get_extra_info("peername")
-        if peer:
-            ip = peer[0]
-            if ip == "127.0.0.1" or ip == "::1":
-                return await handler(request)
-            else:
-                return _auth_html_response(403, "Forbidden", "Access to the websocket endpoint is restricted to localhost.")
+        remote_ip = _peer_ip_from_transport(request.transport)
+        if remote_ip in ("127.0.0.1", "::1"):
+            return await handler(request)
+        else:
+            return _auth_html_response(403, "Forbidden", "Access to the websocket endpoint is restricted to localhost.")
     # Read auth settings from persistent `settings` (updated by web UI).
     auth_bypass_cidr = config.get("AUTH_BYPASS_CIDR", "127.0.0.1/32,::1/128")
     try:
@@ -443,21 +516,21 @@ async def basic_auth_middleware(request, handler):
         return await handler(request)
 
     # If the remote IP is in bypass CIDR list and auth is on, allow.
-    peer = request.transport.get_extra_info("peername")
-    if peer:
-        remote_ip = peer[0]
-        for cidr in [c.strip() for c in str(auth_bypass_cidr).split(",") if c.strip()]:
-            try:
-                if ipaddress.ip_address(remote_ip) in ipaddress.ip_network(cidr, strict=False):
-                    return await handler(request)
-            except Exception:
-                logger.warning("Invalid AUTH_BYPASS_CIDR entry: %s", cidr)
-                continue
+    remote_ip = _peer_ip_from_transport(request.transport)
+    if remote_ip and _ip_in_cidrs(remote_ip, auth_bypass_cidr):
+        return await handler(request)
     if request.method == "OPTIONS":
         return await handler(request)
-    # Allow unauthenticated access to static files
-    if request.path.startswith("/static") or request.path.startswith("/build"):
-        return await handler(request)
+    # Enforce ADMIN_ALLOWED_CIDR for /settings (env-only configured CIDR)
+    resp = _deny_if_not_allowed_cidr(request, "/settings", allowed_methods=("OPTIONS",), web_only=False)
+    if resp:
+        return resp
+
+    # For notifications: require admin CIDR for all notification endpoints (read and write)
+    # Block any access to paths under /notification for clients not in ADMIN_ALLOWED_CIDR.
+    resp = _deny_if_not_allowed_cidr(request, "/notification", allowed_methods=("OPTIONS",), web_only=False)
+    if resp:
+        return resp
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Basic "):
         return _auth_html_response(401, "Authentication required", "This web viewer is protected. Please provide HTTP Basic credentials.", include_www_authenticate=True)
@@ -490,6 +563,7 @@ def create_runner():
         web.post("/notification-mark-read", mark_notifications_read),
         web.get("/notification-unread-count", notification_unread_count),
         web.get("/settings", get_settings),
+        web.get("/has-admin-access", has_admin_access),
         web.post("/settings", update_settings),
         web.options("/settings", cors_options_handler("GET, POST, OPTIONS")),
         web.static("/", path.join(path.dirname(__file__), "build"))

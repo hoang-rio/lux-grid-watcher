@@ -33,6 +33,7 @@ function SystemInformation({
   const [loadingNotifications, setLoadingNotifications] = useState(false); // new state
   const [unreadCount, setUnreadCount] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
+  const [allowAdmin, setAllowAdmin] = useState<boolean>(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const notificationButtonRef = useRef<HTMLDivElement>(null);
   const settingsButtonRef = useRef<HTMLDivElement>(null);
@@ -44,6 +45,15 @@ function SystemInformation({
     const date = new Date(dateInput);
     return date.toLocaleString();
   }, []);
+
+  // If admin access is revoked, close notification UI and clear related state.
+  useEffect(() => {
+    if (!allowAdmin) {
+      setShowNotifications(false);
+      setNotifications([]);
+      setUnreadCount(0);
+    }
+  }, [allowAdmin]);
 
   // Fetch unread notification count on mount and when page becomes visible
   const fetchUnreadCount = useCallback(async () => {
@@ -58,6 +68,10 @@ function SystemInformation({
   }, [i18n]);
 
   useEffect(() => {
+    if (!allowAdmin) {
+      setUnreadCount(0);
+      return;
+    }
     fetchUnreadCount();
     const handleVisibilityChange = () => {
       if (!document.hidden) {
@@ -66,7 +80,25 @@ function SystemInformation({
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [fetchUnreadCount]);
+  }, [fetchUnreadCount, allowAdmin]);
+
+  // Determine whether this client can access admin features (settings + notifications)
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/has-admin-access`);
+        const data = await res.json();
+        if (!cancelled) setAllowAdmin(Boolean(data.has_admin_access));
+      } catch (err) {
+        logUtil.error(i18n.t("settings.adminAccessCheckFailed"), err);
+        // If the request fails, be conservative and hide admin features
+        if (!cancelled) setAllowAdmin(false);
+      }
+    };
+    check();
+    return () => { cancelled = true };
+  }, []);
 
   // Extracted fetchNotifications function
   const fetchNotifications = useCallback(async () => {
@@ -85,10 +117,10 @@ function SystemInformation({
   }, [i18n]);
 
   useEffect(() => {
-    if (showNotifications) {
+    if (showNotifications && allowAdmin) {
       fetchNotifications();
     }
-  }, [showNotifications, fetchNotifications]);
+  }, [showNotifications, fetchNotifications, allowAdmin]);
 
   useEffect(() => {
     if (showNotifications) {
@@ -126,24 +158,25 @@ function SystemInformation({
 
   // Remove auto-open popover on new notification, just update unread count
   useEffect(() => {
+    if (!allowAdmin) return;
     if (newNotification) {
       setUnreadCount((prev) => prev + 1);
       setNotifications((prev) => [newNotification, ...prev]);
     }
-  }, [newNotification]);
+  }, [newNotification, allowAdmin]);
 
   // Mark notifications as read when popover is closed after being opened
   useEffect(() => {
     if (showNotifications) {
       notificationOpened.current = true;
     } else {
-      if (notificationOpened.current && unreadCount > 0) {
+      if (allowAdmin && notificationOpened.current && unreadCount > 0) {
         fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-mark-read`, { method: 'POST' })
           .then(() => fetchUnreadCount());
       }
       notificationOpened.current = false;
     }
-  }, [showNotifications, unreadCount, fetchUnreadCount]);
+  }, [showNotifications, unreadCount, fetchUnreadCount, allowAdmin]);
 
   const handleShowNotifications = useCallback(() => {
     setShowNotifications((prev) => !prev);
@@ -180,12 +213,13 @@ function SystemInformation({
           <div className="system-title">
             <span className="system-title-text">{t("systemInformation")}</span>
             <span>{inverterData.deviceTime}</span>
-            <div className="settings-button" ref={settingsButtonRef}>
-              <button
-                onClick={() => setShowSettings((prev) => !prev)}
-                className={showSettings ? "active" : "inactive"}
-                title={t("settings.title")}
-              >
+            {allowAdmin && (
+              <div className="settings-button" ref={settingsButtonRef}>
+                <button
+                  onClick={() => setShowSettings((prev) => !prev)}
+                  className={showSettings ? "active" : "inactive"}
+                  title={t("settings.title")}
+                >
                 {/* Gear icon SVG */}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -202,35 +236,38 @@ function SystemInformation({
                   <circle cx="12" cy="12" r="3"></circle>
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
-              </button>
-            </div>
-            <div className="notification-button" ref={notificationButtonRef}>
-              <button
-                onClick={handleShowNotifications}
-                className={showNotifications ? "active" : "inactive"}
-                title={t("notification.title")}
-              >
-                {/* Single bell icon SVG */}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  viewBox="0 0 24 24"
-                  strokeLinejoin="round"
-                  className="feather feather-bell"
+                </button>
+              </div>
+            )}
+            {allowAdmin && (
+              <div className="notification-button" ref={notificationButtonRef}>
+                <button
+                  onClick={handleShowNotifications}
+                  className={showNotifications ? "active" : "inactive"}
+                  title={t("notification.title")}
                 >
-                  <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                </svg>
-                {unreadCount > 0 && (
-                  <span className="notification-unread-badge">{unreadCount}</span>
-                )}
-              </button>
-            </div>
+                  {/* Single bell icon SVG */}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    viewBox="0 0 24 24"
+                    strokeLinejoin="round"
+                    className="feather feather-bell"
+                  >
+                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                  </svg>
+                  {unreadCount > 0 && (
+                    <span className="notification-unread-badge">{unreadCount}</span>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
           <div className="system-graph">
             <div className="system-status row">
@@ -289,7 +326,7 @@ function SystemInformation({
             </div>
           </div>
         </div>
-        {showNotifications && (
+        {showNotifications && allowAdmin && (
           <div className="notification-history notification-popover">
             <div className="notification-popover-content" ref={popoverRef}>
               <div className="notification-popover-header">
