@@ -410,7 +410,7 @@ def _auth_html_response(status: int, title: str, message: str, include_www_authe
         """
         headers = {}
         if include_www_authenticate:
-            headers["WWW-Authenticate"] = "Basic realm='Authenticate to access Lux Web Viewer'"
+            headers["WWW-Authenticate"] = "Basic realm='Authenticate_Lux_Web_Viewer'"
         return web.Response(status=status, text=body, content_type='text/html', headers=headers)
 
 # --- Basic Auth Middleware (reads auth settings dynamically) ---
