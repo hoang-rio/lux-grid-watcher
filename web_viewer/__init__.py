@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import sqlite3
 import ssl
 import threading
+import ipaddress
 from aiohttp.aiohttp import web
 from aiohttp import aiohttp
 from os import environ, path
@@ -425,11 +426,13 @@ async def basic_auth_middleware(request, handler):
             else:
                 return _auth_html_response(403, "Forbidden", "Access to the websocket endpoint is restricted to localhost.")
     # Read auth settings from persistent `settings` (updated by web UI).
+    auth_bypass_cidr = config.get("AUTH_BYPASS_CIDR", "127.0.0.1/32,::1/128")
     try:
         import settings as app_settings
         auth_enabled = app_settings.get_setting("AUTH_ENABLED", config.get("AUTH_ENABLED", "false")).lower() == "true"
         auth_username = app_settings.get_setting("AUTH_USERNAME", config.get("AUTH_USERNAME", "admin"))
         auth_password = app_settings.get_setting("AUTH_PASSWORD", config.get("AUTH_PASSWORD", "changeme"))
+        auth_bypass_cidr = app_settings.get_setting("AUTH_BYPASS_CIDR", auth_bypass_cidr)
     except Exception:
         # Fallback to env/config if settings module not available for any reason
         auth_enabled = config.get("AUTH_ENABLED", "false").lower() == "true"
@@ -438,6 +441,18 @@ async def basic_auth_middleware(request, handler):
 
     if not auth_enabled:
         return await handler(request)
+
+    # If the remote IP is in bypass CIDR list and auth is on, allow.
+    peer = request.transport.get_extra_info("peername")
+    if peer:
+        remote_ip = peer[0]
+        for cidr in [c.strip() for c in str(auth_bypass_cidr).split(",") if c.strip()]:
+            try:
+                if ipaddress.ip_address(remote_ip) in ipaddress.ip_network(cidr, strict=False):
+                    return await handler(request)
+            except Exception:
+                logger.warning("Invalid AUTH_BYPASS_CIDR entry: %s", cidr)
+                continue
     if request.method == "OPTIONS":
         return await handler(request)
     # Allow unauthenticated access to static files

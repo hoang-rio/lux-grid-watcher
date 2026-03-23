@@ -22,6 +22,7 @@ interface Settings {
   AUTH_ENABLED: string;
   AUTH_USERNAME: string;
   AUTH_PASSWORD: string;
+  AUTH_BYPASS_CIDR: string;
 }
 
 const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onClose }, ref) => {
@@ -32,6 +33,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
   const [passwordConfirm, setPasswordConfirm] = useState<string>('');
+  const [cidrError, setCidrError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSettings();
@@ -57,6 +59,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
         ,AUTH_ENABLED: 'false'
         ,AUTH_USERNAME: 'admin'
         ,AUTH_PASSWORD: 'changeme'
+        ,AUTH_BYPASS_CIDR: '127.0.0.1/32,::1/128'
       };
       const merged = { ...defaults, ...data };
       setSettings(merged);
@@ -135,6 +138,31 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
       }
       setSettings({ ...settings, [key]: value });
     }
+  };
+
+  const validateCidrList = (value: string) => {
+    if (!value || value.trim() === '') return null;
+    const items = value.split(",").map(s => s.trim()).filter(Boolean);
+    const ipv4Regex = /^(\d{1,3}(?:\.\d{1,3}){3})\/(\d{1,2})$/;
+    const ipv6Regex = /^([0-9A-Fa-f:]+)\/(\d{1,3})$/;
+    for (const it of items) {
+      let m = it.match(ipv4Regex);
+      if (m) {
+        const octets = m[1].split('.').map(Number);
+        if (octets.some(o => Number.isNaN(o) || o < 0 || o > 255)) return t('settings.cidrInvalidIPv4Address', { cidr: it });
+        const prefix = parseInt(m[2], 10);
+        if (isNaN(prefix) || prefix < 0 || prefix > 32) return t('settings.cidrInvalidIPv4Prefix', { cidr: it });
+        continue;
+      }
+      m = it.match(ipv6Regex);
+      if (m) {
+        const prefix = parseInt(m[2], 10);
+        if (isNaN(prefix) || prefix < 0 || prefix > 128) return t('settings.cidrInvalidIPv6Prefix', { cidr: it });
+        continue;
+      }
+      return t('settings.cidrInvalidEntry', { cidr: it });
+    }
+    return null;
   };
 
   const hasChanges = () => {
@@ -280,6 +308,9 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
                 {t("settings.authEnabled")}
               </label>
             </div>
+            <p className="setting-descrtiption">
+              {t("settings.authDescription")}
+            </p>
             <div className="setting-item">
               <label>{t("settings.authUsername")}</label>
               <input
@@ -307,9 +338,28 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
                 disabled={settings.AUTH_ENABLED !== "true"}
               />
             </div>
-            <p className="setting-descrtiption">
-              {t("settings.authDescription")}
-            </p>
+            <div className="setting-item setting-item-block">
+              <label>{t("settings.authBypassCidr")}</label>
+              <textarea
+                value={settings.AUTH_BYPASS_CIDR}
+                placeholder={"e.g. 127.0.0.1/32, ::1/128"}
+                onChange={(e) => {
+                  updateSetting("AUTH_BYPASS_CIDR", e.target.value);
+                  const err = validateCidrList(e.target.value);
+                  setCidrError(err);
+                }}
+                disabled={settings.AUTH_ENABLED !== "true"}
+                rows={2}
+              />
+              {cidrError && (
+                <div className="setting-error">
+                  {cidrError}
+                </div>
+              )}
+              <p className="setting-descrtiption">
+                {t("settings.authBypassCidrDescription")}
+              </p>
+            </div>
 
             <h4>{t("settings.offGridWarningSection")}</h4>
             <div className="setting-item">
@@ -370,7 +420,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
         </div>
         <div className="settings-actions">
           <button onClick={handleSave} disabled={
-            saving || !hasChanges() || (settings.AUTH_ENABLED === 'true' && (
+            saving || !hasChanges() || cidrError !== null || (settings.AUTH_ENABLED === 'true' && (
               !settings.AUTH_USERNAME || settings.AUTH_USERNAME.trim() === '' ||
               !settings.AUTH_PASSWORD || settings.AUTH_PASSWORD === '' ||
               settings.AUTH_PASSWORD !== passwordConfirm

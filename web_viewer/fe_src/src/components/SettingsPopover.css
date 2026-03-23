@@ -149,6 +149,12 @@
     margin: 4px 0 0 0;
 }
 
+.setting-error {
+    color: #d32f2f;
+    margin-top: 4px;
+    font-size: 0.8em;
+}
+
 @media screen and (max-width: 768px) {
     .settings-popover {
         width: 90vw;
