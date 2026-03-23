@@ -64,6 +64,10 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
       const merged = { ...defaults, ...data };
       setSettings(merged);
       setOriginalSettings(merged);
+      // If auth already enabled in saved settings, pre-fill confirm password
+      if (merged.AUTH_ENABLED === 'true') {
+        setPasswordConfirm(merged.AUTH_PASSWORD || '');
+      }
     } catch (err) {
       logUtil.error('Failed to fetch settings', err);
       setMessage({text: t('settings.saveError'), type: 'error'});
