@@ -7,8 +7,6 @@
   "feedInEnergy": "Feed-in energy",
   "import": "Import",
   "consumption": "Consumption",
-  "todayUsed": "Today used",
-  "totalUsed": "Total used",
   "hourlyChart": {
     "title": "Hourly chart",
     "noData": "No data for this day."
@@ -50,10 +48,6 @@
     "selectMonth": "Month:",
     "selectYear": "Year:"
   },
-  "yield": {
-    "today": "Yield today",
-    "total": "Total yield"
-  },
   "chart": {
     "solarProduction": "Solar production",
     "batteryDischarged": "Battery discharged",
@@ -64,7 +58,6 @@
     "solarPV": "Solar PV",
     "battery": "Battery",
     "grid": "Grid",
-    "total": "Total",
     "total_today": "Total today",
     "total_total": "Total",
     "batteryCharged_today": "Battery charged today",
@@ -90,13 +83,9 @@
   "dischargedToday": "Discharged today",
   "charged": "Charged",
   "discharged": "Discharged",
-  "todayExport": "Today export",
-  "todayImport": "Today import",
   "export": "Export",
   "total_export": "Total export",
   "total_import": "Total import",
-  "total_charged": "Total charged",
-  "total_discharged": "Total discharged",
   "eps": {
     "standby": "Standby",
     "backupPower": "Backup power(EPS)"

@@ -128,7 +128,7 @@ function Summary({ invertData }: IProps) {
                 unit=" kWh"
               />
               <div className="description">
-                {isShowCharged ? t('chargedToday') : t('dischargedToday')}
+                {t('today')}
               </div>
               {total && (
                 <>
@@ -139,7 +139,7 @@ function Summary({ invertData }: IProps) {
                     unit=" kWh"
                   />
                   <div className="description">
-                    {t('total', { context: isShowCharged ? 'charged' : 'discharged' })}
+                    {t('total')}
                   </div>
                 </>
               )}
@@ -172,7 +172,7 @@ function Summary({ invertData }: IProps) {
                   unit=" kWh"
                 />
                 <div className="description">
-                  {isShowFeed ? t('todayExport') : t('todayImport')}
+                  {t('today')}
                 </div>
                 {total && (
                   <>
@@ -183,7 +183,7 @@ function Summary({ invertData }: IProps) {
                       unit=" kWh"
                     />
                     <div className="description">
-                      {t('total', { context: isShowFeed ? 'export' : 'import' })}
+                      {t('total')}
                     </div>
                   </>
                 )}
@@ -207,11 +207,11 @@ function Summary({ invertData }: IProps) {
                 ).toFixed(1)}
                 unit=" kWh"
               />
-              <div className="description">{t('todayUsed')}</div>
+              <div className="description">{t('today')}</div>
               {total && (
                 <>
                   <GeneralValue value={fixedIfNeed(total.consumption)} unit=" kWh" />
-                  <div className="description">{t('totalUsed')}</div>
+                  <div className="description">{t('total')}</div>
                 </>
               )}
             </div>

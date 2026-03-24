@@ -14,11 +14,11 @@ function DisplayYield({ total, ePVDay }: IProps) {
       <img src="/assets/icon_solor_yielding.png" />
       <div className="yield-texts summary-item-content-texts ">
         <GeneralValue value={ePVDay} unit=" kWh" />
-        <div className="description">{t('yield.today')}</div>
+        <div className="description">{t('today')}</div>
         {total && (
           <>
             <GeneralValue value={total?.pv?.toFixed(1) ?? 0} unit=" kWh" />
-            <div className="description">{t('yield.total')}</div>
+            <div className="description">{t('total')}</div>
           </>
         )}
       </div>
