@@ -32,14 +32,14 @@ Xem hướng dẫn trên wiki của `lxp-bridge` [tại đây](https://github.co
 * Di chuyển vào thư mục `docker`
 * Chạy lệnh `docker compose up -d` để chạy container docker
 
-## Ứng dụng thông báo
-Bạn có thể tự xây dựng ứng dụng thông báo cho Android/iOS và cho Firebase Device ID vào tập tin `devices.json` để nhận thông báo khi trạng thái kết nối lưới điện thay đổi.
+## Ứng dụng di động
+Bạn có thể tự xây dựng ứng dụng thông báo cho Android/iOS và gửi Firebase device token vào tập tin `devices.json` để nhận thông báo mỗi khi trạng thái kết nối lưới điện thay đổi.
 
-Tôi cũng đã phát triển một ứng dụng cho Android/iOS. Nếu bạn cần, cứ thoải mái liên hệ với tôi.
+Tác giả cũng phát triển một ứng dụng **Lux App Viewer (Android/iOS)**. Nếu bạn cần, hãy liên hệ để nhận hỗ trợ.
 
-Web server tích hợp cũng cung cấp API cho ứng dụng di động:
-* `POST /fcm/register` với JSON hoặc form body `token=<firebase_device_token>` để lưu token thiết bị
-* `GET /mobile/state` để lấy trạng thái điện lưới hiện tại và lịch sử thay đổi trạng thái
+Web server tích hợp cung cấp các API thân thiện với thiết bị di động:
+* `POST /fcm/register` với JSON (hoặc form body) `token=<firebase_device_token>` để đăng ký token thiết bị
+* `GET /mobile/state` để lấy trạng thái kết nối lưới hiện tại và lịch sử thay đổi
 
 ## Trình xem web
 * Biên dịch giao diện với lệnh `cd web_viewer/fe_src && yarn install && yarn build` (Bỏ qua bước này nếu bạn chạy bằng docker)

@@ -32,14 +32,14 @@ See wiki from `lxp-bridge` [here](https://github.com/celsworth/lxp-bridge/wiki/I
 * cd to `docker` folder
 * run command `docker compose up -d` to run docker container
 
-## Notification app
-You can implement notification app for Android/iOS by your self and push Firebase Device ID to devices.json file to get notification when grid connect state change.
+## Mobile Application
+You can implement your own notification app for Android/iOS and save tokens to `devices.json` to receive push alerts when grid connection state changes.
 
-I also developed an app for Android/iOS. If you need it feel free to contact me
+The author also provides a **Lux App Viewer (Android/iOS)**. If you need it, feel free to contact for more support.
 
-The built-in web server also exposes mobile-friendly APIs:
-* `POST /fcm/register` with JSON or form body `token=<firebase_device_token>` to save a device token
-* `GET /mobile/state` to read the current grid connection state and state-change history
+The built-in web server exposes mobile-friendly APIs:
+* `POST /fcm/register` with JSON (or form body) `token=<firebase_device_token>` to register a device token
+* `GET /mobile/state` to read current grid connection state and state-change history
 
 ## Web Viewer
 * Build FE with command `cd web_viewer/fe_src && yarn install && yarn build` (Ignore this step if you run via docker)
