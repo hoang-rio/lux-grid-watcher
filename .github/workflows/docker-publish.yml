@@ -87,7 +87,7 @@ jobs:
           name: Release ${{ env.TAG_TO_RELEASE }}
           body: |
             ## Docker Image
-            [View on GitHub Container Registry](https://github.com/${{github.repository}}/pkgs/container/lux-grid-watcher)
+            [View on GitHub Container Registry](https://github.com/${{github.repository}}/pkgs/container/lux-web-viewer)
             
             Pull with:
             ```sh

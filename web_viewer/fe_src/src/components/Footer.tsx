@@ -31,7 +31,7 @@ function Footer() {
       <div className="footer-spacing" />
       {t("openSourceAt")}{" "}
       <a
-        href="https://github.com/hoang-rio/lux-grid-watcher"
+        href="https://github.com/hoang-rio/lux-web-viewer"
         target="_blank"
         className="footer-link"
       >
