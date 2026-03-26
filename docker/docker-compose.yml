@@ -1,10 +1,10 @@
 services:
-  lux_grid_watcher:
+  lux_web_viewer:
     image: ghcr.io/hoang-rio/lux-web-viewer:latest
     build:
       context: ..
       dockerfile: ./docker/Dockerfile
-    container_name: lux_grid_watcher
+    container_name: lux_web_viewer
     environment:
       - TZ=Asia/Ho_Chi_Minh
     restart: unless-stopped
