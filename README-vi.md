@@ -1,4 +1,4 @@
-# Lux Grid Watcher
+# Lux Web Viewer
 
 Tiếng Việt | [English](README.md)
 
