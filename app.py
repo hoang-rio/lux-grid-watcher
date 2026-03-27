@@ -16,6 +16,7 @@ import settings
 import database
 
 DONGLE_MODE = "DONGLE"
+SERVER_MODE = "SERVER"
 
 # SLEEP_TIME should be minimum audio duration + 2 seconds
 # Example: 4 seconds for has-grid.mp3 + 2 seconds = 6 seconds to sleep
@@ -278,6 +279,7 @@ async def main():
             while True:
                 try:
                     timeout_duration = int(config["SLEEP_TIME"]) * 3
+                    inverter_data = None
                     try:
                         inverter_data = await asyncio.wait_for(
                             asyncio.to_thread(dongle.get_dongle_input),
@@ -310,6 +312,54 @@ async def main():
                 logger.info("Wating for %s second before next check",
                                 config["SLEEP_TIME"])
                 time.sleep(int(config["SLEEP_TIME"]))
+        elif config["WORKING_MODE"] == SERVER_MODE:
+            from dongle_server import DongleServer
+            if run_web_view:
+                db_connection = sqlite3.connect(
+                    config["DB_NAME"]) if "DB_NAME" in config else None
+                from migration import run_migration
+                run_migration(db_connection, logger)
+                settings.load_settings(db_connection)
+                from web_viewer import WebViewer
+                webViewer = WebViewer(logger)
+                webViewer.start()
+                time.sleep(1)
+                ws_client = await initialize_web_socket_client(fcm_service)
+            dongle_server = DongleServer(logger, config)
+            # Start the server in a background task
+            server_task = asyncio.create_task(dongle_server.start_server())
+            logger.info("Waiting for dongle connections on port %s",
+                        config.get("SERVER_MODE_PORT", 4346))
+            while True:
+                try:
+                    timeout_duration = int(config["SLEEP_TIME"]) * 3
+                    inverter_data = await dongle_server.wait_for_data(
+                        timeout=timeout_duration
+                    )
+                    if inverter_data is not None:
+                        handle_grid_status(inverter_data, fcm_service)
+                        if run_web_view:
+                            hourly_chart_item = database.insert_hourly_chart(db_connection, inverter_data, int(config["SLEEP_TIME"]))
+                            try:
+                                sent = await asyncio.wait_for(
+                                    ws_client.send_json({
+                                        "inverter_data": inverter_data,
+                                        "hourly_chart_item": hourly_chart_item
+                                    }),
+                                    timeout=timeout_duration
+                                )
+                                if not sent:
+                                    logger.error("Failed to send data to web socket")
+                                    ws_client = await initialize_web_socket_client(fcm_service, ws_client)
+                            except asyncio.TimeoutError:
+                                logger.error("Timeout waiting for web socket to send data for %s seconds", timeout_duration)
+                                ws_client = await initialize_web_socket_client(fcm_service, ws_client)
+                            database.insert_daily_chart(db_connection, inverter_data)
+                            dectect_abnormal_usage(db_connection, fcm_service)
+                except Exception as e:
+                    logger.exception("Got error in SERVER_MODE %s", e)
+                logger.info("Waiting for next dongle data (timeout: %s seconds)",
+                            config["SLEEP_TIME"])
         else:
             http = http_handler.Http(logger, config)
             while True:

@@ -44,47 +44,114 @@ class Dongle():
             self.__logger.exception("Got exception when connect socket %s", e)
 
     def get_dongle_input(self) -> Optional[dict]:
+        """Get all input data from dongle (ReadInput1, ReadInput2, ReadInput3, ReadInput4)."""
+        import time
         try:
             self.__logger.info("Start get dongle input")
-            # TCP Header to dataTranslated readInput1 with TCP_PROTOCOL_V1
-            TCP_PROTOCOL_V1 = 1
-            msg = [161, 26, TCP_PROTOCOL_V1, 0, 32, 0, 1, 194]
-            dongle_serial_arr = bytearray(
-                str(self.__config["DONGLE_SERIAL"]).encode()
-            )
-            # Dongle SERIAL
-            msg.extend(dongle_serial_arr)
-            msg.extend([18, 0, 0, 4])
-            # INVERTER SERIAL
-            invert_serial_arr = bytearray(
-                str(self.__config["INVERT_SERIAL"]).encode()
-            )
-            msg.extend(invert_serial_arr)
-            msg.extend([0, 0, 40, 0, 226, 149])
+            
             if self.__client is None:
                 self.__logger.info(
                     "Socket initial error. Re init for next time"
                 )
                 self.__connect_socket()
                 return None
+            
+            all_data = {}
+            
+            # Request and parse ReadInput1 (register 0)
+            msg = Dongle.build_read_input_request(
+                self.__config["DONGLE_SERIAL"],
+                self.__config["INVERT_SERIAL"],
+                register=0
+            )
             self.__client.send(bytes(msg))
-            data = self.__client.recv(1024)
-            self.__logger.debug("Server: %s", list(data))
-            if data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE and Dongle.to_int(list(data[32:34])) == 0 and len(data) == 117:
-                parsed_data = Dongle.read_input1(list(data))
-                self.__logger.debug("Parsed data: %s", parsed_data)
-                parsed_data['deviceTime'] = datetime.now().strftime(
+            try:
+                data = self.__client.recv(1024)
+                self.__logger.debug("ReadInput1 response: %s", list(data))
+                if data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE:
+                    parsed_data = Dongle.read_input1(list(data))
+                    if parsed_data:
+                        all_data.update(parsed_data)
+                        self.__logger.info("ReadInput1 parsed successfully")
+            except TimeoutError:
+                self.__logger.warning("ReadInput1 timeout, continuing...")
+            
+            # Small delay between requests
+            time.sleep(0.1)
+            
+            # Request and parse ReadInput2 (register 40)
+            msg = Dongle.build_read_input_request(
+                self.__config["DONGLE_SERIAL"],
+                self.__config["INVERT_SERIAL"],
+                register=40
+            )
+            self.__client.send(bytes(msg))
+            try:
+                data = self.__client.recv(1024)
+                self.__logger.debug("ReadInput2 response: %s", list(data))
+                if data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE:
+                    parsed_data = Dongle.read_input2(list(data))
+                    if parsed_data:
+                        all_data.update(parsed_data)
+                        self.__logger.info("ReadInput2 parsed successfully")
+            except TimeoutError:
+                self.__logger.warning("ReadInput2 timeout, continuing...")
+            
+            # Small delay between requests
+            time.sleep(0.1)
+            
+            # Request and parse ReadInput3 (register 80)
+            msg = Dongle.build_read_input_request(
+                self.__config["DONGLE_SERIAL"],
+                self.__config["INVERT_SERIAL"],
+                register=80
+            )
+            self.__client.send(bytes(msg))
+            try:
+                data = self.__client.recv(1024)
+                self.__logger.debug("ReadInput3 response: %s", list(data))
+                if data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE:
+                    parsed_data = Dongle.read_input3(list(data))
+                    if parsed_data:
+                        all_data.update(parsed_data)
+                        self.__logger.info("ReadInput3 parsed successfully")
+            except TimeoutError:
+                self.__logger.warning("ReadInput3 timeout, continuing...")
+            
+            # Small delay between requests
+            time.sleep(0.1)
+            
+            # Request and parse ReadInput4 (register 120)
+            msg = Dongle.build_read_input_request(
+                self.__config["DONGLE_SERIAL"],
+                self.__config["INVERT_SERIAL"],
+                register=120
+            )
+            self.__client.send(bytes(msg))
+            try:
+                data = self.__client.recv(1024)
+                self.__logger.debug("ReadInput4 response: %s", list(data))
+                if data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE:
+                    parsed_data = Dongle.read_input4(list(data))
+                    if parsed_data:
+                        all_data.update(parsed_data)
+                        self.__logger.info("ReadInput4 parsed successfully")
+            except TimeoutError:
+                self.__logger.warning("ReadInput4 timeout, continuing...")
+            
+            if all_data:
+                all_data['deviceTime'] = datetime.now().strftime(
                     "%Y-%m-%d %H:%M:%S"
                 )
                 self.__logger.info("Finish get dongle input")
-                if parsed_data["v_bat"] < 40 or parsed_data["v_bat"] > 58:
+                if "v_bat" in all_data and (all_data["v_bat"] < 40 or all_data["v_bat"] > 58):
                     self.__logger.warning(
                         "v_bat should between 40V and 58V. Inverter may not work properly. Parsed data: %s",
-                        parsed_data,
+                        all_data,
                     )
-                return parsed_data
+                return all_data
             else:
-                self.__logger.info("Not Input1 data. Skip")
+                self.__logger.info("No data parsed from dongle")
                 return None
         except Exception as e:
             self.__logger.exception(
@@ -106,12 +173,16 @@ class Dongle():
         status_text = "Unknow status"
         if status in STATUS_MAP:
             status_text = STATUS_MAP[status]
+        # Parse dongle serial (bytes 2-12)
+        serial = bytes(data[2:13]).decode('utf-8', errors='ignore').strip('\x00')
+        
         return {
             # 0 = static 1
             # 1 = R_INPUT
             # 2..12 = serial
             # 13/14 = length
 
+            "serial": serial,
             "status": status,
             "status_text": status_text,
 
@@ -171,3 +242,385 @@ class Dongle():
             "v_bus_1": Dongle.to_int(data[91:91 + 2]) / 10.0,  # V
             "v_bus_2": Dongle.to_int(data[93:93 + 2]) / 10.0  # V
         }
+
+    @staticmethod
+    def to_int32(ints: list[int]):
+        """Convert 4 bytes to 32-bit integer (little-endian)."""
+        return sum(b << (idx * 8) for idx, b in enumerate(ints))
+
+    @staticmethod
+    def read_input2(input: list[int]):
+        """Parse ReadInput2 - Energy totals, fault/warning codes, temperatures, runtime.
+        
+        Register 40, 80 bytes.
+        """
+        # Remove header + checksum
+        data = input[20: len(input) - 2]
+        
+        # Parse dongle serial (bytes 2-12)
+        serial = bytes(data[2:13]).decode('utf-8', errors='ignore').strip('\x00')
+        
+        return {
+            "serial": serial,
+            
+            # Energy totals (all time) - 4 bytes each
+            "e_pv_all_1": Dongle.to_int32(data[15:19]) / 10.0,  # kWh
+            "e_pv_all_2": Dongle.to_int32(data[19:23]) / 10.0,  # kWh
+            "e_pv_all_3": Dongle.to_int32(data[23:27]) / 10.0,  # kWh
+            "e_pv_all": round((Dongle.to_int32(data[15:19]) + Dongle.to_int32(data[19:23]) + Dongle.to_int32(data[23:27])) / 10.0, 1),
+            
+            "e_inv_all": Dongle.to_int32(data[27:31]) / 10.0,  # kWh
+            "e_rec_all": Dongle.to_int32(data[31:35]) / 10.0,  # kWh
+            "e_chg_all": Dongle.to_int32(data[35:39]) / 10.0,  # kWh
+            "e_dischg_all": Dongle.to_int32(data[39:43]) / 10.0,  # kWh
+            "e_eps_all": Dongle.to_int32(data[43:47]) / 10.0,  # kWh
+            "e_to_grid_all": Dongle.to_int32(data[47:51]) / 10.0,  # kWh
+            "e_to_user_all": Dongle.to_int32(data[51:55]) / 10.0,  # kWh
+            
+            # Fault and warning codes
+            "fault_code": Dongle.to_int32(data[55:59]),
+            "warning_code": Dongle.to_int32(data[59:63]),
+            
+            # Temperatures
+            "t_inner": Dongle.to_int(data[63:65]),  # °C
+            "t_rad_1": Dongle.to_int(data[65:67]),  # °C
+            "t_rad_2": Dongle.to_int(data[67:69]),  # °C
+            "t_bat": Dongle.to_int(data[69:71]),  # °C
+            
+            # Runtime (seconds)
+            "runtime": Dongle.to_int32(data[73:77]),
+        }
+
+    @staticmethod
+    def read_input3(input: list[int]):
+        """Parse ReadInput3 - Battery BMS data.
+        
+        Register 80, 80 bytes.
+        """
+        # Remove header + checksum
+        data = input[20: len(input) - 2]
+        
+        # Parse dongle serial (bytes 2-12)
+        serial = bytes(data[2:13]).decode('utf-8', errors='ignore').strip('\x00')
+        
+        return {
+            "serial": serial,
+            
+            # Battery charge/discharge limits
+            "max_chg_curr": Dongle.to_int(data[17:19]) / 10.0,  # A
+            "max_dischg_curr": Dongle.to_int(data[19:21]) / 10.0,  # A
+            "charge_volt_ref": Dongle.to_int(data[21:23]) / 10.0,  # V
+            "dischg_cut_volt": Dongle.to_int(data[23:25]) / 10.0,  # V
+            
+            # Battery status flags
+            "bat_status_0": Dongle.to_int(data[25:27]),
+            "bat_status_1": Dongle.to_int(data[27:29]),
+            "bat_status_2": Dongle.to_int(data[29:31]),
+            "bat_status_3": Dongle.to_int(data[31:33]),
+            "bat_status_4": Dongle.to_int(data[33:35]),
+            "bat_status_5": Dongle.to_int(data[35:37]),
+            "bat_status_6": Dongle.to_int(data[37:39]),
+            "bat_status_7": Dongle.to_int(data[39:41]),
+            "bat_status_8": Dongle.to_int(data[41:43]),
+            "bat_status_9": Dongle.to_int(data[43:45]),
+            "bat_status_inv": Dongle.to_int(data[45:47]),
+            
+            # Battery info
+            "bat_count": Dongle.to_int(data[47:49]),
+            "bat_capacity": Dongle.to_int(data[49:51]),  # Ah
+            "bat_current": Dongle.to_int(data[51:53]) / 100.0,  # A
+            
+            # BMS events
+            "bms_event_1": Dongle.to_int(data[53:55]),
+            "bms_event_2": Dongle.to_int(data[55:57]),
+            
+            # Cell voltages and temperatures
+            "max_cell_voltage": Dongle.to_int(data[57:59]) / 1000.0,  # V
+            "min_cell_voltage": Dongle.to_int(data[59:61]) / 1000.0,  # V
+            "max_cell_temp": Dongle.to_int(data[61:63]) / 10.0,  # °C
+            "min_cell_temp": Dongle.to_int(data[63:65]) / 10.0,  # °C
+            
+            # BMS firmware and cycle
+            "bms_fw_update_state": Dongle.to_int(data[65:67]),
+            "cycle_count": Dongle.to_int(data[67:69]),
+            
+            # Battery voltage
+            "vbat_inv": Dongle.to_int(data[69:71]) / 10.0,  # V
+        }
+
+    @staticmethod
+    def read_input4(input: list[int]):
+        """Parse ReadInput4 - Generator and EPS data.
+        
+        Register 120, 80 bytes.
+        """
+        # Remove header + checksum
+        data = input[20: len(input) - 2]
+        
+        # Parse dongle serial (bytes 2-12)
+        serial = bytes(data[2:13]).decode('utf-8', errors='ignore').strip('\x00')
+        
+        return {
+            "serial": serial,
+            
+            # Generator data
+            "v_gen": Dongle.to_int(data[17:19]) / 10.0,  # V
+            "f_gen": Dongle.to_int(data[19:21]) / 100.0,  # Hz
+            "p_gen": Dongle.to_int(data[21:23]),  # W
+            "e_gen_day": Dongle.to_int(data[23:25]) / 10.0,  # kWh
+            "e_gen_all": Dongle.to_int32(data[25:29]) / 10.0,  # kWh
+            
+            # EPS L1/L2 data
+            "v_eps_l1": Dongle.to_int(data[29:31]) / 10.0,  # V
+            "v_eps_l2": Dongle.to_int(data[31:33]) / 10.0,  # V
+            "p_eps_l1": Dongle.to_int(data[33:35]),  # W
+            "p_eps_l2": Dongle.to_int(data[35:37]),  # W
+            "s_eps_l1": Dongle.to_int(data[37:39]),  # VA
+            "s_eps_l2": Dongle.to_int(data[39:41]),  # VA
+            "e_eps_l1_day": Dongle.to_int(data[41:43]) / 10.0,  # kWh
+            "e_eps_l2_day": Dongle.to_int(data[43:45]) / 10.0,  # kWh
+            "e_eps_l1_all": Dongle.to_int32(data[45:49]) / 10.0,  # kWh
+            "e_eps_l2_all": Dongle.to_int32(data[49:53]) / 10.0,  # kWh
+        }
+
+    @staticmethod
+    def read_input(input: list[int]) -> Optional[dict]:
+        """Auto-detect and parse any ReadInput type based on register offset and data length.
+        
+        Based on lxp-bridge protocol:
+        - Register 0, 80 bytes -> ReadInput1 (real-time data)
+        - Register 40, 80 bytes -> ReadInput2 (energy totals, temps, runtime)
+        - Register 80, 80 bytes -> ReadInput3 (battery BMS data)
+        - Register 120, 80 bytes -> ReadInput4 (generator, EPS data)
+        - Register 0, 254 bytes -> ReadInputAll (combined data)
+        """
+        if len(input) < 38:
+            return None
+        
+        # Extract register offset from data (bytes 12-13 after header)
+        # Header is 20 bytes, so register is at data[12:14]
+        data = input[20: len(input) - 2]
+        
+        if len(data) < 14:
+            return None
+            
+        register = Dongle.to_int(data[12:14])
+        data_len = len(data)
+        
+        try:
+            # ReadInputAll - combined data (register 0, 254 bytes)
+            if register == 0 and data_len == 254:
+                return Dongle.read_input_all(input)
+            # ReadInput1 - real-time data (register 0, 80 bytes)
+            elif register == 0 and data_len == 80:
+                return Dongle.read_input1(input)
+            # ReadInput2 - energy totals (register 40, 80 bytes)
+            elif register == 40 and data_len == 80:
+                return Dongle.read_input2(input)
+            # ReadInput3 - battery BMS (register 80, 80 bytes)
+            elif register == 80 and data_len == 80:
+                return Dongle.read_input3(input)
+            # ReadInput4 - generator/EPS (register 120, 80 bytes)
+            elif register == 120 and data_len == 80:
+                return Dongle.read_input4(input)
+            else:
+                return None
+        except Exception:
+            return None
+
+    @staticmethod
+    def build_read_input_request(dongle_serial: str, inverter_serial: str, register: int = 0, protocol: int = 1) -> bytes:
+        """Build a ReadInput request message matching the original protocol.
+        
+        Args:
+            dongle_serial: Dongle serial number
+            inverter_serial: Inverter serial number
+            register: Register offset (0=ReadInput1, 40=ReadInput2, 80=ReadInput3, 120=ReadInput4)
+            protocol: Protocol version (1 or 2)
+        
+        Returns:
+            bytes: Complete TCP frame for ReadInput request
+        """
+        TCP_FUNCTION_TRANSLATE = 194
+        
+        # Build message
+        msg = [161, 26, protocol, 0, 32, 0, 1, TCP_FUNCTION_TRANSLATE]
+        
+        # Dongle SERIAL
+        dongle_serial_arr = bytearray(str(dongle_serial).encode())
+        msg.extend(dongle_serial_arr)
+        
+        # Fixed bytes
+        msg.extend([18, 0, 0, 4])
+        
+        # INVERTER SERIAL
+        invert_serial_arr = bytearray(str(inverter_serial).encode())
+        msg.extend(invert_serial_arr)
+        
+        # Register and checksum (last 6 bytes)
+        # Format: [0, 0, register_low, register_high, checksum_low, checksum_high]
+        register_bytes = register.to_bytes(2, 'little')
+        msg.extend([0, 0, register_bytes[0], register_bytes[1]])
+        
+        # Calculate checksum (sum of bytes from index 8 onwards)
+        checksum = sum(msg[8:]) & 0xFFFF
+        checksum_bytes = checksum.to_bytes(2, 'little')
+        msg.extend([checksum_bytes[0], checksum_bytes[1]])
+        
+        return bytes(msg)
+
+    @staticmethod
+    def read_input_all(input: list[int]) -> Optional[dict]:
+        """Parse ReadInputAll - Combined data from all input registers.
+        
+        Register 0, 254 bytes.
+        """
+        try:
+            # Remove header + checksum
+            data = input[20: len(input) - 2]
+            
+            # Parse dongle serial (bytes 2-12)
+            serial = bytes(data[2:13]).decode('utf-8', errors='ignore').strip('\x00')
+            
+            # Parse ReadInput1 section (offset 0)
+            status = Dongle.to_int(data[15:17])
+            status_text = STATUS_MAP.get(status, "Unknown status")
+            
+            # Calculate p_pv and e_pv_day
+            p_pv_1 = Dongle.to_int(data[29:31])
+            p_pv_2 = Dongle.to_int(data[31:33])
+            p_pv_3 = Dongle.to_int(data[33:35])
+            p_pv = p_pv_1 + p_pv_2 + p_pv_3
+            
+            e_pv_1_day = Dongle.to_int(data[71:73]) / 10.0
+            e_pv_2_day = Dongle.to_int(data[73:75]) / 10.0
+            e_pv_3_day = Dongle.to_int(data[75:77]) / 10.0
+            e_pv_day = round(e_pv_1_day + e_pv_2_day + e_pv_3_day, 1)
+            
+            # Parse ReadInput2 section (offset 40)
+            e_pv_all_1 = Dongle.to_int32(data[55:59]) / 10.0
+            e_pv_all_2 = Dongle.to_int32(data[59:63]) / 10.0
+            e_pv_all_3 = Dongle.to_int32(data[63:67]) / 10.0
+            e_pv_all = round(e_pv_all_1 + e_pv_all_2 + e_pv_all_3, 1)
+            
+            # Parse ReadInput3 section (offset 80)
+            # Parse ReadInput4 section (offset 120)
+            
+            return {
+                "serial": serial,
+                "input_type": "all",
+                
+                # ReadInput1 data
+                "status": status,
+                "status_text": status_text,
+                "v_pv_1": Dongle.to_int(data[17:19]) / 10.0,
+                "v_pv_2": Dongle.to_int(data[19:21]) / 10.0,
+                "v_pv_3": Dongle.to_int(data[21:23]) / 10.0,
+                "v_bat": Dongle.to_int(data[23:25]) / 10.0,
+                "soc": data[25],
+                "soh": data[26],
+                "internal_fault": Dongle.to_int(data[27:29]),
+                "p_pv": p_pv,
+                "p_pv_1": p_pv_1,
+                "p_pv_2": p_pv_2,
+                "p_pv_3": p_pv_3,
+                "p_charge": Dongle.to_int(data[35:37]),
+                "p_discharge": Dongle.to_int(data[37:39]),
+                "vacr": Dongle.to_int(data[39:41]),
+                "vacs": Dongle.to_int(data[41:43]),
+                "vact": Dongle.to_int(data[43:45]),
+                "fac": Dongle.to_int(data[45:47]),
+                "p_inv": Dongle.to_int(data[47:49]),
+                "p_rec": Dongle.to_int(data[49:51]),
+                "i_inv_rms": Dongle.to_int(data[51:53]),
+                "pf": Dongle.to_int(data[53:55]) / 1000.0,
+                "v_eps_r": Dongle.to_int(data[55:57]) / 10.0,
+                "v_eps_s": Dongle.to_int(data[57:59]) / 10.0,
+                "v_eps_t": Dongle.to_int(data[59:61]) / 10.0,
+                "f_eps": Dongle.to_int(data[61:63]) / 100.0,
+                "p_eps": Dongle.to_int(data[63:65]),
+                "s_eps": Dongle.to_int(data[65:67]),
+                "p_to_grid": Dongle.to_int(data[67:69]),
+                "p_to_user": Dongle.to_int(data[69:71]),
+                "e_pv_day": e_pv_day,
+                "e_pv_1_day": e_pv_1_day,
+                "e_pv_2_day": e_pv_2_day,
+                "e_pv_3_day": e_pv_3_day,
+                "e_inv_day": Dongle.to_int(data[77:79]) / 10.0,
+                "e_rec_day": Dongle.to_int(data[79:81]) / 10.0,
+                "e_chg_day": Dongle.to_int(data[81:83]) / 10.0,
+                "e_dischg_day": Dongle.to_int(data[83:85]) / 10.0,
+                "e_eps_day": Dongle.to_int(data[85:87]) / 10.0,
+                "e_to_grid_day": Dongle.to_int(data[87:89]) / 10.0,
+                "e_to_user_day": Dongle.to_int(data[89:91]) / 10.0,
+                "v_bus_1": Dongle.to_int(data[91:93]) / 10.0,
+                "v_bus_2": Dongle.to_int(data[93:95]) / 10.0,
+                
+                # ReadInput2 data
+                "e_pv_all": e_pv_all,
+                "e_pv_all_1": e_pv_all_1,
+                "e_pv_all_2": e_pv_all_2,
+                "e_pv_all_3": e_pv_all_3,
+                "e_inv_all": Dongle.to_int32(data[95:99]) / 10.0,
+                "e_rec_all": Dongle.to_int32(data[99:103]) / 10.0,
+                "e_chg_all": Dongle.to_int32(data[103:107]) / 10.0,
+                "e_dischg_all": Dongle.to_int32(data[107:111]) / 10.0,
+                "e_eps_all": Dongle.to_int32(data[111:115]) / 10.0,
+                "e_to_grid_all": Dongle.to_int32(data[115:119]) / 10.0,
+                "e_to_user_all": Dongle.to_int32(data[119:123]) / 10.0,
+                "fault_code": Dongle.to_int32(data[123:127]),
+                "warning_code": Dongle.to_int32(data[127:131]),
+                "t_inner": Dongle.to_int(data[131:133]),
+                "t_rad_1": Dongle.to_int(data[133:135]),
+                "t_rad_2": Dongle.to_int(data[135:137]),
+                "t_bat": Dongle.to_int(data[137:139]),
+                "runtime": Dongle.to_int32(data[141:145]),
+                
+                # ReadInput3 data
+                "max_chg_curr": Dongle.to_int(data[147:149]) / 10.0,
+                "max_dischg_curr": Dongle.to_int(data[149:151]) / 10.0,
+                "charge_volt_ref": Dongle.to_int(data[151:153]) / 10.0,
+                "dischg_cut_volt": Dongle.to_int(data[153:155]) / 10.0,
+                "bat_status_0": Dongle.to_int(data[155:157]),
+                "bat_status_1": Dongle.to_int(data[157:159]),
+                "bat_status_2": Dongle.to_int(data[159:161]),
+                "bat_status_3": Dongle.to_int(data[161:163]),
+                "bat_status_4": Dongle.to_int(data[163:165]),
+                "bat_status_5": Dongle.to_int(data[165:167]),
+                "bat_status_6": Dongle.to_int(data[167:169]),
+                "bat_status_7": Dongle.to_int(data[169:171]),
+                "bat_status_8": Dongle.to_int(data[171:173]),
+                "bat_status_9": Dongle.to_int(data[173:175]),
+                "bat_status_inv": Dongle.to_int(data[175:177]),
+                "bat_count": Dongle.to_int(data[177:179]),
+                "bat_capacity": Dongle.to_int(data[179:181]),
+                "bat_current": Dongle.to_int(data[181:183]) / 100.0,
+                "bms_event_1": Dongle.to_int(data[183:185]),
+                "bms_event_2": Dongle.to_int(data[185:187]),
+                "max_cell_voltage": Dongle.to_int(data[187:189]) / 1000.0,
+                "min_cell_voltage": Dongle.to_int(data[189:191]) / 1000.0,
+                "max_cell_temp": Dongle.to_int(data[191:193]) / 10.0,
+                "min_cell_temp": Dongle.to_int(data[193:195]) / 10.0,
+                "bms_fw_update_state": Dongle.to_int(data[195:197]),
+                "cycle_count": Dongle.to_int(data[197:199]),
+                "vbat_inv": Dongle.to_int(data[199:201]) / 10.0,
+                
+                # ReadInput4 data
+                "v_gen": Dongle.to_int(data[217:219]) / 10.0,
+                "f_gen": Dongle.to_int(data[219:221]) / 100.0,
+                "p_gen": Dongle.to_int(data[221:223]),
+                "e_gen_day": Dongle.to_int(data[223:225]) / 10.0,
+                "e_gen_all": Dongle.to_int32(data[225:229]) / 10.0,
+                "v_eps_l1": Dongle.to_int(data[229:231]) / 10.0,
+                "v_eps_l2": Dongle.to_int(data[231:233]) / 10.0,
+                "p_eps_l1": Dongle.to_int(data[233:235]),
+                "p_eps_l2": Dongle.to_int(data[235:237]),
+                "s_eps_l1": Dongle.to_int(data[237:239]),
+                "s_eps_l2": Dongle.to_int(data[239:241]),
+                "e_eps_l1_day": Dongle.to_int(data[241:243]) / 10.0,
+                "e_eps_l2_day": Dongle.to_int(data[243:245]) / 10.0,
+                "e_eps_l1_all": Dongle.to_int32(data[245:249]) / 10.0,
+                "e_eps_l2_all": Dongle.to_int32(data[249:253]) / 10.0,
+            }
+        except Exception:
+            return None

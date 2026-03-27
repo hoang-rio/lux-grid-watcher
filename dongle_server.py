@@ -1,0 +1,244 @@
+import asyncio
+import logging
+from typing import Optional
+import dongle_handler
+
+
+class DongleServer:
+    __server: asyncio.Server | None = None
+    __config: dict
+    __logger: logging.Logger
+    __port: int
+    __host: str
+
+    def __init__(self, logger: logging.Logger, config: dict) -> None:
+        self.__config = config
+        self.__logger = logger
+        self.__host = config.get("SERVER_MODE_HOST", "0.0.0.0")
+        self.__port = int(config.get("SERVER_MODE_PORT", 4346))
+        self.__inverter_data: Optional[dict] = None
+        self.__data_received_event = asyncio.Event()
+
+    async def start_server(self):
+        """Start the TCP server to listen for dongle connections."""
+        try:
+            self.__server = await asyncio.start_server(
+                self.__handle_client,
+                self.__host,
+                self.__port
+            )
+            self.__logger.info(
+                "Dongle server started on %s:%s",
+                self.__host,
+                self.__port
+            )
+            async with self.__server:
+                await self.__server.serve_forever()
+        except Exception as e:
+            self.__logger.exception("Failed to start dongle server: %s", e)
+            raise
+
+    async def __handle_client(
+        self,
+        reader: asyncio.StreamReader,
+        writer: asyncio.StreamWriter
+    ):
+        """Handle incoming client connection from dongle."""
+        client_addr = writer.get_extra_info('peername')
+        self.__logger.info("Dongle connected from %s", client_addr)
+
+        try:
+            dongle_serial = self.__config.get("DONGLE_SERIAL", "")
+            inverter_serial = self.__config.get("INVERT_SERIAL", "")
+            sleep_time = int(self.__config.get("SLEEP_TIME", 120))
+            
+            if dongle_serial and inverter_serial:
+                self.__logger.info(
+                    "DONGLE_SERIAL and INVERTEL_SERIAL configured, "
+                    "will send requests to dongle"
+                )
+                # Send ReadInput request immediately when dongle connects
+                # Try protocol 2 for server mode
+                request = dongle_handler.Dongle.build_read_input_request(
+                    dongle_serial, inverter_serial, register=0, protocol=2
+                )
+                writer.write(request)
+                await writer.drain()
+                self.__logger.info("Sent ReadInput1 request (protocol 2) to %s immediately", client_addr)
+            else:
+                self.__logger.warning(
+                    "DONGLE_SERIAL or INVERT_SERIAL not configured, "
+                    "waiting for dongle to send data"
+                )
+            
+            while True:
+                try:
+                    # Wait for data from dongle
+                    data = await asyncio.wait_for(
+                        reader.read(1024),
+                        timeout=int(self.__config.get("SERVER_MODE_TIMEOUT", 300))
+                    )
+
+                    if not data:
+                        self.__logger.info(
+                            "Dongle disconnected from %s",
+                            client_addr
+                        )
+                        break
+
+                    self.__logger.debug(
+                        "Received %d bytes from %s: %s",
+                        len(data),
+                        client_addr,
+                        list(data)
+                    )
+
+                    # Parse the received data
+                    parsed_data = self.__parse_inverter_data(list(data))
+                    if parsed_data is not None:
+                        self.__inverter_data = parsed_data
+                        self.__data_received_event.set()
+                        self.__logger.info(
+                            "Successfully parsed data from %s",
+                            client_addr
+                        )
+
+                    # Send next ReadInput request after processing
+                    if dongle_serial and inverter_serial:
+                        # Request ReadInput1 (register 0) - real-time data
+                        request = dongle_handler.Dongle.build_read_input_request(
+                            dongle_serial, inverter_serial, register=0
+                        )
+                        writer.write(request)
+                        await writer.drain()
+                        self.__logger.info("Sent ReadInput1 request to %s", client_addr)
+                    
+                    # Wait for next polling interval
+                    self.__logger.info(
+                        "Waiting %s seconds before next request to %s",
+                        sleep_time,
+                        client_addr
+                    )
+                    await asyncio.sleep(sleep_time)
+
+                except asyncio.TimeoutError:
+                    self.__logger.warning(
+                        "Timeout waiting for data from %s",
+                        client_addr
+                    )
+                    # Continue polling even on timeout
+                    await asyncio.sleep(sleep_time)
+                except Exception as e:
+                    self.__logger.exception(
+                        "Error handling data from %s: %s",
+                        client_addr,
+                        e
+                    )
+                    break
+
+        finally:
+            writer.close()
+            await writer.wait_closed()
+            self.__logger.info("Connection from %s closed", client_addr)
+
+    def __parse_inverter_data(self, data: list[int]) -> Optional[dict]:
+        """Parse raw data from dongle - supports all ReadInput types (1-4 and All)."""
+        try:
+            # Validate basic TCP frame format
+            if len(data) < 38:
+                self.__logger.debug(
+                    "Received data too short: %d bytes", len(data)
+                )
+                return None
+            
+            if data[0] == 0:
+                self.__logger.debug(
+                    "Received data starts with 0, skipping"
+                )
+                return None
+            
+            if data[7] != dongle_handler.TCP_FUNCTION_TRANSLATE:
+                self.__logger.debug(
+                    "Received data is not TranslatedData function: %s",
+                    data[7] if len(data) > 7 else "N/A"
+                )
+                return None
+
+            # Try to auto-detect and parse any ReadInput type
+            parsed_data = dongle_handler.Dongle.read_input(data)
+            
+            if parsed_data is not None:
+                # Add device timestamp
+                from datetime import datetime
+                parsed_data['deviceTime'] = datetime.now().strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+
+                # Log input type if available
+                input_type = parsed_data.get("input_type", "input1")
+                self.__logger.info(
+                    "Successfully parsed %s data from dongle",
+                    input_type
+                )
+                self.__logger.debug("Parsed data: %s", parsed_data)
+
+                # Validate battery voltage if present
+                if "v_bat" in parsed_data:
+                    if parsed_data["v_bat"] < 40 or parsed_data["v_bat"] > 58:
+                        self.__logger.warning(
+                            "v_bat should be between 40V and 58V. "
+                            "Inverter may not work properly. Parsed data: %s",
+                            parsed_data
+                        )
+
+                return parsed_data
+            else:
+                # Fallback: try ReadInput1 directly for backward compatibility
+                data_len = len(data)
+                if data_len == 117:
+                    parsed_data = dongle_handler.Dongle.read_input1(data)
+                    if parsed_data is not None:
+                        from datetime import datetime
+                        parsed_data['deviceTime'] = datetime.now().strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                        self.__logger.info(
+                            "Parsed data using ReadInput1 fallback"
+                        )
+                        return parsed_data
+                
+                self.__logger.debug(
+                    "Received data could not be parsed. "
+                    "Length: %d, First byte: %s, Function: %s",
+                    len(data),
+                    data[0] if data else "N/A",
+                    data[7] if len(data) > 7 else "N/A"
+                )
+                return None
+        except Exception as e:
+            self.__logger.exception("Failed to parse inverter data: %s", e)
+            return None
+
+    async def wait_for_data(
+        self,
+        timeout: Optional[float] = None
+    ) -> Optional[dict]:
+        """Wait for new data from dongle with optional timeout."""
+        try:
+            self.__data_received_event.clear()
+            await asyncio.wait_for(
+                self.__data_received_event.wait(),
+                timeout=timeout
+            )
+            data = self.__inverter_data
+            self.__inverter_data = None
+            return data
+        except asyncio.TimeoutError:
+            return None
+
+    async def stop_server(self):
+        """Stop the TCP server."""
+        if self.__server is not None:
+            self.__server.close()
+            await self.__server.wait_closed()
+            self.__logger.info("Dongle server stopped")
