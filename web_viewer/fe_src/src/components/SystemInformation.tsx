@@ -46,15 +46,6 @@ function SystemInformation({
     return date.toLocaleString();
   }, []);
 
-  // If admin access is revoked, close notification UI and clear related state.
-  useEffect(() => {
-    if (!allowAdmin) {
-      setShowNotifications(false);
-      setNotifications([]);
-      setUnreadCount(0);
-    }
-  }, [allowAdmin]);
-
   // Fetch unread notification count on mount and when page becomes visible
   const fetchUnreadCount = useCallback(async () => {
     try {
@@ -68,10 +59,6 @@ function SystemInformation({
   }, [i18n]);
 
   useEffect(() => {
-    if (!allowAdmin) {
-      setUnreadCount(0);
-      return;
-    }
     fetchUnreadCount();
     const handleVisibilityChange = () => {
       if (!document.hidden) {
@@ -80,9 +67,9 @@ function SystemInformation({
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [fetchUnreadCount, allowAdmin]);
+  }, [fetchUnreadCount]);
 
-  // Determine whether this client can access admin features (settings + notifications)
+  // Determine whether this client can access admin features (settings)
   useEffect(() => {
     let cancelled = false;
     const check = async () => {
@@ -117,10 +104,10 @@ function SystemInformation({
   }, [i18n]);
 
   useEffect(() => {
-    if (showNotifications && allowAdmin) {
+    if (showNotifications) {
       fetchNotifications();
     }
-  }, [showNotifications, fetchNotifications, allowAdmin]);
+  }, [showNotifications, fetchNotifications]);
 
   useEffect(() => {
     if (showNotifications) {
@@ -158,25 +145,24 @@ function SystemInformation({
 
   // Remove auto-open popover on new notification, just update unread count
   useEffect(() => {
-    if (!allowAdmin) return;
     if (newNotification) {
       setUnreadCount((prev) => prev + 1);
       setNotifications((prev) => [newNotification, ...prev]);
     }
-  }, [newNotification, allowAdmin]);
+  }, [newNotification]);
 
   // Mark notifications as read when popover is closed after being opened
   useEffect(() => {
     if (showNotifications) {
       notificationOpened.current = true;
     } else {
-      if (allowAdmin && notificationOpened.current && unreadCount > 0) {
+      if (notificationOpened.current && unreadCount > 0) {
         fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-mark-read`, { method: 'POST' })
           .then(() => fetchUnreadCount());
       }
       notificationOpened.current = false;
     }
-  }, [showNotifications, unreadCount, fetchUnreadCount, allowAdmin]);
+  }, [showNotifications, unreadCount, fetchUnreadCount]);
 
   const handleShowNotifications = useCallback(() => {
     setShowNotifications((prev) => !prev);
@@ -239,35 +225,33 @@ function SystemInformation({
                 </button>
               </div>
             )}
-            {allowAdmin && (
-              <div className="notification-button" ref={notificationButtonRef}>
-                <button
-                  onClick={handleShowNotifications}
-                  className={showNotifications ? "active" : "inactive"}
-                  title={t("notification.title")}
+            <div className="notification-button" ref={notificationButtonRef}>
+              <button
+                onClick={handleShowNotifications}
+                className={showNotifications ? "active" : "inactive"}
+                title={t("notification.title")}
+              >
+                {/* Single bell icon SVG */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  viewBox="0 0 24 24"
+                  strokeLinejoin="round"
+                  className="feather feather-bell"
                 >
-                  {/* Single bell icon SVG */}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    viewBox="0 0 24 24"
-                    strokeLinejoin="round"
-                    className="feather feather-bell"
-                  >
-                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                  </svg>
-                  {unreadCount > 0 && (
-                    <span className="notification-unread-badge">{unreadCount}</span>
-                  )}
-                </button>
-              </div>
-            )}
+                  <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                {unreadCount > 0 && (
+                  <span className="notification-unread-badge">{unreadCount}</span>
+                )}
+              </button>
+            </div>
           </div>
           <div className="system-graph">
             <div className="system-status row">
@@ -326,7 +310,7 @@ function SystemInformation({
             </div>
           </div>
         </div>
-        {showNotifications && allowAdmin && (
+        {showNotifications && (
           <div className="notification-history notification-popover">
             <div className="notification-popover-content" ref={popoverRef}>
               <div className="notification-popover-header">
