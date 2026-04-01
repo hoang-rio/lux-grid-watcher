@@ -1,0 +1,38 @@
+{
+    "runArgs": [
+        "--device=/dev/net/tun",
+        "--cap-add=NET_ADMIN"
+    ],
+    "features": {
+        // ... other features
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "24.14.1"
+        },
+        "ghcr.io/tailscale/codespace/tailscale": {
+            "version": "latest"
+        }
+    },
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "postStartCommand": "sudo tailscaled --state=/var/lib/tailscale/tailscaled.state & sleep 1",
+    "remoteUser": "vscode",
+    "containerEnv": {
+        "SHELL": "/bin/bash"
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash",
+                "terminal.integrated.profiles.linux": {
+                    "bash": {
+                        "path": "/bin/bash",
+                        "args": [
+                            "-l"
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}
