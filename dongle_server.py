@@ -51,20 +51,57 @@ class DongleServer:
             dongle_serial = self.__config.get("DONGLE_SERIAL", "")
             inverter_serial = self.__config.get("INVERT_SERIAL", "")
             sleep_time = int(self.__config.get("SLEEP_TIME", 120))
+            read_mode = dongle_handler.normalize_read_input_mode(
+                self.__config.get("READ_INPUT_MODE", dongle_handler.READ_INPUT_MODE_ALL)
+            )
+            registers = [0] if read_mode == dongle_handler.READ_INPUT_MODE_INPUT1_ONLY else [0, 40, 80, 120]
+            next_register_idx = 0
+            all_mode_buffer: dict = {}
+            all_mode_received_registers: set[int] = set()
+
+            def build_poll_request(register: int) -> bytes:
+                return dongle_handler.Dongle.build_read_input_request(
+                    dongle_serial,
+                    inverter_serial,
+                    register=register,
+                    protocol=1,
+                )
+
+            request_name = "ReadInput1" if read_mode == dongle_handler.READ_INPUT_MODE_INPUT1_ONLY else "ReadInput1-4"
+
+            def extract_register(raw_data: list[int]) -> int | None:
+                if len(raw_data) < 38:
+                    return None
+                body = raw_data[20: len(raw_data) - 2]
+                if len(body) < 14:
+                    return None
+                return dongle_handler.Dongle.to_int(body[12:14])
+
+            def get_next_register() -> int:
+                return registers[next_register_idx % len(registers)]
+
+            def advance_next_register():
+                nonlocal next_register_idx
+                next_register_idx = (next_register_idx + 1) % len(registers)
             
             if dongle_serial and inverter_serial:
                 self.__logger.info(
                     "DONGLE_SERIAL and INVERTEL_SERIAL configured, "
-                    "will send requests to dongle"
+                    "will send %s requests to dongle",
+                    request_name,
                 )
                 # Send ReadInput request immediately when dongle connects
-                # Try protocol 2 for server mode
-                request = dongle_handler.Dongle.build_read_input_request(
-                    dongle_serial, inverter_serial, register=0, protocol=2
-                )
+                current_register = get_next_register()
+                request = build_poll_request(current_register)
                 writer.write(request)
                 await writer.drain()
-                self.__logger.info("Sent ReadInput1 request (protocol 2) to %s immediately", client_addr)
+                self.__logger.info(
+                    "Sent %s request (register=%s, protocol 1) to %s immediately",
+                    request_name,
+                    current_register,
+                    client_addr,
+                )
+                advance_next_register()
             else:
                 self.__logger.warning(
                     "DONGLE_SERIAL or INVERT_SERIAL not configured, "
@@ -94,24 +131,50 @@ class DongleServer:
                     )
 
                     # Parse the received data
-                    parsed_data = self.__parse_inverter_data(list(data))
+                    raw_data = list(data)
+                    parsed_data = self.__parse_inverter_data(raw_data)
                     if parsed_data is not None:
-                        self.__inverter_data = parsed_data
-                        self.__data_received_event.set()
-                        self.__logger.info(
-                            "Successfully parsed data from %s",
-                            client_addr
-                        )
+                        if read_mode == dongle_handler.READ_INPUT_MODE_INPUT1_ONLY:
+                            self.__inverter_data = parsed_data
+                            self.__data_received_event.set()
+                            self.__logger.info(
+                                "Successfully parsed data from %s",
+                                client_addr
+                            )
+                        else:
+                            register = extract_register(raw_data)
+                            if register is not None:
+                                all_mode_buffer.update(parsed_data)
+                                all_mode_received_registers.add(register)
+                                self.__logger.info(
+                                    "Parsed register=%s from %s (%s/4)",
+                                    register,
+                                    client_addr,
+                                    len(all_mode_received_registers),
+                                )
+                                if all_mode_received_registers.issuperset({0, 40, 80, 120}):
+                                    self.__inverter_data = dict(all_mode_buffer)
+                                    self.__data_received_event.set()
+                                    self.__logger.info(
+                                        "Merged ReadInput1-4 data ready from %s",
+                                        client_addr,
+                                    )
+                                    all_mode_buffer = {}
+                                    all_mode_received_registers.clear()
 
                     # Send next ReadInput request after processing
                     if dongle_serial and inverter_serial:
-                        # Request ReadInput1 (register 0) - real-time data
-                        request = dongle_handler.Dongle.build_read_input_request(
-                            dongle_serial, inverter_serial, register=0
-                        )
+                        current_register = get_next_register()
+                        request = build_poll_request(current_register)
                         writer.write(request)
                         await writer.drain()
-                        self.__logger.info("Sent ReadInput1 request to %s", client_addr)
+                        self.__logger.info(
+                            "Sent %s request (register=%s) to %s",
+                            request_name,
+                            current_register,
+                            client_addr,
+                        )
+                        advance_next_register()
                     
                     # Wait for next polling interval
                     self.__logger.info(
@@ -126,7 +189,19 @@ class DongleServer:
                         "Timeout waiting for data from %s",
                         client_addr
                     )
-                    # Continue polling even on timeout
+                    # Keep polling on timeout in case the previous response was dropped.
+                    if dongle_serial and inverter_serial:
+                        current_register = get_next_register()
+                        request = build_poll_request(current_register)
+                        writer.write(request)
+                        await writer.drain()
+                        self.__logger.info(
+                            "Resent %s request (register=%s) to %s after timeout",
+                            request_name,
+                            current_register,
+                            client_addr,
+                        )
+                        advance_next_register()
                     await asyncio.sleep(sleep_time)
                 except Exception as e:
                     self.__logger.exception(
@@ -195,7 +270,15 @@ class DongleServer:
             else:
                 # Fallback: try ReadInput1 directly for backward compatibility
                 data_len = len(data)
-                if data_len == 117:
+                register = None
+                try:
+                    body = data[20: len(data) - 2]
+                    if len(body) >= 14:
+                        register = dongle_handler.Dongle.to_int(body[12:14])
+                except Exception:
+                    register = None
+
+                if data_len == 117 and register == 0:
                     parsed_data = dongle_handler.Dongle.read_input1(data)
                     if parsed_data is not None:
                         from datetime import datetime

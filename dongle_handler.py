@@ -23,6 +23,15 @@ STATUS_MAP: dict = {
 }
 
 TCP_FUNCTION_TRANSLATE = 194
+READ_INPUT_MODE_INPUT1_ONLY = "INPUT1_ONLY"
+READ_INPUT_MODE_ALL = "ALL"
+
+
+def normalize_read_input_mode(mode: str | None) -> str:
+    mode_value = (mode or READ_INPUT_MODE_ALL).strip().upper()
+    if mode_value in {"INPUT1", "READINPUT1", "READ_INPUT1", "INPUT1_ONLY"}:
+        return READ_INPUT_MODE_INPUT1_ONLY
+    return READ_INPUT_MODE_ALL
 
 class Dongle():
     __client: socket | None = None
@@ -57,87 +66,59 @@ class Dongle():
                 return None
             
             all_data = {}
-            
-            # Request and parse ReadInput1 (register 0)
-            msg = Dongle.build_read_input_request(
-                self.__config["DONGLE_SERIAL"],
-                self.__config["INVERT_SERIAL"],
-                register=0
+            read_mode = normalize_read_input_mode(
+                self.__config.get("READ_INPUT_MODE", READ_INPUT_MODE_ALL)
             )
-            self.__client.send(bytes(msg))
-            try:
-                data = self.__client.recv(1024)
-                self.__logger.debug("ReadInput1 response: %s", list(data))
-                if data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE:
-                    parsed_data = Dongle.read_input1(list(data))
-                    if parsed_data:
-                        all_data.update(parsed_data)
-                        self.__logger.info("ReadInput1 parsed successfully")
-            except TimeoutError:
-                self.__logger.warning("ReadInput1 timeout, continuing...")
-            
-            # Small delay between requests
+
+            if read_mode == READ_INPUT_MODE_INPUT1_ONLY:
+                msg = Dongle.build_read_input_request(
+                    self.__config["DONGLE_SERIAL"],
+                    self.__config["INVERT_SERIAL"],
+                    register=0,
+                )
+                self.__client.send(bytes(msg))
+                try:
+                    data = self.__client.recv(1024)
+                    self.__logger.debug("ReadInput1 response: %s", list(data))
+                    if data and data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE:
+                        parsed_data = Dongle.read_input1(list(data))
+                        if parsed_data:
+                            all_data.update(parsed_data)
+                            self.__logger.info("ReadInput1 parsed successfully")
+                except TimeoutError:
+                    self.__logger.warning("ReadInput1 timeout, continuing...")
+            else:
+                # Poll ReadInput1 -> 4 so data stays compatible with more dongle firmwares.
+                request_plan = [
+                    (0, Dongle.read_input1, "ReadInput1"),
+                    (40, Dongle.read_input2, "ReadInput2"),
+                    (80, Dongle.read_input3, "ReadInput3"),
+                    (120, Dongle.read_input4, "ReadInput4"),
+                ]
+
+                for register, parser, label in request_plan:
+                    msg = Dongle.build_read_input_request(
+                        self.__config["DONGLE_SERIAL"],
+                        self.__config["INVERT_SERIAL"],
+                        register=register,
+                    )
+                    self.__client.send(bytes(msg))
+                    try:
+                        data = self.__client.recv(1024)
+                        self.__logger.debug("%s response: %s", label, list(data))
+                        if data and data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE:
+                            parsed_data = parser(list(data))
+                            if parsed_data:
+                                all_data.update(parsed_data)
+                                self.__logger.info("%s parsed successfully", label)
+                    except TimeoutError:
+                        self.__logger.warning("%s timeout, continuing...", label)
+
+                    # Small delay between requests
+                    time.sleep(0.1)
+
+            # Keep a tiny delay to avoid tight reconnect loops on unstable links.
             time.sleep(0.1)
-            
-            # Request and parse ReadInput2 (register 40)
-            msg = Dongle.build_read_input_request(
-                self.__config["DONGLE_SERIAL"],
-                self.__config["INVERT_SERIAL"],
-                register=40
-            )
-            self.__client.send(bytes(msg))
-            try:
-                data = self.__client.recv(1024)
-                self.__logger.debug("ReadInput2 response: %s", list(data))
-                if data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE:
-                    parsed_data = Dongle.read_input2(list(data))
-                    if parsed_data:
-                        all_data.update(parsed_data)
-                        self.__logger.info("ReadInput2 parsed successfully")
-            except TimeoutError:
-                self.__logger.warning("ReadInput2 timeout, continuing...")
-            
-            # Small delay between requests
-            time.sleep(0.1)
-            
-            # Request and parse ReadInput3 (register 80)
-            msg = Dongle.build_read_input_request(
-                self.__config["DONGLE_SERIAL"],
-                self.__config["INVERT_SERIAL"],
-                register=80
-            )
-            self.__client.send(bytes(msg))
-            try:
-                data = self.__client.recv(1024)
-                self.__logger.debug("ReadInput3 response: %s", list(data))
-                if data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE:
-                    parsed_data = Dongle.read_input3(list(data))
-                    if parsed_data:
-                        all_data.update(parsed_data)
-                        self.__logger.info("ReadInput3 parsed successfully")
-            except TimeoutError:
-                self.__logger.warning("ReadInput3 timeout, continuing...")
-            
-            # Small delay between requests
-            time.sleep(0.1)
-            
-            # Request and parse ReadInput4 (register 120)
-            msg = Dongle.build_read_input_request(
-                self.__config["DONGLE_SERIAL"],
-                self.__config["INVERT_SERIAL"],
-                register=120
-            )
-            self.__client.send(bytes(msg))
-            try:
-                data = self.__client.recv(1024)
-                self.__logger.debug("ReadInput4 response: %s", list(data))
-                if data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE:
-                    parsed_data = Dongle.read_input4(list(data))
-                    if parsed_data:
-                        all_data.update(parsed_data)
-                        self.__logger.info("ReadInput4 parsed successfully")
-            except TimeoutError:
-                self.__logger.warning("ReadInput4 timeout, continuing...")
             
             if all_data:
                 all_data['deviceTime'] = datetime.now().strftime(
@@ -397,31 +378,44 @@ class Dongle():
         if len(input) < 38:
             return None
         
-        # Extract register offset from data (bytes 12-13 after header)
-        # Header is 20 bytes, so register is at data[12:14]
+        # Strip TCP header and checksum.
         data = input[20: len(input) - 2]
         
+        # Expected layout after stripping header/checksum:
+        # [address(1), function(1), inverter_serial(10), register(2), value_len?(1), values...]
         if len(data) < 14:
             return None
             
         register = Dongle.to_int(data[12:14])
-        data_len = len(data)
+
+        # Most inverter replies include a value-length byte for ReadInput.
+        # Use it when valid, otherwise fallback to inferred payload length.
+        value_len: Optional[int] = None
+        if len(data) >= 15:
+            advertised_len = data[14]
+            remaining = len(data) - 15
+            if advertised_len == remaining:
+                value_len = advertised_len
+
+        if value_len is None:
+            # Protocol variants without value-length byte.
+            value_len = len(data) - 14
         
         try:
             # ReadInputAll - combined data (register 0, 254 bytes)
-            if register == 0 and data_len == 254:
+            if register == 0 and value_len == 254:
                 return Dongle.read_input_all(input)
             # ReadInput1 - real-time data (register 0, 80 bytes)
-            elif register == 0 and data_len == 80:
+            elif register == 0 and value_len == 80:
                 return Dongle.read_input1(input)
             # ReadInput2 - energy totals (register 40, 80 bytes)
-            elif register == 40 and data_len == 80:
+            elif register == 40 and value_len == 80:
                 return Dongle.read_input2(input)
             # ReadInput3 - battery BMS (register 80, 80 bytes)
-            elif register == 80 and data_len == 80:
+            elif register == 80 and value_len == 80:
                 return Dongle.read_input3(input)
             # ReadInput4 - generator/EPS (register 120, 80 bytes)
-            elif register == 120 and data_len == 80:
+            elif register == 120 and value_len == 80:
                 return Dongle.read_input4(input)
             else:
                 return None
@@ -441,33 +435,66 @@ class Dongle():
         Returns:
             bytes: Complete TCP frame for ReadInput request
         """
-        TCP_FUNCTION_TRANSLATE = 194
-        
-        # Build message
-        msg = [161, 26, protocol, 0, 32, 0, 1, TCP_FUNCTION_TRANSLATE]
-        
-        # Dongle SERIAL
-        dongle_serial_arr = bytearray(str(dongle_serial).encode())
-        msg.extend(dongle_serial_arr)
-        
-        # Fixed bytes
-        msg.extend([18, 0, 0, 4])
-        
-        # INVERTER SERIAL
-        invert_serial_arr = bytearray(str(inverter_serial).encode())
-        msg.extend(invert_serial_arr)
-        
-        # Register and checksum (last 6 bytes)
-        # Format: [0, 0, register_low, register_high, checksum_low, checksum_high]
-        register_bytes = register.to_bytes(2, 'little')
-        msg.extend([0, 0, register_bytes[0], register_bytes[1]])
-        
-        # Calculate checksum (sum of bytes from index 8 onwards)
-        checksum = sum(msg[8:]) & 0xFFFF
-        checksum_bytes = checksum.to_bytes(2, 'little')
-        msg.extend([checksum_bytes[0], checksum_bytes[1]])
-        
-        return bytes(msg)
+        return Dongle.build_read_input_request_with_count(
+            dongle_serial=dongle_serial,
+            inverter_serial=inverter_serial,
+            register=register,
+            count=40,
+            protocol=protocol,
+        )
+
+    @staticmethod
+    def build_read_input_request_with_count(
+        dongle_serial: str,
+        inverter_serial: str,
+        register: int = 0,
+        count: int = 40,
+        protocol: int = 1,
+    ) -> bytes:
+        """Build a ReadInput request frame compatible with lxp-bridge.
+
+        Packet details:
+        - Values for ReadInput are register-count (2 bytes LE), default 40
+        - Inner packet checksum is CRC16 MODBUS over data[2:]
+        - Header length field is frame_length - 6 (little-endian)
+        """
+        def serial_bytes(serial: str) -> bytes:
+            raw = str(serial).encode("ascii", errors="ignore")
+            return raw[:10].ljust(10, b"\x00")
+
+        def crc16_modbus(payload: bytes) -> int:
+            crc = 0xFFFF
+            for byte in payload:
+                crc ^= byte
+                for _ in range(8):
+                    if crc & 0x0001:
+                        crc = (crc >> 1) ^ 0xA001
+                    else:
+                        crc >>= 1
+            return crc & 0xFFFF
+
+        datalog = serial_bytes(dongle_serial)
+        inverter = serial_bytes(inverter_serial)
+
+        # Build translated-data body.
+        data = bytearray([0, 0, 0, 4])
+        data.extend(inverter)
+        data.extend(int(register).to_bytes(2, "little", signed=False))
+        data.extend(int(count).to_bytes(2, "little", signed=False))
+        data[0:2] = len(data).to_bytes(2, "little", signed=False)
+
+        checksum = crc16_modbus(data[2:])
+        data.extend(checksum.to_bytes(2, "little", signed=False))
+
+        frame_length = 18 + len(data)
+        frame = bytearray([161, 26])
+        frame.extend(int(protocol).to_bytes(2, "little", signed=False))
+        frame.extend(int(frame_length - 6).to_bytes(2, "little", signed=False))
+        frame.extend([1, TCP_FUNCTION_TRANSLATE])
+        frame.extend(datalog)
+        frame.extend(data)
+
+        return bytes(frame)
 
     @staticmethod
     def read_input_all(input: list[int]) -> Optional[dict]:

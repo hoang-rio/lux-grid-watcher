@@ -185,7 +185,19 @@ def detect_battery_full(soc: int, fcm_service: FCM):
         fcm_service.battery_full_notify(body)
         last_battery_full_notify_date = today
 
+
+def has_input1_data(json_data: dict) -> bool:
+    """Return True when payload has minimum fields from ReadInput1."""
+    return isinstance(json_data, dict) and ("fac" in json_data)
+
 def handle_grid_status(json_data: dict, fcm_service: FCM):
+    if not has_input1_data(json_data):
+        logger.debug(
+            "Skip handle_grid_status because payload does not contain ReadInput1 fields (missing fac). Keys: %s",
+            sorted(json_data.keys()) if isinstance(json_data, dict) else type(json_data),
+        )
+        return
+
     # is_grid_connected = True
     is_grid_connected = json_data["fac"] > 0
     last_grid_connected = True

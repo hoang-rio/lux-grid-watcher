@@ -19,6 +19,14 @@ Xem hướng dẫn trên wiki của `lxp-bridge` [tại đây](https://github.co
 * Sao chép `.env.example` thành `.env`
 * Cập nhật thông tin cấu hình trong tập tin `.env` với thông tin của bạn
 
+### Chế độ ReadInput (DONGLE/SERVER)
+Bạn có thể chọn loại frame input cần đọc bằng biến `READ_INPUT_MODE` trong `.env`:
+
+* `READ_INPUT_MODE=INPUT1_ONLY`: chỉ đọc ReadInput1 (register `0`, count `40`)
+* `READ_INPUT_MODE=ALL`: đọc tuần tự ReadInput1 -> ReadInput4 (register `0`, `40`, `80`, `120`)
+
+`ALL` cho dữ liệu đầy đủ hơn bằng cách gộp ReadInput1-4, còn `INPUT1_ONLY` có payload nhỏ hơn.
+
 ## Cài đặt và chạy
 * Đồng bộ git submodule với `git submodule init && git submodule update`
 * Yêu cầu Python 3
