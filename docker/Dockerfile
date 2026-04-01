@@ -1,4 +1,4 @@
-FROM node:24.14.0-alpine AS fe_builder
+FROM node:24.14.1-alpine AS fe_builder
 
 COPY web_viewer/fe_src /fe_builder/fe_src
 
@@ -7,7 +7,7 @@ RUN yarn install
 # Build the frontend
 RUN yarn build
 
-FROM python:3.12-alpine
+FROM python:3.13-alpine
 
 COPY . /app
 # Copy the requirements file

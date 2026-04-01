@@ -526,11 +526,6 @@ async def basic_auth_middleware(request, handler):
     if resp:
         return resp
 
-    # For notifications: require admin CIDR for all notification endpoints (read and write)
-    # Block any access to paths under /notification for clients not in ADMIN_ALLOWED_CIDR.
-    resp = _deny_if_not_allowed_cidr(request, "/notification", allowed_methods=("OPTIONS",), web_only=False)
-    if resp:
-        return resp
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Basic "):
         return _auth_html_response(401, "Authentication required", "This web viewer is protected. Please provide HTTP Basic credentials.", include_www_authenticate=True)
