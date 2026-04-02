@@ -44,6 +44,7 @@ export interface IInverterData {
   v_bus_1: number;
   v_bus_2: number;
   deviceTime: string;
+  serial?: string;
 }
 
 export interface ICProps {
