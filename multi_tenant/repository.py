@@ -450,7 +450,14 @@ def get_monthly_chart(
         .group_by(DailyChart.month)
         .order_by(DailyChart.month)
     ).all()
-    return [r._asdict() for r in rows]
+    # Convert Decimal values to float for JSON serialization
+    result = []
+    for r in rows:
+        row_dict = r._asdict()
+        if row_dict.get("consumption") is not None:
+            row_dict["consumption"] = float(row_dict["consumption"])
+        result.append(row_dict)
+    return result
 
 
 def get_available_years(session: Session, inverter_id: uuid.UUID) -> list[int]:
@@ -479,7 +486,14 @@ def get_yearly_chart(session: Session, inverter_id: uuid.UUID) -> list[dict]:
         .group_by(DailyChart.year)
         .order_by(DailyChart.year)
     ).all()
-    return [r._asdict() for r in rows]
+    # Convert Decimal values to float for JSON serialization
+    result = []
+    for r in rows:
+        row_dict = r._asdict()
+        if row_dict.get("consumption") is not None:
+            row_dict["consumption"] = float(row_dict["consumption"])
+        result.append(row_dict)
+    return result
 
 
 def get_total(session: Session, inverter_id: uuid.UUID) -> dict:
@@ -493,7 +507,11 @@ def get_total(session: Session, inverter_id: uuid.UUID) -> dict:
             func.sum(DailyChart.consumption).label("consumption"),
         ).where(DailyChart.inverter_id == inverter_id)
     ).one()
-    return row._asdict()
+    result = row._asdict()
+    # Convert Decimal to float for JSON serialization
+    if result.get("consumption") is not None:
+        result["consumption"] = float(result["consumption"])
+    return result
 
 
 # ---------------------------------------------------------------------------

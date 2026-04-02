@@ -583,7 +583,7 @@ async def daily_chart(_: web.Request):
                         r.battery_discharged,
                         r.grid_import,
                         r.grid_export,
-                        r.consumption,
+                        float(r.consumption) if r.consumption is not None else 0,
                         ""
                     )
                     for r in rows
