@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useRef, useState, lazy } from "react";
 import { useTranslation } from "react-i18next";
 import "./App.css";
-import { IUpdateChart, IInverterData, INotificationData } from "./Intefaces";
+import {
+  IUpdateChart,
+  IInverterData,
+  INotificationData,
+  IAuthUser,
+  IUserInverter,
+} from "./Intefaces";
 import Footer from "./components/Footer";
 import Loading from "./components/Loading";
 import * as logUtil from "./utils/logUtil";
@@ -12,10 +18,17 @@ const HourlyChart = lazy(() => import("./components/HourlyChart"));
 const EnergyChart = lazy(() => import("./components/EnergyChart"));
 
 const MAX_RECONNECT_COUNT = 5;
+const ACCESS_TOKEN_KEY = "lux_access_token";
+const REFRESH_TOKEN_KEY = "lux_refresh_token";
+const INVERTER_ID_KEY = "lux_selected_inverter_id";
 
 function App() {
   const { t, i18n } = useTranslation();
   const [inverterData, setInverterData] = useState<IInverterData>();
+  const [authUser, setAuthUser] = useState<IAuthUser | null>(null);
+  const [userInverters, setUserInverters] = useState<IUserInverter[]>([]);
+  const [selectedInverterId, setSelectedInverterId] = useState<string>("");
+  const [accessToken, setAccessToken] = useState<string>("");
   const eventSourceRef = useRef<EventSource>(undefined);
   const reconnectCountRef = useRef<number>(0);
   const [isSSEConnected, setIsSSEConnected] = useState<boolean>(false);
@@ -28,7 +41,21 @@ function App() {
   const [newNotification, setNewNotification] =
     useState<INotificationData | null>(null);
 
+  const useBearerAuth = Boolean(accessToken);
+
+  const authHeaders = useCallback(() => {
+    if (!accessToken) {
+      return undefined;
+    }
+    return {
+      Authorization: `Bearer ${accessToken}`,
+    } as HeadersInit;
+  }, [accessToken]);
+
   const connectSSE = useCallback(() => {
+    if (useBearerAuth) {
+      return;
+    }
     if (eventSourceRef.current) {
       return;
     }
@@ -72,7 +99,7 @@ function App() {
       // eslint-disable-next-line react-hooks/immutability
       setTimeout(() => connectSSE(), 1000 * reconnectCountRef.current);
     };
-  }, [i18n]);
+  }, [i18n, useBearerAuth]);
 
   const closeSSE = useCallback(() => {
     logUtil.log(i18n.t("sse.closing"));
@@ -90,7 +117,13 @@ function App() {
         return;
       }
       isFetchingRef.current = true;
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/state`);
+      const stateUrl = new URL(`${import.meta.env.VITE_API_BASE_URL}/state`);
+      if (selectedInverterId) {
+        stateUrl.searchParams.set("inverter_id", selectedInverterId);
+      }
+      const res = await fetch(stateUrl.toString(), {
+        headers: authHeaders(),
+      });
       const json = await res.json();
       if (Object.keys(json).length !== 0) {
         setInverterData(json);
@@ -100,7 +133,65 @@ function App() {
       logUtil.error(i18n.t("getStateError"), err);
     }
     isFetchingRef.current = false;
-  }, [i18n]);
+  }, [authHeaders, i18n, selectedInverterId]);
+
+  const clearAuthSession = useCallback(() => {
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    setAccessToken("");
+    setAuthUser(null);
+    setUserInverters([]);
+    setSelectedInverterId("");
+  }, []);
+
+  const loadAuthSession = useCallback(async () => {
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY) || "";
+    if (!token) {
+      clearAuthSession();
+      return;
+    }
+
+    setAccessToken(token);
+    try {
+      const profileRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const profileJson = await profileRes.json();
+      if (!profileRes.ok || !profileJson.success) {
+        clearAuthSession();
+        return;
+      }
+      setAuthUser(profileJson.user);
+
+      const invRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/inverters`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const invJson = await invRes.json();
+      if (!invRes.ok || !invJson.success || !Array.isArray(invJson.inverters)) {
+        setUserInverters([]);
+        setSelectedInverterId("");
+        return;
+      }
+
+      setUserInverters(invJson.inverters);
+      const savedInverterId = localStorage.getItem(INVERTER_ID_KEY) || "";
+      const defaultInverterId =
+        invJson.inverters.find((inv: IUserInverter) => inv.id === savedInverterId)?.id ||
+        invJson.inverters[0]?.id ||
+        "";
+      setSelectedInverterId(defaultInverterId);
+      if (defaultInverterId) {
+        localStorage.setItem(INVERTER_ID_KEY, defaultInverterId);
+      }
+    } catch (err) {
+      logUtil.error("load auth session error", err);
+      clearAuthSession();
+    }
+  }, [clearAuthSession]);
+
+  useEffect(() => {
+    loadAuthSession();
+  }, [loadAuthSession]);
 
   useEffect(() => {
     if (!eventSourceRef.current && !document.hidden) {
@@ -118,6 +209,16 @@ function App() {
   }, [fetchState]);
 
   useEffect(() => {
+    if (!useBearerAuth) {
+      return;
+    }
+    const timer = setInterval(() => {
+      fetchState();
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [fetchState, useBearerAuth]);
+
+  useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
         // When the page is hidden, close the SSE connection to reduce activity
@@ -133,6 +234,12 @@ function App() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [connectSSE, closeSSE, fetchState]);
+
+  useEffect(() => {
+    if (selectedInverterId) {
+      localStorage.setItem(INVERTER_ID_KEY, selectedInverterId);
+    }
+  }, [selectedInverterId]);
 
   useEffect(() => {
     if (!inverterData?.deviceTime) return;
@@ -155,16 +262,33 @@ function App() {
   if (inverterData) {
     return (
       <>
-        <Summary invertData={inverterData} />
+        <Summary
+          invertData={inverterData}
+          selectedInverterId={selectedInverterId}
+          authToken={accessToken}
+        />
         <SystemInformation
           inverterData={inverterData}
           isSSEConnected={isSSEConnected}
           onReconnect={connectSSE}
           newNotification={newNotification}
+          authUser={authUser}
+          inverters={userInverters}
+          selectedInverterId={selectedInverterId}
+          onSelectInverter={setSelectedInverterId}
         />
         <div className="row chart">
-          <HourlyChart ref={hourlyChartfRef} className="flex-1 chart-item" />
-          <EnergyChart className="flex-1 chart-item" />
+          <HourlyChart
+            ref={hourlyChartfRef}
+            className="flex-1 chart-item"
+            selectedInverterId={selectedInverterId}
+            authToken={accessToken}
+          />
+          <EnergyChart
+            className="flex-1 chart-item"
+            selectedInverterId={selectedInverterId}
+            authToken={accessToken}
+          />
         </div>
         <Footer />
       </>

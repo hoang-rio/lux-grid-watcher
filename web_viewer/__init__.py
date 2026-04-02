@@ -4,6 +4,7 @@ import sqlite3
 import ssl
 import threading
 import ipaddress
+import uuid
 from aiohttp.aiohttp import web
 from aiohttp import aiohttp
 from os import environ, path
@@ -13,13 +14,18 @@ from dotenv import dotenv_values
 from typing import List, Optional
 from base64 import b64decode
 from html import escape
+import jwt as pyjwt
 
 from api_storage import read_grid_state, register_device_token
 from web_viewer.routes_auth import AUTH_ROUTES
 from web_viewer.routes_inverters import INVERTER_ROUTES
+from multi_tenant.auth import decode_access_token
+from multi_tenant.db import get_db_session
+from multi_tenant import repository as mt_repo
 
 # Load config from .env and environment
 config: dict = {**dotenv_values(".env"), **environ}
+USE_PG = bool(config.get("POSTGRES_DB_URL") or config.get("DATABASE_URL"))
 
 # Comma-separated CIDR list that are allowed to access admin features (settings + notification modification).
 # Configured via `ADMIN_ALLOWED_CIDR` environment variable.
@@ -139,6 +145,34 @@ def _deny_if_not_allowed_cidr(request: web.Request, path_prefix: str, allowed_me
         body = {"success": False, "message": "Forbidden"}
     return web.json_response(body, status=403, headers=VITE_CORS_HEADER)
 
+
+def _extract_jwt_user_id(request: web.Request) -> Optional[uuid.UUID]:
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        return None
+    try:
+        payload = decode_access_token(auth[7:])
+        return uuid.UUID(str(payload.get("sub")))
+    except (pyjwt.ExpiredSignatureError, pyjwt.InvalidTokenError, ValueError, TypeError):
+        return None
+    except Exception:
+        return None
+
+
+def _resolve_request_inverter(session, user_id: uuid.UUID, request: web.Request):
+    inverter_id_str = request.rel_url.query.get("inverter_id", "").strip()
+    if inverter_id_str:
+        try:
+            inverter_id = uuid.UUID(inverter_id_str)
+        except ValueError:
+            return None
+        return mt_repo.get_inverter_by_id_and_user(session, inverter_id, user_id)
+
+    user_inverters = mt_repo.get_inverters_by_user(session, user_id)
+    if not user_inverters:
+        return None
+    return user_inverters[0]
+
 # SSE state
 sse_clients: List[web.StreamResponse] = []
 last_inverter_data: str = '{"inverter_data": {}}'
@@ -208,6 +242,22 @@ VITE_CORS_HEADER = {'Access-Control-Allow-Origin': '*'}
 
 async def state(_: web.Request):
     global last_inverter_data
+    user_id = _extract_jwt_user_id(_)
+    if user_id is not None:
+        try:
+            session = next(get_db_session())
+            try:
+                inverter = _resolve_request_inverter(session, user_id, _)
+                if inverter is None:
+                    return web.json_response({}, headers=VITE_CORS_HEADER)
+                latest = mt_repo.get_inverter_latest_state(session, inverter.id)
+                payload = latest.payload if latest and latest.payload else {}
+                return web.json_response(payload, headers=VITE_CORS_HEADER)
+            finally:
+                session.close()
+        except Exception as error:
+            logger.error("Error in state (multi-tenant): %s", error)
+
     try:
         data = json.loads(last_inverter_data)["inverter_data"]
     except Exception:
@@ -275,6 +325,45 @@ def cors_options_handler(allowed_methods: str = "GET, POST, OPTIONS"):
     return handler
 
 async def hourly_chart(request: web.Request):
+    user_id = _extract_jwt_user_id(request)
+    if user_id is not None:
+        try:
+            date_str = request.rel_url.query.get('date')
+            if date_str:
+                try:
+                    query_date = datetime.strptime(date_str, "%Y-%m-%d")
+                except Exception:
+                    query_date = datetime.now()
+            else:
+                query_date = datetime.now()
+
+            session = next(get_db_session())
+            try:
+                inverter = _resolve_request_inverter(session, user_id, request)
+                if inverter is None:
+                    return web.json_response([], headers=VITE_CORS_HEADER)
+                rows = mt_repo.get_hourly_chart(session, inverter.id, query_date.date())
+                chart = [
+                    [
+                        f"{inverter.id}:{r.datetime.strftime('%Y%m%d%H')}",
+                        r.datetime.strftime("%Y-%m-%d %H:%M:%S"),
+                        r.pv,
+                        r.battery,
+                        r.grid,
+                        r.consumption,
+                        r.soc,
+                    ]
+                    for r in rows
+                ]
+                return web.json_response(chart, headers=VITE_CORS_HEADER)
+            finally:
+                session.close()
+        except Exception as e:
+            logger.error(f"Error in hourly_chart (multi-tenant): {e}")
+
+    if USE_PG:
+        return web.json_response([], headers=VITE_CORS_HEADER)
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -298,6 +387,24 @@ async def hourly_chart(request: web.Request):
         return web.json_response([], headers=VITE_CORS_HEADER)
 
 async def total(_: web.Request):
+    user_id = _extract_jwt_user_id(_)
+    if user_id is not None:
+        try:
+            session = next(get_db_session())
+            try:
+                inverter = _resolve_request_inverter(session, user_id, _)
+                if inverter is None:
+                    return web.json_response({}, headers=VITE_CORS_HEADER)
+                totals = mt_repo.get_total(session, inverter.id)
+                return web.json_response(totals, headers=VITE_CORS_HEADER)
+            finally:
+                session.close()
+        except Exception as e:
+            logger.error(f"Error in total (multi-tenant): {e}")
+
+    if USE_PG:
+        return web.json_response({}, headers=VITE_CORS_HEADER)
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -311,6 +418,69 @@ async def total(_: web.Request):
         return web.json_response({}, headers=VITE_CORS_HEADER)
 
 async def daily_chart(_: web.Request):
+    user_id = _extract_jwt_user_id(_)
+    if user_id is not None:
+        try:
+            request = _
+            month_str = request.rel_url.query.get('month')
+            if month_str:
+                try:
+                    year, month = map(int, month_str.split('-'))
+                    query_date = datetime(year, month, 1)
+                except Exception:
+                    query_date = datetime.now()
+                    year = query_date.year
+                    month = query_date.month
+            else:
+                query_date = datetime.now()
+                year = query_date.year
+                month = query_date.month
+
+            session = next(get_db_session())
+            try:
+                inverter = _resolve_request_inverter(session, user_id, request)
+                if inverter is None:
+                    return web.json_response([], headers=VITE_CORS_HEADER)
+
+                rows = mt_repo.get_daily_chart(session, inverter.id, year, month)
+                daily_chart = [
+                    (
+                        f"{inverter.id}:{r.date.strftime('%Y%m%d')}",
+                        r.year,
+                        r.month,
+                        r.date.strftime("%Y-%m-%d"),
+                        r.pv,
+                        r.battery_charged,
+                        r.battery_discharged,
+                        r.grid_import,
+                        r.grid_export,
+                        r.consumption,
+                        ""
+                    )
+                    for r in rows
+                ]
+
+                if daily_chart:
+                    last_day_of_month = (query_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+                    last_item_date = datetime.strptime(daily_chart[-1][3], "%Y-%m-%d")
+                    while last_item_date < last_day_of_month:
+                        last_item_date += timedelta(days=1)
+                        daily_chart.append((
+                            f"{inverter.id}:{last_item_date.strftime('%Y%m%d')}",
+                            last_item_date.year,
+                            last_item_date.month,
+                            last_item_date.strftime("%Y-%m-%d"),
+                            0, 0, 0, 0, 0, 0, ""
+                        ))
+                return web.json_response(daily_chart, headers=VITE_CORS_HEADER)
+            finally:
+                session.close()
+        except Exception as e:
+            logger.error(f"Error in daily_chart (multi-tenant): {e}")
+
+    if USE_PG:
+        return web.json_response([], headers=VITE_CORS_HEADER)
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -352,6 +522,48 @@ async def daily_chart(_: web.Request):
         return web.json_response([], headers=VITE_CORS_HEADER)
 
 async def monthly_chart(request: web.Request):
+    user_id = _extract_jwt_user_id(request)
+    if user_id is not None:
+        try:
+            now = datetime.now()
+            year_param = request.rel_url.query.get("year")
+            try:
+                year = int(year_param) if year_param else now.year
+            except Exception:
+                year = now.year
+
+            session = next(get_db_session())
+            try:
+                inverter = _resolve_request_inverter(session, user_id, request)
+                if inverter is None:
+                    return web.json_response({"chart": [], "years": []}, headers=VITE_CORS_HEADER)
+
+                rows = mt_repo.get_monthly_chart(session, inverter.id, year)
+                chart = [
+                    (
+                        f"{inverter.id}:{year}{int(r['month']):02d}",
+                        f"{inverter.id}:{year}{int(r['month']):02d}",
+                        f"{inverter.id}:{year}{int(r['month']):02d}",
+                        f"{int(r['month'])}/{year}",
+                        r.get("pv") or 0,
+                        r.get("battery_charged") or 0,
+                        r.get("battery_discharged") or 0,
+                        r.get("grid_import") or 0,
+                        r.get("grid_export") or 0,
+                        r.get("consumption") or 0,
+                    )
+                    for r in rows
+                ]
+                years = mt_repo.get_available_years(session, inverter.id)
+                return web.json_response({"chart": chart, "years": years}, headers=VITE_CORS_HEADER)
+            finally:
+                session.close()
+        except Exception as e:
+            logger.error(f"Error in monthly_chart (multi-tenant): {e}")
+
+    if USE_PG:
+        return web.json_response({"chart": [], "years": []}, headers=VITE_CORS_HEADER)
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -377,6 +589,40 @@ async def monthly_chart(request: web.Request):
         return web.json_response({"chart": [], "years": []}, headers=VITE_CORS_HEADER)
 
 async def yearly_chart(_: web.Request):
+    user_id = _extract_jwt_user_id(_)
+    if user_id is not None:
+        try:
+            session = next(get_db_session())
+            try:
+                inverter = _resolve_request_inverter(session, user_id, _)
+                if inverter is None:
+                    return web.json_response([], headers=VITE_CORS_HEADER)
+
+                rows = mt_repo.get_yearly_chart(session, inverter.id)
+                chart = [
+                    (
+                        f"{inverter.id}:{int(r['year'])}",
+                        f"{inverter.id}:{int(r['year'])}",
+                        f"{inverter.id}:{int(r['year'])}",
+                        str(int(r["year"])),
+                        r.get("pv") or 0,
+                        r.get("battery_charged") or 0,
+                        r.get("battery_discharged") or 0,
+                        r.get("grid_import") or 0,
+                        r.get("grid_export") or 0,
+                        r.get("consumption") or 0,
+                    )
+                    for r in rows
+                ]
+                return web.json_response(chart, headers=VITE_CORS_HEADER)
+            finally:
+                session.close()
+        except Exception as e:
+            logger.error(f"Error in yearly_chart (multi-tenant): {e}")
+
+    if USE_PG:
+        return web.json_response([], headers=VITE_CORS_HEADER)
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()

@@ -34,6 +34,7 @@ config: dict = {
 
 # Initialize settings module with config for fallback
 settings.init_config(config)
+USE_PG = bool(config.get("POSTGRES_DB_URL") or config.get("DATABASE_URL"))
 
 log_level = logging.DEBUG if config["IS_DEBUG"] == 'True' else logging.INFO
 
@@ -190,6 +191,107 @@ def has_input1_data(json_data: dict) -> bool:
     """Return True when payload has minimum fields from ReadInput1."""
     return isinstance(json_data, dict) and ("fac" in json_data)
 
+
+def _build_hourly_chart_item(inverter_data: dict) -> list:
+    device_time = datetime.strptime(inverter_data["deviceTime"], "%Y-%m-%d %H:%M:%S")
+    item_id = device_time.strftime("%Y%m%d%H%M")
+    grid = inverter_data["p_to_grid"] - inverter_data["p_to_user"]
+    consumption = (
+        inverter_data["p_inv"]
+        + inverter_data["p_to_user"]
+        - inverter_data["p_rec"]
+        + inverter_data["p_eps"]
+    )
+    return [
+        item_id,
+        inverter_data["deviceTime"],
+        inverter_data["p_pv"],
+        inverter_data["p_discharge"] - inverter_data["p_charge"],
+        grid,
+        consumption,
+        inverter_data["soc"],
+    ]
+
+
+def _pg_upsert_inverter_data(inverter_data: dict) -> None:
+    """Write inverter runtime/energy data to PostgreSQL when inverter is mapped."""
+    inverter_id_str = inverter_data.get("_inverter_id")
+    if not inverter_id_str:
+        return
+    try:
+        import uuid
+        from datetime import datetime as _dt
+        from multi_tenant.db import get_db_session
+        from multi_tenant import repository as repo
+
+        inverter_id = uuid.UUID(inverter_id_str)
+        session = next(get_db_session())
+        try:
+            device_time_str = inverter_data.get("deviceTime", "")
+            try:
+                device_time = _dt.strptime(device_time_str, "%Y-%m-%d %H:%M:%S")
+            except Exception:
+                device_time = _dt.now()
+
+            repo.upsert_inverter_latest_state(session, inverter_id, device_time, inverter_data)
+
+            pv = int(inverter_data.get("p_pv", 0))
+            battery = int(inverter_data.get("p_discharge", 0)) - int(inverter_data.get("p_charge", 0))
+            grid = int(inverter_data.get("p_to_grid", 0)) - int(inverter_data.get("p_to_user", 0))
+            consumption = (
+                int(inverter_data.get("p_inv", 0))
+                + int(inverter_data.get("p_to_user", 0))
+                - int(inverter_data.get("p_rec", 0))
+                + int(inverter_data.get("p_eps", 0))
+            )
+            soc = int(inverter_data.get("soc", 0))
+            hour_dt = device_time.replace(minute=0, second=0, microsecond=0)
+            repo.upsert_hourly_chart(
+                session,
+                inverter_id,
+                hour_dt,
+                int(config["SLEEP_TIME"]),
+                pv,
+                battery,
+                grid,
+                consumption,
+                soc,
+            )
+
+            today = device_time.date()
+            e_pv = int(inverter_data.get("e_pv_day", 0))
+            e_bat_charge = int(inverter_data.get("e_chg_day", 0))
+            e_bat_discharge = int(inverter_data.get("e_dischg_day", 0))
+            e_grid_import = int(inverter_data.get("e_to_user_day", 0))
+            e_grid_export = int(inverter_data.get("e_to_grid_day", 0))
+            e_consumption = (
+                float(inverter_data.get("e_inv_day", 0))
+                + float(inverter_data.get("e_to_user_day", 0))
+                + float(inverter_data.get("e_eps_day", 0))
+                - float(inverter_data.get("e_rec_day", 0))
+            )
+            repo.upsert_daily_chart(
+                session,
+                inverter_id,
+                today,
+                today.year,
+                today.month,
+                e_pv,
+                e_bat_charge,
+                e_bat_discharge,
+                e_grid_import,
+                e_grid_export,
+                e_consumption,
+            )
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+    except Exception as exc:
+        logger.warning("PostgreSQL upsert failed for inverter_id=%s: %s", inverter_id_str, exc)
+
 def handle_grid_status(json_data: dict, fcm_service: FCM):
     if not has_input1_data(json_data):
         logger.debug(
@@ -258,66 +360,6 @@ ________Status: \"%s\" (%s) at deviceTime: %s with fac: %s Hz and vacr: %s V____
 
 
 async def initialize_web_socket_client(fcm_service: FCM, old_ws_client: WebSocketClient | None = None):
-
-    def _pg_upsert_inverter_data(inverter_data: dict) -> None:
-        """Write inverter data to PostgreSQL when inverter is registered (multi-tenant mode).
-
-        This is a no-op when ``_inverter_id`` is absent (single-tenant / legacy mode).
-        """
-        inverter_id_str = inverter_data.get("_inverter_id")
-        if not inverter_id_str:
-            return
-        try:
-            import uuid
-            from datetime import datetime as _dt
-            from multi_tenant.db import get_db_session
-            from multi_tenant import repository as repo
-
-            inverter_id = uuid.UUID(inverter_id_str)
-            session = next(get_db_session())
-            try:
-                # Latest state
-                device_time_str = inverter_data.get("deviceTime", "")
-                try:
-                    device_time = _dt.strptime(device_time_str, "%Y-%m-%d %H:%M:%S")
-                except Exception:
-                    device_time = _dt.now()
-
-                repo.upsert_inverter_latest_state(session, inverter_id, device_time, inverter_data)
-
-                # Hourly chart
-                pv = int(inverter_data.get("p_pv", 0))
-                battery = int(inverter_data.get("p_charge", 0)) - int(inverter_data.get("p_discharge", 0))
-                grid = int(inverter_data.get("p_to_grid", 0)) - int(inverter_data.get("p_to_user", 0))
-                consumption = int(inverter_data.get("p_load", 0))
-                soc = int(inverter_data.get("soc", 0))
-                hour_dt = device_time.replace(minute=0, second=0, microsecond=0)
-                repo.upsert_hourly_chart(session, inverter_id, hour_dt, pv, battery, grid, consumption, soc)
-
-                # Daily chart
-                today = device_time.date()
-                e_pv = int(inverter_data.get("e_pv_day", 0))
-                e_bat_charge = int(inverter_data.get("e_chg_day", 0))
-                e_bat_discharge = int(inverter_data.get("e_dischg_day", 0))
-                e_grid_import = int(inverter_data.get("e_to_user_day", 0))
-                e_grid_export = int(inverter_data.get("e_to_grid_day", 0))
-                e_consumption = float(inverter_data.get("e_load_day", 0))
-                repo.upsert_daily_chart(
-                    session, inverter_id, today,
-                    today.year, today.month,
-                    e_pv, e_bat_charge, e_bat_discharge,
-                    e_grid_import, e_grid_export, e_consumption,
-                )
-                session.commit()
-            except Exception:
-                session.rollback()
-                raise
-            finally:
-                session.close()
-        except Exception as exc:
-            logger.warning("PostgreSQL upsert failed for inverter_id=%s: %s", inverter_id_str, exc)
-
-
     if old_ws_client is not None:
         # Reinitialize the web socket client for next iteration
         logger.info("Stopping old web socket client")
@@ -337,18 +379,21 @@ async def process_inverter_data(
     ws_client: WebSocketClient | None = None,
 ) -> WebSocketClient | None:
     handle_grid_status(inverter_data, fcm_service)
-    if not run_web_view or db_connection is None or ws_client is None:
+    if not run_web_view or ws_client is None:
         return ws_client
 
     timeout_duration = int(config["SLEEP_TIME"]) * 3
-    hourly_chart_item = database.insert_hourly_chart(
-        db_connection,
-        inverter_data,
-        int(config["SLEEP_TIME"]),
-    )
-
-        # PostgreSQL multi-tenant upserts (when inverter is registered)
+    if USE_PG:
         _pg_upsert_inverter_data(inverter_data)
+        hourly_chart_item = _build_hourly_chart_item(inverter_data)
+    else:
+        if db_connection is None:
+            return ws_client
+        hourly_chart_item = database.insert_hourly_chart(
+            db_connection,
+            inverter_data,
+            int(config["SLEEP_TIME"]),
+        )
 
     try:
         sent = await asyncio.wait_for(
@@ -365,8 +410,10 @@ async def process_inverter_data(
         logger.error("Timeout waiting for web socket to send data for %s seconds", timeout_duration)
         ws_client = await initialize_web_socket_client(fcm_service, ws_client)
 
-    database.insert_daily_chart(db_connection, inverter_data)
-    dectect_abnormal_usage(db_connection, fcm_service)
+    if not USE_PG and db_connection is not None:
+        database.insert_daily_chart(db_connection, inverter_data)
+        dectect_abnormal_usage(db_connection, fcm_service)
+
     return ws_client
 
 async def main():
@@ -377,11 +424,15 @@ async def main():
         run_web_view = config["RUN_WEB_VIEWER"] == "True"
         if config["WORKING_MODE"] == DONGLE_MODE:
             if run_web_view:
-                db_connection = sqlite3.connect(
-                    config["DB_NAME"]) if "DB_NAME" in config else None
-                from migration import run_migration
-                run_migration(db_connection, logger)
-                settings.load_settings(db_connection)
+                db_connection = None
+                if not USE_PG:
+                    db_connection = sqlite3.connect(
+                        config["DB_NAME"]) if "DB_NAME" in config else None
+                    from migration import run_migration
+                    run_migration(db_connection, logger)
+                    settings.load_settings(db_connection)
+                else:
+                    logger.info("PostgreSQL configured: SQLite runtime storage is disabled")
                 from web_viewer import WebViewer
                 webViewer = WebViewer(logger)
                 webViewer.start()
@@ -415,11 +466,15 @@ async def main():
         elif config["WORKING_MODE"] == SERVER_MODE:
             from dongle_server import DongleServer
             if run_web_view:
-                db_connection = sqlite3.connect(
-                    config["DB_NAME"]) if "DB_NAME" in config else None
-                from migration import run_migration
-                run_migration(db_connection, logger)
-                settings.load_settings(db_connection)
+                db_connection = None
+                if not USE_PG:
+                    db_connection = sqlite3.connect(
+                        config["DB_NAME"]) if "DB_NAME" in config else None
+                    from migration import run_migration
+                    run_migration(db_connection, logger)
+                    settings.load_settings(db_connection)
+                else:
+                    logger.info("PostgreSQL configured: SQLite runtime storage is disabled")
                 from web_viewer import WebViewer
                 webViewer = WebViewer(logger)
                 webViewer.start()

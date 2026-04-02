@@ -18,6 +18,31 @@
     font-weight: bold;
 }
 
+.system-title-serial {
+    color: #555;
+    margin-right: 10px;
+}
+
+.inverter-select {
+    margin-right: 10px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid #bcbcbc;
+    min-width: 220px;
+}
+
+.email-warning-banner {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    max-width: 550px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #f0b429;
+    background: #fff7db;
+    color: #7a5600;
+    font-size: 14px;
+}
+
 .settings-button {
     position: absolute;
     top: 0;

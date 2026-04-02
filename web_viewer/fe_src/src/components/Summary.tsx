@@ -10,13 +10,15 @@ import * as logUtil from "../utils/logUtil";
 
 interface IProps {
   invertData: IInverterData;
+  selectedInverterId?: string;
+  authToken?: string;
 }
 enum YieldDisplay {
   YIELD,
   CHART_TODAY,
   CHART_TOTAL,
 }
-function Summary({ invertData }: IProps) {
+function Summary({ invertData, selectedInverterId, authToken }: IProps) {
   const { i18n, t } = useTranslation();
   const [isShowCharged, setIsShowCharged] = useState(false);
   const [isShowFeed, setIsShowFeed] = useState(false);
@@ -47,7 +49,15 @@ function Summary({ invertData }: IProps) {
     try {
       logUtil.log(i18n.t('fetchingTotal'));
       isFetchingRef.current = true;
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/total`);
+      const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/total`);
+      if (selectedInverterId) {
+        url.searchParams.set("inverter_id", selectedInverterId);
+      }
+      const headers: Record<string, string> = {};
+      if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+      }
+      const res = await fetch(url.toString(), { headers });
       const json = await res.json();
       setTotal(json);
     } catch (err) {
@@ -55,7 +65,7 @@ function Summary({ invertData }: IProps) {
     } finally {
       isFetchingRef.current = false;
     }
-  }, [i18n]);
+  }, [authToken, i18n, selectedInverterId]);
 
   const onVisibilityChange = useCallback(() => {
     if (!document.hidden) {

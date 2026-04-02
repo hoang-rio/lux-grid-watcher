@@ -85,3 +85,18 @@ export interface INotificationData {
   notified_at: string | number;
   read: number;
 }
+
+export interface IAuthUser {
+  id: string;
+  email: string;
+  email_confirmed: boolean;
+}
+
+export interface IUserInverter {
+  id: string;
+  name: string;
+  dongle_serial: string;
+  invert_serial: string;
+  is_active: boolean;
+  created_at?: string;
+}

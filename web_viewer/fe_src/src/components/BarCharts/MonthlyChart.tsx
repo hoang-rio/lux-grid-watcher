@@ -18,6 +18,8 @@ import BarChart from "./BarChart";
 interface MonthlyChartProps {
   year?: number;
   onYearsAvailable?: (years: number[]) => void;
+  selectedInverterId?: string;
+  authToken?: string;
 }
 
 const MonthlyChart = forwardRef((props: MonthlyChartProps, ref: ForwardedRef<IFetchChart>) => {
@@ -83,8 +85,16 @@ const MonthlyChart = forwardRef((props: MonthlyChartProps, ref: ForwardedRef<IFe
     setIsLoading(true);
     try {
       const useYear = year ?? new Date().getFullYear();
-      const url = `${import.meta.env.VITE_API_BASE_URL}/monthly-chart?year=${useYear}`;
-      const res = await fetch(url);
+      const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/monthly-chart`);
+      url.searchParams.set("year", String(useYear));
+      if (props.selectedInverterId) {
+        url.searchParams.set("inverter_id", props.selectedInverterId);
+      }
+      const headers: Record<string, string> = {};
+      if (props.authToken) {
+        headers.Authorization = `Bearer ${props.authToken}`;
+      }
+      const res = await fetch(url.toString(), { headers });
       const json = await res.json();
       setChartData(json && json.chart ? json.chart : json || []);
       // report available years to parent once on first successful fetch
@@ -119,7 +129,7 @@ const MonthlyChart = forwardRef((props: MonthlyChartProps, ref: ForwardedRef<IFe
       setIsLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [year]);
+  }, [props.authToken, props.selectedInverterId, year]);
 
   useImperativeHandle(ref, (): IFetchChart => ({ fetchChart }));
 

@@ -106,6 +106,9 @@
     "fetchingUnreadCount": "Đang lấy số lượng thông báo chưa đọc...",
     "failedFetchUnreadCount": "Lấy số lượng thông báo chưa đọc thất bại"
   },
+  "auth": {
+    "verifyEmailWarning": "Email của bạn chưa được xác thực. Hãy xác thực để bật chức năng đặt lại mật khẩu qua email."
+  },
   "settings": {
     "title": "Cài đặt",
     "abnormalUsageSection": "Phát hiện sử dụng bất thường",

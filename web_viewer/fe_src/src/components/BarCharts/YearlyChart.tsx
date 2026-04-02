@@ -15,7 +15,12 @@ import Loading from "../Loading";
 import { roundTo } from "../utils";
 import BarChart from "./BarChart";
 
-const YearlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
+interface YearlyChartProps {
+  selectedInverterId?: string;
+  authToken?: string;
+}
+
+const YearlyChart = forwardRef((props: YearlyChartProps, ref: ForwardedRef<IFetchChart>) => {
   const { t } = useTranslation();
   const [state, setState] = useState({
     isLoading: true,
@@ -74,14 +79,20 @@ const YearlyChart = forwardRef((_, ref: ForwardedRef<IFetchChart>) => {
     }
     isFetchingRef.current = true;
     setState((prev) => ({ ...prev, isLoading: true }));
-    const res = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL}/yearly-chart`
-    );
+    const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/yearly-chart`);
+    if (props.selectedInverterId) {
+      url.searchParams.set("inverter_id", props.selectedInverterId);
+    }
+    const headers: Record<string, string> = {};
+    if (props.authToken) {
+      headers.Authorization = `Bearer ${props.authToken}`;
+    }
+    const res = await fetch(url.toString(), { headers });
     const json = await res.json();
     setState((prev) => ({ ...prev, chartData: json }));
     isFetchingRef.current = false;
     setState((prev) => ({ ...prev, isLoading: false }));
-  }, []);
+  }, [props.authToken, props.selectedInverterId]);
 
   useImperativeHandle(
     ref,

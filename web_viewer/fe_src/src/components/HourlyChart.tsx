@@ -15,8 +15,13 @@ import { IClassNameProps, IUpdateChart, SeriesItem } from "../Intefaces";
 import Loading from "./Loading";
 import { useTranslation } from "react-i18next";
 
+interface HourlyChartProps extends IClassNameProps {
+  selectedInverterId?: string;
+  authToken?: string;
+}
+
 const HourlyChart = forwardRef(
-  ({ className }: IClassNameProps, ref: ForwardedRef<IUpdateChart>) => {
+  ({ className, selectedInverterId, authToken }: HourlyChartProps, ref: ForwardedRef<IUpdateChart>) => {
     const { t, i18n } = useTranslation();
     const SOLAR_PV_SERIE_NAME = t("chart.solarPV");
     const BATTERY_SERIE_NAME = t("chart.battery");
@@ -106,14 +111,21 @@ const HourlyChart = forwardRef(
       isFetchingRef.current = true;
       setIsLoading(true);
       const dStr = dateStr || selectedDateRef.current;
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/hourly-chart?date=${dStr}`
-      );
+      const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/hourly-chart`);
+      url.searchParams.set("date", dStr);
+      if (selectedInverterId) {
+        url.searchParams.set("inverter_id", selectedInverterId);
+      }
+      const headers: Record<string, string> = {};
+      if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+      }
+      const res = await fetch(url.toString(), { headers });
       const json = await res.json();
       setChartData(json);
       setIsLoading(false);
       isFetchingRef.current = false;
-    }, []);
+    }, [authToken, selectedInverterId]);
 
     useImperativeHandle(
       ref,

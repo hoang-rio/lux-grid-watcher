@@ -1,4 +1,4 @@
-import { IInverterData, INotificationData } from "../Intefaces";
+import { IAuthUser, IInverterData, INotificationData, IUserInverter } from "../Intefaces";
 import "./SystemInformation.css";
 import SolarPV from "./SolarPV";
 import Battery from "./Battery";
@@ -19,6 +19,10 @@ interface Props {
   onReconnect: () => void;
   // Changed to accept an INotificationData object or null
   newNotification?: INotificationData | null;
+  authUser?: IAuthUser | null;
+  inverters?: IUserInverter[];
+  selectedInverterId?: string;
+  onSelectInverter?: (inverterId: string) => void;
 }
 
 function SystemInformation({
@@ -26,6 +30,10 @@ function SystemInformation({
   isSSEConnected,
   onReconnect,
   newNotification,
+  authUser,
+  inverters = [],
+  selectedInverterId = "",
+  onSelectInverter,
 }: Props) {
   const { t, i18n } = useTranslation();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -39,6 +47,17 @@ function SystemInformation({
   const settingsButtonRef = useRef<HTMLDivElement>(null);
   const settingsPopoverRef = useRef<HTMLDivElement>(null);
   const notificationOpened = useRef(false); // Track if notification popover was opened
+  const useBearerAuth = Boolean(authUser);
+
+  const authHeaders = useCallback(() => {
+    const token = localStorage.getItem("lux_access_token") || "";
+    if (!token) {
+      return {};
+    }
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  }, []);
 
   // Added helper function to format datetime
   const formatDateTime = useCallback((dateInput: string | number) => {
@@ -50,13 +69,17 @@ function SystemInformation({
   const fetchUnreadCount = useCallback(async () => {
     try {
       logUtil.log(i18n.t("notification.fetchingUnreadCount"));
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-unread-count`);
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-unread-count`, {
+        headers: {
+          ...authHeaders(),
+        },
+      });
       const data = await res.json();
       setUnreadCount(data.unread_count);
     } catch (err) {
       logUtil.error(i18n.t("notification.failedFetchUnreadCount"), err);
     }
-  }, [i18n]);
+  }, [authHeaders, i18n]);
 
   useEffect(() => {
     fetchUnreadCount();
@@ -93,7 +116,11 @@ function SystemInformation({
     setLoadingNotifications(true); // start loading
     try {
       logUtil.log(i18n.t("notification.fetchingNotifications"));
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-history`);
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-history`, {
+        headers: {
+          ...authHeaders(),
+        },
+      });
       const data = await res.json();
       setNotifications(data.notifications);
       // Don't set unreadCount here, it's handled by fetchUnreadCount
@@ -102,7 +129,7 @@ function SystemInformation({
     } finally {
       setLoadingNotifications(false); // end loading
     }
-  }, [i18n]);
+  }, [authHeaders, i18n]);
 
   useEffect(() => {
     if (showNotifications) {
@@ -158,12 +185,22 @@ function SystemInformation({
       notificationOpened.current = true;
     } else {
       if (notificationOpened.current && unreadCount > 0) {
-        fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-mark-read`, { method: 'POST' })
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-mark-read`, {
+          method: 'POST',
+          headers: {
+            ...authHeaders(),
+          },
+        })
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error("mark read failed");
+            }
+          })
           .then(() => fetchUnreadCount());
       }
       notificationOpened.current = false;
     }
-  }, [showNotifications, unreadCount, fetchUnreadCount]);
+  }, [authHeaders, showNotifications, unreadCount, fetchUnreadCount]);
 
   const handleShowNotifications = useCallback(() => {
     setShowNotifications((prev) => !prev);
@@ -198,8 +235,27 @@ function SystemInformation({
       <div className="card system-information">
         <div className="system-content">
           <div className="system-title">
-            <span className="system-title-text">{t("systemInformation")}{inverterData.serial ? ` (${inverterData.serial})` : ""}</span>
+            <span className="system-title-text">{t("systemInformation")}</span>
+            {inverters.length > 0 && (
+              <select
+                className="inverter-select"
+                value={selectedInverterId}
+                onChange={(e) => onSelectInverter?.(e.target.value)}
+              >
+                {inverters.map((inv) => (
+                  <option key={inv.id} value={inv.id}>
+                    {inv.name} ({inv.dongle_serial})
+                  </option>
+                ))}
+              </select>
+            )}
+            {inverters.length === 0 && inverterData.serial && (
+              <span className="system-title-serial">({inverterData.serial})</span>
+            )}
             <span>{inverterData.deviceTime}</span>
+            {authUser && !authUser.email_confirmed && (
+              <div className="email-warning-banner">{t("auth.verifyEmailWarning")}</div>
+            )}
             {allowAdmin && (
               <div className="settings-button" ref={settingsButtonRef}>
                 <button
@@ -271,7 +327,7 @@ function SystemInformation({
                 className="system-status-reconnect"
                 onClick={onReconnect}
                 title={t("reconnect")}
-                disabled={isSSEConnected}
+                disabled={isSSEConnected || useBearerAuth}
               >
                 {t("reconnect")}
               </button>

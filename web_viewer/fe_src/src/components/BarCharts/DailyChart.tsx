@@ -17,6 +17,8 @@ import BarChart from "./BarChart";
 
 interface DailyChartProps {
   month?: string;
+  selectedInverterId?: string;
+  authToken?: string;
 }
 
 const DailyChart = forwardRef((props: DailyChartProps, ref: ForwardedRef<IFetchChart>) => {
@@ -85,16 +87,23 @@ const DailyChart = forwardRef((props: DailyChartProps, ref: ForwardedRef<IFetchC
     }
     isFetchingRef.current = true;
     setIsLoading(true);
-    let url = `${import.meta.env.VITE_API_BASE_URL}/daily-chart`;
+    const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/daily-chart`);
     if (month) {
-      url += `?month=${month}`;
+      url.searchParams.set("month", month);
     }
-    const res = await fetch(url);
+    if (props.selectedInverterId) {
+      url.searchParams.set("inverter_id", props.selectedInverterId);
+    }
+    const headers: Record<string, string> = {};
+    if (props.authToken) {
+      headers.Authorization = `Bearer ${props.authToken}`;
+    }
+    const res = await fetch(url.toString(), { headers });
     const json = await res.json();
     setChartData(json);
     isFetchingRef.current = false;
     setIsLoading(false);
-  }, [month]);
+  }, [month, props.authToken, props.selectedInverterId]);
 
   useImperativeHandle(
     ref,

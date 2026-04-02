@@ -13,7 +13,12 @@ enum EnergyChartType {
   Monthly,
   Yearly,
 }
-function EnergyChart({ className }: IClassNameProps) {
+interface EnergyChartProps extends IClassNameProps {
+  selectedInverterId?: string;
+  authToken?: string;
+}
+
+function EnergyChart({ className, selectedInverterId, authToken }: EnergyChartProps) {
   const { t } = useTranslation();
   const [energyChartType, setEnergyChartType] = useState(EnergyChartType.Daily);
   const fetchChartRef = useRef<IFetchChart>(null);
@@ -182,17 +187,29 @@ function EnergyChart({ className }: IClassNameProps) {
             <DailyChart
               ref={fetchChartRef}
               month={`${selectedYear}-${String(selectedMonth).padStart(2, "0")}`}
+              selectedInverterId={selectedInverterId}
+              authToken={authToken}
             />
           </Suspense>
         )}
         {energyChartType === EnergyChartType.Monthly && (
           <Suspense fallback={<Loading />}>
-            <MonthlyChart ref={fetchChartRef} year={selectedYear} onYearsAvailable={handleYearsAvailable} />
+            <MonthlyChart
+              ref={fetchChartRef}
+              year={selectedYear}
+              onYearsAvailable={handleYearsAvailable}
+              selectedInverterId={selectedInverterId}
+              authToken={authToken}
+            />
           </Suspense>
         )}
         {energyChartType === EnergyChartType.Yearly && (
           <Suspense fallback={<Loading />}>
-            <YearlyChart ref={fetchChartRef} />
+            <YearlyChart
+              ref={fetchChartRef}
+              selectedInverterId={selectedInverterId}
+              authToken={authToken}
+            />
           </Suspense>
         )}
       </div>

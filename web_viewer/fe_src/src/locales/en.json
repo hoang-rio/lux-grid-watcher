@@ -108,6 +108,9 @@
     "fetchingUnreadCount": "Fetching unread notification count...",
     "failedFetchUnreadCount": "Failed to fetch unread notification count"
   },
+  "auth": {
+    "verifyEmailWarning": "Your email is not verified yet. Verify it to enable password reset via email."
+  },
   "settings": {
     "title": "Settings",
     "abnormalUsageSection": "Abnormal usage detection",
