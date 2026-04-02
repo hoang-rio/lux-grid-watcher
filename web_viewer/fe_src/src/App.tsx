@@ -55,7 +55,26 @@ function App() {
 
   const useBearerAuth = Boolean(accessToken);
 
+  const setConnectedTitle = useCallback((deviceTimeOnly?: string) => {
+    if (document.hidden) {
+      return;
+    }
+    const currentDeviceTime = deviceTimeOnly || deviceTimeRef.current;
+    if (currentDeviceTime) {
+      document.title = `[${currentDeviceTime}] ${i18n.t("webTitle")}`;
+    }
+  }, [i18n]);
+
+  const setOfflineTitle = useCallback(() => {
+    if (!isNoInverterOnboarding && !isAuthScreen) {
+      document.title = `[${i18n.t("offline")}] ${i18n.t("webTitle")}`;
+    }
+  }, [i18n, isAuthScreen, isNoInverterOnboarding]);
+
   const handleSSEPayload = useCallback((rawData: string) => {
+    if (document.hidden) {
+      return;
+    }
     const jsonData = JSON.parse(rawData);
     if (jsonData.event === "new_notification") {
       setNewNotification(jsonData.data);
@@ -95,8 +114,14 @@ function App() {
     if (document.hidden) {
       return;
     }
-    if (eventSourceRef.current || sseAbortControllerRef.current) {
-      return;
+    // Ensure refs are clean before attempting connection
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = undefined;
+    }
+    if (sseAbortControllerRef.current) {
+      sseAbortControllerRef.current.abort();
+      sseAbortControllerRef.current = null;
     }
     logUtil.log(i18n.t("sse.connecting"));
     const sseParams = new URLSearchParams();
@@ -125,9 +150,7 @@ function App() {
 
           reconnectCountRef.current = 0;
           logUtil.log(i18n.t("sse.connected"));
-          if (deviceTimeRef.current) {
-            document.title = `[${deviceTimeRef.current}] ${i18n.t("webTitle")}`;
-          }
+          setConnectedTitle();
           setIsSSEConnected(true);
 
           const reader = response.body.getReader();
@@ -135,6 +158,10 @@ function App() {
           let buffer = "";
 
           while (true) {
+            // Check if abort signal was triggered
+            if (abortController.signal.aborted) {
+              break;
+            }
             const { value, done } = await reader.read();
             if (done) {
               break;
@@ -167,9 +194,7 @@ function App() {
           if (abortController.signal.aborted) {
             return;
           }
-          if (!isNoInverterOnboarding && !isAuthScreen) {
-            document.title = `[${i18n.t("offline")}] ${i18n.t("webTitle")}`;
-          }
+          setOfflineTitle();
           setIsSSEConnected(false);
           logUtil.error(i18n.t("sse.error"), error);
           scheduleSSEReconnect(connectSSE);
@@ -184,9 +209,7 @@ function App() {
     eventSource.onopen = () => {
       reconnectCountRef.current = 0;
       logUtil.log(i18n.t("sse.connected"));
-      if (deviceTimeRef.current) {
-        document.title = `[${deviceTimeRef.current}] ${i18n.t("webTitle")}`;
-      }
+      setConnectedTitle();
       setIsSSEConnected(true);
     };
 
@@ -195,22 +218,18 @@ function App() {
     };
 
     eventSource.onerror = (event) => {
-      if (!isNoInverterOnboarding && !isAuthScreen) {
-        document.title = `[${i18n.t("offline")}] ${i18n.t("webTitle")}`;
-      }
+      setOfflineTitle();
       setIsSSEConnected(false);
       logUtil.error(i18n.t("sse.error"), event);
       eventSource.close();
       eventSourceRef.current = undefined;
       scheduleSSEReconnect(connectSSE);
     };
-  }, [authRequired, authUser, handleSSEPayload, i18n, isAuthScreen, isNoInverterOnboarding, scheduleSSEReconnect, selectedInverterId, useBearerAuth]);
+  }, [authRequired, authUser, handleSSEPayload, i18n, scheduleSSEReconnect, selectedInverterId, setConnectedTitle, setOfflineTitle, useBearerAuth]);
 
   const closeSSE = useCallback(() => {
     logUtil.log(i18n.t("sse.closing"));
-    if (!isNoInverterOnboarding && !isAuthScreen) {
-      document.title = `[${i18n.t("offline")}] ${i18n.t("webTitle")}`;
-    }
+    setOfflineTitle();
     setIsSSEConnected(false);
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
@@ -224,10 +243,14 @@ function App() {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
     }
-  }, [i18n, isAuthScreen, isNoInverterOnboarding]);
+    reconnectCountRef.current = 0;
+  }, [i18n, setOfflineTitle]);
 
   const fetchState = useCallback(async () => {
     try {
+      if (document.hidden) {
+        return;
+      }
       if (authRequired && !accessToken) {
         return;
       }
@@ -394,7 +417,7 @@ function App() {
     if (authRequired && !accessToken) {
       return;
     }
-    if (!eventSourceRef.current && !document.hidden) {
+    if (!document.hidden) {
       connectSSE();
     }
     window.addEventListener("beforeunload", closeSSE);
@@ -445,8 +468,8 @@ function App() {
     if (!inverterData?.deviceTime) return;
     const deviceTimeOnly = inverterData.deviceTime.split(" ")[1];
     deviceTimeRef.current = deviceTimeOnly;
-    document.title = `[${deviceTimeOnly}] ${t("webTitle")}`;
-  }, [inverterData?.deviceTime, t]);
+    setConnectedTitle(deviceTimeOnly);
+  }, [inverterData?.deviceTime, setConnectedTitle, t]);
 
   if (isLoading) {
     return (
