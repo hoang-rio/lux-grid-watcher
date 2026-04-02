@@ -111,6 +111,9 @@ function App() {
     if (authRequired && !authUser) {
       return;
     }
+    if (useBearerAuth && !selectedInverterId) {
+      return;
+    }
     if (document.hidden) {
       return;
     }
@@ -254,6 +257,9 @@ function App() {
       if (authRequired && !accessToken) {
         return;
       }
+      if (useBearerAuth && !selectedInverterId) {
+        return;
+      }
       if (isFetchingRef.current) {
         return;
       }
@@ -275,7 +281,7 @@ function App() {
       logUtil.error(i18n.t("getStateError"), err);
     }
     isFetchingRef.current = false;
-  }, [accessToken, authRequired, i18n, selectedInverterId]);
+  }, [accessToken, authRequired, i18n, selectedInverterId, useBearerAuth]);
 
   const loadAuthConfig = useCallback(async () => {
     try {

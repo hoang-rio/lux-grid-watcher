@@ -201,6 +201,13 @@ async def sse_handler(request):
             headers=VITE_CORS_HEADER,
         )
 
+    if USE_PG and user_id is not None and not requested_inverter_id:
+        return web.json_response(
+            {"success": False, "message": "inverter_id is required"},
+            status=400,
+            headers=VITE_CORS_HEADER,
+        )
+
     allowed_inverter_ids: set[str] | None = None
     if USE_PG and user_id is not None:
         try:
@@ -324,6 +331,15 @@ async def state(_: web.Request):
     if USE_PG and user_id is None:
         return web.json_response({}, status=401, headers=VITE_CORS_HEADER)
 
+    requested_inverter_id = _.rel_url.query.get("inverter_id", "").strip()
+
+    if USE_PG and user_id is not None and not requested_inverter_id:
+        return web.json_response(
+            {"success": False, "message": "inverter_id is required"},
+            status=400,
+            headers=VITE_CORS_HEADER,
+        )
+
     if user_id is not None:
         try:
             session = next(get_db_session())
@@ -340,7 +356,6 @@ async def state(_: web.Request):
             logger.error("Error in state (multi-tenant): %s", error)
 
     try:
-        requested_inverter_id = _.rel_url.query.get("inverter_id", "").strip()
         if requested_inverter_id:
             data = last_inverter_data_by_id.get(requested_inverter_id, {})
         else:

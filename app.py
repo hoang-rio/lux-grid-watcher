@@ -326,7 +326,30 @@ def _pg_upsert_inverter_data(inverter_data: dict) -> None:
                 soc,
             )
 
+            # Handle daily chart - skip at midnight (00:00-00:59) to match SQLite behavior
+            if device_time.hour == 0 and device_time.minute == 0:
+                logger.debug("Skipping daily_chart insert at midnight for inverter_id=%s", inverter_id_str)
+                session.commit()
+                return
+
             today = device_time.date()
+            
+            # Check if energy day fields are present in inverter_data
+            has_energy_fields = any(field in inverter_data for field in [
+                "e_pv_day", "e_chg_day", "e_dischg_day", 
+                "e_to_user_day", "e_to_grid_day", "e_inv_day", "e_eps_day", "e_rec_day"
+            ])
+            
+            if not has_energy_fields:
+                logger.warning(
+                    "Inverter data missing energy day fields. Cannot update daily_chart for inverter_id=%s. "
+                    "Available fields: %s", 
+                    inverter_id_str, 
+                    sorted(inverter_data.keys())
+                )
+                session.commit()
+                return
+            
             e_pv = int(inverter_data.get("e_pv_day", 0))
             e_bat_charge = int(inverter_data.get("e_chg_day", 0))
             e_bat_discharge = int(inverter_data.get("e_dischg_day", 0))
@@ -338,6 +361,14 @@ def _pg_upsert_inverter_data(inverter_data: dict) -> None:
                 + float(inverter_data.get("e_eps_day", 0))
                 - float(inverter_data.get("e_rec_day", 0))
             )
+            
+            logger.debug(
+                "Upserting daily_chart for inverter_id=%s, date=%s: pv=%d, battery_charged=%d, battery_discharged=%d, "
+                "grid_import=%d, grid_export=%d, consumption=%.1f",
+                inverter_id_str, today, e_pv, e_bat_charge, e_bat_discharge,
+                e_grid_import, e_grid_export, e_consumption
+            )
+            
             repo.upsert_daily_chart(
                 session,
                 inverter_id,
@@ -673,21 +704,27 @@ async def process_inverter_data(
         inverter_data["_inverter_id"] = inverter_ctx["id"]
 
     handle_grid_status(inverter_data, fcm_service, inverter_ctx)
-    if not run_web_view or ws_client is None:
-        return ws_client
-
-    timeout_duration = int(config["SLEEP_TIME"]) * 3
+    
+    # Store data in database regardless of web viewer status
+    hourly_chart_item = None
     if USE_PG:
         _pg_upsert_inverter_data(inverter_data)
         hourly_chart_item = _build_hourly_chart_item(inverter_data)
-    else:
-        if db_connection is None:
-            return ws_client
+    elif db_connection is not None:
+        # SQLite mode: insert hourly and daily chart data
         hourly_chart_item = database.insert_hourly_chart(
             db_connection,
             inverter_data,
             int(config["SLEEP_TIME"]),
         )
+        database.insert_daily_chart(db_connection, inverter_data)
+        dectect_abnormal_usage(db_connection, fcm_service, inverter_ctx)
+    
+    # Only send to web viewer if enabled
+    if not run_web_view or ws_client is None:
+        return ws_client
+
+    timeout_duration = int(config["SLEEP_TIME"]) * 3
 
     try:
         sent = await asyncio.wait_for(
@@ -703,10 +740,6 @@ async def process_inverter_data(
     except asyncio.TimeoutError:
         logger.error("Timeout waiting for web socket to send data for %s seconds", timeout_duration)
         ws_client = await initialize_web_socket_client(fcm_service, ws_client)
-
-    if not USE_PG and db_connection is not None:
-        database.insert_daily_chart(db_connection, inverter_data)
-        dectect_abnormal_usage(db_connection, fcm_service, inverter_ctx)
 
     return ws_client
 
