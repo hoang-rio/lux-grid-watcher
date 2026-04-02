@@ -239,6 +239,17 @@ function App() {
   }, [loadAuthSession]);
 
   useEffect(() => {
+    const onSessionExpired = () => {
+      clearAuthSession();
+      setIsLoading(false);
+    };
+    window.addEventListener("lux:session-expired", onSessionExpired);
+    return () => {
+      window.removeEventListener("lux:session-expired", onSessionExpired);
+    };
+  }, [clearAuthSession]);
+
+  useEffect(() => {
     if (authRequired && !accessToken) {
       return;
     }
