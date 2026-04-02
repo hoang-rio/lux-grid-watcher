@@ -147,9 +147,17 @@ class Dongle():
         return sum(b << (idx * 8) for idx, b in enumerate(ints))
 
     @staticmethod
+    def parse_dongle_serial_from_header(input: list[int]) -> str:
+        """Parse datalog serial from TCP header (10-byte ASCII at byte offset 8)."""
+        if len(input) < 18:
+            return ""
+        return bytes(input[8:18]).decode("utf-8", errors="ignore").strip("\x00")
+
+    @staticmethod
     def read_input1(input: list[int]):
         # Remove header + checksum
         data = input[20: len(input) - 2]
+        dongle_serial = Dongle.parse_dongle_serial_from_header(input)
         status = Dongle.to_int(data[15:15 + 2])
         status_text = "Unknow status"
         if status in STATUS_MAP:
@@ -163,6 +171,7 @@ class Dongle():
             # 2..12 = serial
             # 13/14 = length
 
+            "dongle_serial": dongle_serial,
             "serial": serial,
             "status": status,
             "status_text": status_text,
@@ -237,11 +246,13 @@ class Dongle():
         """
         # Remove header + checksum
         data = input[20: len(input) - 2]
+        dongle_serial = Dongle.parse_dongle_serial_from_header(input)
         
         # Parse dongle serial (bytes 2-12)
         serial = bytes(data[2:13]).decode('utf-8', errors='ignore').strip('\x00')
         
         return {
+            "dongle_serial": dongle_serial,
             "serial": serial,
             
             # Energy totals (all time) - 4 bytes each
@@ -280,11 +291,13 @@ class Dongle():
         """
         # Remove header + checksum
         data = input[20: len(input) - 2]
+        dongle_serial = Dongle.parse_dongle_serial_from_header(input)
         
         # Parse dongle serial (bytes 2-12)
         serial = bytes(data[2:13]).decode('utf-8', errors='ignore').strip('\x00')
         
         return {
+            "dongle_serial": dongle_serial,
             "serial": serial,
             
             # Battery charge/discharge limits
@@ -337,11 +350,13 @@ class Dongle():
         """
         # Remove header + checksum
         data = input[20: len(input) - 2]
+        dongle_serial = Dongle.parse_dongle_serial_from_header(input)
         
         # Parse dongle serial (bytes 2-12)
         serial = bytes(data[2:13]).decode('utf-8', errors='ignore').strip('\x00')
         
         return {
+            "dongle_serial": dongle_serial,
             "serial": serial,
             
             # Generator data
@@ -505,6 +520,7 @@ class Dongle():
         try:
             # Remove header + checksum
             data = input[20: len(input) - 2]
+            dongle_serial = Dongle.parse_dongle_serial_from_header(input)
             
             # Parse dongle serial (bytes 2-12)
             serial = bytes(data[2:13]).decode('utf-8', errors='ignore').strip('\x00')
@@ -534,6 +550,7 @@ class Dongle():
             # Parse ReadInput4 section (offset 120)
             
             return {
+                "dongle_serial": dongle_serial,
                 "serial": serial,
                 "input_type": "all",
                 
