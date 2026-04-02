@@ -85,6 +85,7 @@ function SystemInformation({
     };
     check();
     return () => { cancelled = true };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Extracted fetchNotifications function
@@ -197,7 +198,7 @@ function SystemInformation({
       <div className="card system-information">
         <div className="system-content">
           <div className="system-title">
-            <span className="system-title-text">{t("systemInformation")}</span>
+            <span className="system-title-text">{t("systemInformation")}{inverterData.serial ? ` (${inverterData.serial})` : ""}</span>
             <span>{inverterData.deviceTime}</span>
             {allowAdmin && (
               <div className="settings-button" ref={settingsButtonRef}>
