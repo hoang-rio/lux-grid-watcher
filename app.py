@@ -269,6 +269,42 @@ async def initialize_web_socket_client(fcm_service: FCM, old_ws_client: WebSocke
     ws_client.start()
     return ws_client
 
+async def process_inverter_data(
+    inverter_data: dict,
+    fcm_service: FCM,
+    run_web_view: bool,
+    db_connection: sqlite3.Connection | None = None,
+    ws_client: WebSocketClient | None = None,
+) -> WebSocketClient | None:
+    handle_grid_status(inverter_data, fcm_service)
+    if not run_web_view or db_connection is None or ws_client is None:
+        return ws_client
+
+    timeout_duration = int(config["SLEEP_TIME"]) * 3
+    hourly_chart_item = database.insert_hourly_chart(
+        db_connection,
+        inverter_data,
+        int(config["SLEEP_TIME"]),
+    )
+    try:
+        sent = await asyncio.wait_for(
+            ws_client.send_json({
+                "inverter_data": inverter_data,
+                "hourly_chart_item": hourly_chart_item
+            }),
+            timeout=timeout_duration
+        )
+        if not sent:
+            logger.error("Failed to send data to web socket")
+            ws_client = await initialize_web_socket_client(fcm_service, ws_client)
+    except asyncio.TimeoutError:
+        logger.error("Timeout waiting for web socket to send data for %s seconds", timeout_duration)
+        ws_client = await initialize_web_socket_client(fcm_service, ws_client)
+
+    database.insert_daily_chart(db_connection, inverter_data)
+    dectect_abnormal_usage(db_connection, fcm_service)
+    return ws_client
+
 async def main():
     try:
         logger.info("Grid connect watch working on mode: %s",
@@ -300,25 +336,13 @@ async def main():
                     except asyncio.TimeoutError:
                         logger.error("Timeout waiting for dongle input for %s seconds", timeout_duration)
                     if inverter_data is not None:
-                        handle_grid_status(inverter_data, fcm_service)
-                        if run_web_view:
-                            hourly_chart_item = database.insert_hourly_chart(db_connection, inverter_data, int(config["SLEEP_TIME"]))
-                            try:
-                                sent = await asyncio.wait_for(
-                                    ws_client.send_json({
-                                        "inverter_data": inverter_data,
-                                        "hourly_chart_item": hourly_chart_item
-                                    }),
-                                    timeout=timeout_duration
-                                )
-                                if not sent:
-                                    logger.error("Failed to send data to web socket")
-                                    ws_client = await initialize_web_socket_client(fcm_service, ws_client)
-                            except asyncio.TimeoutError:
-                                logger.error("Timeout waiting for web socket to send data for %s seconds", timeout_duration)
-                                ws_client = await initialize_web_socket_client(fcm_service, ws_client)
-                            database.insert_daily_chart(db_connection, inverter_data)
-                            dectect_abnormal_usage(db_connection, fcm_service)
+                        ws_client = await process_inverter_data(
+                            inverter_data,
+                            fcm_service,
+                            run_web_view,
+                            db_connection if run_web_view else None,
+                            ws_client if run_web_view else None,
+                        )
                 except Exception as e:
                     logger.exception("Got error when get dongle input %s", e)
                 logger.info("Wating for %s second before next check",
@@ -348,26 +372,15 @@ async def main():
                     inverter_data = await dongle_server.wait_for_data(
                         timeout=timeout_duration
                     )
-                    if inverter_data is not None:
-                        handle_grid_status(inverter_data, fcm_service)
-                        if run_web_view:
-                            hourly_chart_item = database.insert_hourly_chart(db_connection, inverter_data, int(config["SLEEP_TIME"]))
-                            try:
-                                sent = await asyncio.wait_for(
-                                    ws_client.send_json({
-                                        "inverter_data": inverter_data,
-                                        "hourly_chart_item": hourly_chart_item
-                                    }),
-                                    timeout=timeout_duration
-                                )
-                                if not sent:
-                                    logger.error("Failed to send data to web socket")
-                                    ws_client = await initialize_web_socket_client(fcm_service, ws_client)
-                            except asyncio.TimeoutError:
-                                logger.error("Timeout waiting for web socket to send data for %s seconds", timeout_duration)
-                                ws_client = await initialize_web_socket_client(fcm_service, ws_client)
-                            database.insert_daily_chart(db_connection, inverter_data)
-                            dectect_abnormal_usage(db_connection, fcm_service)
+                    while inverter_data is not None:
+                        ws_client = await process_inverter_data(
+                            inverter_data,
+                            fcm_service,
+                            run_web_view,
+                            db_connection if run_web_view else None,
+                            ws_client if run_web_view else None,
+                        )
+                        inverter_data = dongle_server.get_pending_data()
                 except Exception as e:
                     logger.exception("Got error in SERVER_MODE %s", e)
                 logger.info("Waiting for next dongle data (timeout: %s seconds)",

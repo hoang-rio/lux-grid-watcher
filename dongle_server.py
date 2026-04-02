@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import queue
 from typing import Optional
 import dongle_handler
 
@@ -16,8 +17,7 @@ class DongleServer:
         self.__logger = logger
         self.__host = config.get("SERVER_MODE_HOST", "0.0.0.0")
         self.__port = int(config.get("SERVER_MODE_PORT", 4346))
-        self.__inverter_data: Optional[dict] = None
-        self.__data_received_event = asyncio.Event()
+        self.__data_queue: asyncio.Queue[dict] = asyncio.Queue()
 
     async def start_server(self):
         """Start the TCP server to listen for dongle connections."""
@@ -135,8 +135,7 @@ class DongleServer:
                     parsed_data = self.__parse_inverter_data(raw_data)
                     if parsed_data is not None:
                         if read_mode == dongle_handler.READ_INPUT_MODE_INPUT1_ONLY:
-                            self.__inverter_data = parsed_data
-                            self.__data_received_event.set()
+                            await self.__enqueue_inverter_data(parsed_data, client_addr)
                             self.__logger.info(
                                 "Successfully parsed data from %s",
                                 client_addr
@@ -153,8 +152,7 @@ class DongleServer:
                                     len(all_mode_received_registers),
                                 )
                                 if all_mode_received_registers.issuperset({0, 40, 80, 120}):
-                                    self.__inverter_data = dict(all_mode_buffer)
-                                    self.__data_received_event.set()
+                                    await self.__enqueue_inverter_data(dict(all_mode_buffer), client_addr)
                                     self.__logger.info(
                                         "Merged ReadInput1-4 data ready from %s",
                                         client_addr,
@@ -302,21 +300,30 @@ class DongleServer:
             self.__logger.exception("Failed to parse inverter data: %s", e)
             return None
 
+    async def __enqueue_inverter_data(self, data: dict, client_addr) -> None:
+        """Queue parsed inverter data so client handlers never overwrite each other."""
+        await self.__data_queue.put(data)
+        self.__logger.debug(
+            "Queued inverter data from %s. Pending queue size: %s",
+            client_addr,
+            self.__data_queue.qsize(),
+        )
+
     async def wait_for_data(
         self,
         timeout: Optional[float] = None
     ) -> Optional[dict]:
-        """Wait for new data from dongle with optional timeout."""
+        """Wait for next queued dongle payload with optional timeout."""
         try:
-            self.__data_received_event.clear()
-            await asyncio.wait_for(
-                self.__data_received_event.wait(),
-                timeout=timeout
-            )
-            data = self.__inverter_data
-            self.__inverter_data = None
-            return data
+            return await asyncio.wait_for(self.__data_queue.get(), timeout=timeout)
         except asyncio.TimeoutError:
+            return None
+
+    def get_pending_data(self) -> Optional[dict]:
+        """Return queued payload immediately without blocking."""
+        try:
+            return self.__data_queue.get_nowait()
+        except queue.Empty:
             return None
 
     async def stop_server(self):
