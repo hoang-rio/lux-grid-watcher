@@ -5,11 +5,13 @@ import asyncio
 import re
 import secrets
 import uuid
+from os import environ
 from functools import partial
 from logging import getLogger
 
 import jwt as _jwt
 from aiohttp.aiohttp import web
+from dotenv import dotenv_values
 
 from multi_tenant.auth import (
     create_access_token,
@@ -23,6 +25,7 @@ from multi_tenant import repository as repo
 from multi_tenant.email_service import send_password_reset_email, send_verification_email
 
 logger = getLogger(__name__)
+_config: dict = {**dotenv_values(".env"), **environ}
 
 CORS = {"Access-Control-Allow-Origin": "*"}
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -71,6 +74,11 @@ def _user_dict(user) -> dict:
 def _get_base_url(request: web.Request) -> str:
     scheme = "https" if request.secure else "http"
     return f"{scheme}://{request.host}"
+
+
+async def auth_config(_: web.Request) -> web.Response:
+    auth_required = bool(_config.get("POSTGRES_DB_URL") or _config.get("DATABASE_URL"))
+    return _ok(auth_required=auth_required)
 
 
 # ---------------------------------------------------------------------------
@@ -421,6 +429,7 @@ async def _cors_options(_: web.Request) -> web.Response:
 # ---------------------------------------------------------------------------
 
 AUTH_ROUTES = [
+    web.get("/auth/config", auth_config),
     web.post("/auth/register", register),
     web.post("/auth/login", login),
     web.post("/auth/refresh", refresh),

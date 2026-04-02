@@ -16,6 +16,7 @@ const SystemInformation = lazy(() => import("./components/SystemInformation"));
 const Summary = lazy(() => import("./components/Summary"));
 const HourlyChart = lazy(() => import("./components/HourlyChart"));
 const EnergyChart = lazy(() => import("./components/EnergyChart"));
+const AuthPanel = lazy(() => import("./components/AuthPanel"));
 
 const MAX_RECONNECT_COUNT = 5;
 const ACCESS_TOKEN_KEY = "lux_access_token";
@@ -26,6 +27,8 @@ function App() {
   const { t, i18n } = useTranslation();
   const [inverterData, setInverterData] = useState<IInverterData>();
   const [authUser, setAuthUser] = useState<IAuthUser | null>(null);
+  const [authRequired, setAuthRequired] = useState(false);
+  const [authConfigLoaded, setAuthConfigLoaded] = useState(false);
   const [userInverters, setUserInverters] = useState<IUserInverter[]>([]);
   const [selectedInverterId, setSelectedInverterId] = useState<string>("");
   const [accessToken, setAccessToken] = useState<string>("");
@@ -53,7 +56,7 @@ function App() {
   }, [accessToken]);
 
   const connectSSE = useCallback(() => {
-    if (useBearerAuth) {
+    if (useBearerAuth || authRequired) {
       return;
     }
     if (eventSourceRef.current) {
@@ -99,7 +102,7 @@ function App() {
       // eslint-disable-next-line react-hooks/immutability
       setTimeout(() => connectSSE(), 1000 * reconnectCountRef.current);
     };
-  }, [i18n, useBearerAuth]);
+  }, [authRequired, i18n, useBearerAuth]);
 
   const closeSSE = useCallback(() => {
     logUtil.log(i18n.t("sse.closing"));
@@ -113,6 +116,9 @@ function App() {
 
   const fetchState = useCallback(async () => {
     try {
+      if (authRequired && !accessToken) {
+        return;
+      }
       if (isFetchingRef.current) {
         return;
       }
@@ -133,7 +139,19 @@ function App() {
       logUtil.error(i18n.t("getStateError"), err);
     }
     isFetchingRef.current = false;
-  }, [authHeaders, i18n, selectedInverterId]);
+  }, [accessToken, authHeaders, authRequired, i18n, selectedInverterId]);
+
+  const loadAuthConfig = useCallback(async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/config`);
+      const json = await res.json();
+      setAuthRequired(Boolean(json?.auth_required));
+    } catch {
+      setAuthRequired(false);
+    } finally {
+      setAuthConfigLoaded(true);
+    }
+  }, []);
 
   const clearAuthSession = useCallback(() => {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
@@ -145,9 +163,16 @@ function App() {
   }, []);
 
   const loadAuthSession = useCallback(async () => {
+    if (!authConfigLoaded) {
+      return;
+    }
+    if (!authRequired) {
+      return;
+    }
     const token = localStorage.getItem(ACCESS_TOKEN_KEY) || "";
     if (!token) {
       clearAuthSession();
+      setIsLoading(false);
       return;
     }
 
@@ -170,6 +195,7 @@ function App() {
       if (!invRes.ok || !invJson.success || !Array.isArray(invJson.inverters)) {
         setUserInverters([]);
         setSelectedInverterId("");
+        setIsLoading(false);
         return;
       }
 
@@ -183,17 +209,34 @@ function App() {
       if (defaultInverterId) {
         localStorage.setItem(INVERTER_ID_KEY, defaultInverterId);
       }
+      setIsLoading(false);
     } catch (err) {
       logUtil.error("load auth session error", err);
       clearAuthSession();
+      setIsLoading(false);
     }
-  }, [clearAuthSession]);
+  }, [authConfigLoaded, authRequired, clearAuthSession]);
+
+  const onAuthSuccess = useCallback(async (token: string, refreshToken: string) => {
+    localStorage.setItem(ACCESS_TOKEN_KEY, token);
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    setAccessToken(token);
+    await loadAuthSession();
+    await fetchState();
+  }, [fetchState, loadAuthSession]);
+
+  useEffect(() => {
+    loadAuthConfig();
+  }, [loadAuthConfig]);
 
   useEffect(() => {
     loadAuthSession();
   }, [loadAuthSession]);
 
   useEffect(() => {
+    if (authRequired && !accessToken) {
+      return;
+    }
     if (!eventSourceRef.current && !document.hidden) {
       connectSSE();
     }
@@ -202,11 +245,14 @@ function App() {
       window.removeEventListener("beforeunload", closeSSE);
       closeSSE();
     };
-  }, [connectSSE, closeSSE]);
+  }, [accessToken, authRequired, connectSSE, closeSSE]);
 
   useEffect(() => {
+    if (authRequired && !accessToken) {
+      return;
+    }
     fetchState();
-  }, [fetchState]);
+  }, [accessToken, authRequired, fetchState]);
 
   useEffect(() => {
     if (!useBearerAuth) {
@@ -254,6 +300,15 @@ function App() {
         <div className="d-flex card loading align-center justify-center flex-1">
           <Loading />
         </div>
+        <Footer />
+      </>
+    );
+  }
+
+  if (authConfigLoaded && authRequired && !authUser) {
+    return (
+      <>
+        <AuthPanel onAuthSuccess={onAuthSuccess} />
         <Footer />
       </>
     );
