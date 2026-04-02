@@ -38,6 +38,7 @@ function App() {
   const [accessToken, setAccessToken] = useState<string>("");
   const eventSourceRef = useRef<EventSource>(undefined);
   const sseAbortControllerRef = useRef<AbortController | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectCountRef = useRef<number>(0);
   const [isSSEConnected, setIsSSEConnected] = useState<boolean>(false);
   const hourlyChartfRef = useRef<IUpdateChart>(null);
@@ -66,18 +67,32 @@ function App() {
   }, []);
 
   const scheduleSSEReconnect = useCallback((reconnect: () => void) => {
+    if (document.hidden) {
+      return;
+    }
     if (reconnectCountRef.current >= MAX_RECONNECT_COUNT) {
       logUtil.warn(i18n.t("sse.stopReconnect"), MAX_RECONNECT_COUNT);
       return;
     }
 
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+    }
     reconnectCountRef.current++;
     logUtil.log(i18n.t("sse.reconnecting"), reconnectCountRef.current);
-    setTimeout(() => reconnect(), 1000 * reconnectCountRef.current);
+    reconnectTimeoutRef.current = setTimeout(() => {
+      reconnectTimeoutRef.current = null;
+      if (!document.hidden) {
+        reconnect();
+      }
+    }, 1000 * reconnectCountRef.current);
   }, [i18n]);
 
   const connectSSE = useCallback(() => {
     if (authRequired && !authUser) {
+      return;
+    }
+    if (document.hidden) {
       return;
     }
     if (eventSourceRef.current || sseAbortControllerRef.current) {
@@ -204,6 +219,10 @@ function App() {
     if (sseAbortControllerRef.current) {
       sseAbortControllerRef.current.abort();
       sseAbortControllerRef.current = null;
+    }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
     }
   }, [i18n, isAuthScreen, isNoInverterOnboarding]);
 
