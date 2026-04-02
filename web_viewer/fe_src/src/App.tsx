@@ -62,6 +62,10 @@ function App() {
     }
     logUtil.log(i18n.t("sse.connecting"));
     const sseParams = new URLSearchParams();
+    const sseToken = localStorage.getItem(ACCESS_TOKEN_KEY) || accessToken;
+    if (sseToken) {
+      sseParams.set("access_token", sseToken);
+    }
     if (selectedInverterId) {
       sseParams.set("inverter_id", selectedInverterId);
     }
@@ -106,7 +110,7 @@ function App() {
       logUtil.log(i18n.t("sse.reconnecting"), reconnectCountRef.current);
       setTimeout(() => connectSSE(), 1000 * reconnectCountRef.current);
     };
-  }, [authRequired, authUser, i18n, isAuthScreen, isNoInverterOnboarding, selectedInverterId]);
+  }, [accessToken, authRequired, authUser, i18n, isAuthScreen, isNoInverterOnboarding, selectedInverterId]);
 
   const closeSSE = useCallback(() => {
     logUtil.log(i18n.t("sse.closing"));

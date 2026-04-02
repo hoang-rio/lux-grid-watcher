@@ -150,8 +150,14 @@ def _extract_jwt_user_id(request: web.Request) -> Optional[uuid.UUID]:
     auth = request.headers.get("Authorization", "")
     if not auth.startswith("Bearer "):
         return None
+    return _extract_jwt_user_id_from_token(auth[7:])
+
+
+def _extract_jwt_user_id_from_token(token: str) -> Optional[uuid.UUID]:
+    if not token:
+        return None
     try:
-        payload = decode_access_token(auth[7:])
+        payload = decode_access_token(token)
         return uuid.UUID(str(payload.get("sub")))
     except (pyjwt.ExpiredSignatureError, pyjwt.InvalidTokenError, ValueError, TypeError):
         return None
@@ -184,17 +190,22 @@ async def http_handler(_: web.Request):
 
 async def sse_handler(request):
     global sse_clients
-    response = web.StreamResponse()
-    response.headers['Content-Type'] = 'text/event-stream'
-    response.headers['Cache-Control'] = 'no-cache'
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Headers'] = 'Cache-Control'
-    await response.prepare(request)
-
     requested_inverter_id = request.rel_url.query.get("inverter_id", "").strip() or None
-    allowed_inverter_ids: set[str] | None = None
+
     user_id = _extract_jwt_user_id(request)
-    if user_id is not None and USE_PG:
+    if user_id is None:
+        token_qs = request.rel_url.query.get("access_token", "").strip()
+        user_id = _extract_jwt_user_id_from_token(token_qs)
+
+    if USE_PG and user_id is None:
+        return web.json_response(
+            {"success": False, "message": "Unauthorized"},
+            status=401,
+            headers=VITE_CORS_HEADER,
+        )
+
+    allowed_inverter_ids: set[str] | None = None
+    if USE_PG and user_id is not None:
         try:
             session = next(get_db_session())
             try:
@@ -204,12 +215,25 @@ async def sse_handler(request):
                 session.close()
         except Exception as exc:
             logger.error("Failed to resolve SSE user inverter scope: %s", exc)
-            allowed_inverter_ids = set()
+            return web.json_response(
+                {"success": False, "message": "Failed to resolve inverter scope"},
+                status=500,
+                headers=VITE_CORS_HEADER,
+            )
 
     if requested_inverter_id and allowed_inverter_ids is not None and requested_inverter_id not in allowed_inverter_ids:
-        await response.write(b'event: error\ndata: {"message":"Forbidden inverter scope"}\n\n')
-        await response.write_eof()
-        return response
+        return web.json_response(
+            {"success": False, "message": "Forbidden inverter scope"},
+            status=403,
+            headers=VITE_CORS_HEADER,
+        )
+
+    response = web.StreamResponse()
+    response.headers['Content-Type'] = 'text/event-stream'
+    response.headers['Cache-Control'] = 'no-cache'
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Cache-Control'
+    await response.prepare(request)
 
     sse_client = {
         "response": response,
@@ -300,6 +324,9 @@ async def state(_: web.Request):
     global last_inverter_data
     global last_inverter_data_by_id
     user_id = _extract_jwt_user_id(_)
+    if USE_PG and user_id is None:
+        return web.json_response({}, status=401, headers=VITE_CORS_HEADER)
+
     if user_id is not None:
         try:
             session = next(get_db_session())
