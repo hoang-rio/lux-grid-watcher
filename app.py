@@ -380,12 +380,18 @@ def _resolve_inverter_context(inverter_data: dict) -> dict | None:
             if inverter_id_str:
                 try:
                     inverter = repo.get_inverter_by_id(session, uuid.UUID(str(inverter_id_str)))
+                    if inverter is not None and not getattr(inverter, "is_active", True):
+                        inverter = None
                 except Exception:
                     inverter = None
             if inverter is None:
                 dongle_serial = inverter_data.get("dongle_serial") or inverter_data.get("serial")
                 if dongle_serial:
                     inverter = repo.get_inverter_by_dongle_serial(session, str(dongle_serial))
+            if inverter is None:
+                invert_serial = inverter_data.get("serial")
+                if invert_serial:
+                    inverter = repo.get_inverter_by_invert_serial(session, str(invert_serial))
             if inverter is None:
                 return None
             inverter_data["_inverter_id"] = str(inverter.id)
@@ -567,7 +573,7 @@ def _migrate_sqlite_to_pg_if_needed() -> None:
     except Exception as exc:
         logger.exception("SQLite→PostgreSQL migration failed: %s", exc)
 
-def handle_grid_status(json_data: dict, fcm_service: FCM):
+def handle_grid_status(json_data: dict, fcm_service: FCM, inverter_ctx: dict | None = None):
     if not has_input1_data(json_data):
         logger.debug(
             "Skip handle_grid_status because payload does not contain ReadInput1 fields (missing fac). Keys: %s",
@@ -576,7 +582,7 @@ def handle_grid_status(json_data: dict, fcm_service: FCM):
         return
 
     # is_grid_connected = True
-    inverter_ctx = _resolve_inverter_context(json_data)
+    inverter_ctx = inverter_ctx or _resolve_inverter_context(json_data)
     is_grid_connected = json_data["fac"] > 0
     last_grid_connected = True
     disconnected_time = json_data["deviceTime"]
@@ -654,7 +660,19 @@ async def process_inverter_data(
     db_connection: sqlite3.Connection | None = None,
     ws_client: WebSocketClient | None = None,
 ) -> WebSocketClient | None:
-    handle_grid_status(inverter_data, fcm_service)
+    inverter_ctx = None
+    if USE_PG:
+        inverter_ctx = _resolve_inverter_context(inverter_data)
+        if inverter_ctx is None:
+            logger.warning(
+                "Skip data from unregistered inverter (dongle_serial=%s, invert_serial=%s)",
+                inverter_data.get("dongle_serial"),
+                inverter_data.get("serial"),
+            )
+            return ws_client
+        inverter_data["_inverter_id"] = inverter_ctx["id"]
+
+    handle_grid_status(inverter_data, fcm_service, inverter_ctx)
     if not run_web_view or ws_client is None:
         return ws_client
 
@@ -688,7 +706,7 @@ async def process_inverter_data(
 
     if not USE_PG and db_connection is not None:
         database.insert_daily_chart(db_connection, inverter_data)
-        dectect_abnormal_usage(db_connection, fcm_service, _resolve_inverter_context(inverter_data))
+        dectect_abnormal_usage(db_connection, fcm_service, inverter_ctx)
 
     return ws_client
 

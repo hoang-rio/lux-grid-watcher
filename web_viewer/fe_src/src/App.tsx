@@ -54,14 +54,19 @@ function App() {
   const useBearerAuth = Boolean(accessToken);
 
   const connectSSE = useCallback(() => {
-    if (useBearerAuth || authRequired) {
+    if (authRequired && !authUser) {
       return;
     }
     if (eventSourceRef.current) {
       return;
     }
     logUtil.log(i18n.t("sse.connecting"));
-    const eventSource = new EventSource(`${import.meta.env.VITE_API_BASE_URL}/events`);
+    const sseParams = new URLSearchParams();
+    if (selectedInverterId) {
+      sseParams.set("inverter_id", selectedInverterId);
+    }
+    const ssePath = sseParams.toString() ? `/events?${sseParams.toString()}` : "/events";
+    const eventSource = new EventSource(`${import.meta.env.VITE_API_BASE_URL}${ssePath}`);
     eventSourceRef.current = eventSource;
 
     eventSource.onopen = () => {
@@ -101,7 +106,7 @@ function App() {
       logUtil.log(i18n.t("sse.reconnecting"), reconnectCountRef.current);
       setTimeout(() => connectSSE(), 1000 * reconnectCountRef.current);
     };
-  }, [authRequired, i18n, isAuthScreen, isNoInverterOnboarding, useBearerAuth]);
+  }, [authRequired, authUser, i18n, isAuthScreen, isNoInverterOnboarding, selectedInverterId]);
 
   const closeSSE = useCallback(() => {
     logUtil.log(i18n.t("sse.closing"));

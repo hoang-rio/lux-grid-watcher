@@ -173,9 +173,10 @@ def _resolve_request_inverter(session, user_id: uuid.UUID, request: web.Request)
         return None
     return user_inverters[0]
 
-# SSE state
-sse_clients: List[web.StreamResponse] = []
+# SSE/state cache
+sse_clients: List[dict] = []
 last_inverter_data: str = '{"inverter_data": {}}'
+last_inverter_data_by_id: dict[str, dict] = {}
 
 async def http_handler(_: web.Request):
     index_file_path = path.join(path.dirname(__file__), 'build', 'index.html')
@@ -189,7 +190,33 @@ async def sse_handler(request):
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Headers'] = 'Cache-Control'
     await response.prepare(request)
-    sse_clients.append(response)
+
+    requested_inverter_id = request.rel_url.query.get("inverter_id", "").strip() or None
+    allowed_inverter_ids: set[str] | None = None
+    user_id = _extract_jwt_user_id(request)
+    if user_id is not None and USE_PG:
+        try:
+            session = next(get_db_session())
+            try:
+                user_inverters = mt_repo.get_inverters_by_user(session, user_id)
+                allowed_inverter_ids = {str(inv.id) for inv in user_inverters}
+            finally:
+                session.close()
+        except Exception as exc:
+            logger.error("Failed to resolve SSE user inverter scope: %s", exc)
+            allowed_inverter_ids = set()
+
+    if requested_inverter_id and allowed_inverter_ids is not None and requested_inverter_id not in allowed_inverter_ids:
+        await response.write(b'event: error\ndata: {"message":"Forbidden inverter scope"}\n\n')
+        await response.write_eof()
+        return response
+
+    sse_client = {
+        "response": response,
+        "inverter_id": requested_inverter_id,
+        "allowed_inverter_ids": allowed_inverter_ids,
+    }
+    sse_clients.append(sse_client)
     logger.debug(f"SSE_CLIENTS count: {len(sse_clients)}")
     try:
         # Keep the connection open with keep-alive
@@ -206,15 +233,35 @@ async def sse_handler(request):
     except Exception as e:
         logger.error(f"SSE connection error: {e}")
     finally:
-        if response in sse_clients:
-            sse_clients.remove(response)
+        for client in sse_clients[:]:
+            if client.get("response") is response:
+                sse_clients.remove(client)
     return response
 
 async def broadcast_sse(data: str):
     global sse_clients
+    inverter_id = None
+    try:
+        payload = json.loads(data)
+        inverter_payload = payload.get("inverter_data") or {}
+        inverter_id = inverter_payload.get("_inverter_id")
+    except Exception:
+        inverter_id = None
+
     for client in sse_clients[:]:
+        response = client.get("response")
+        if response is None:
+            continue
+        scoped_inverter_id = client.get("inverter_id")
+        allowed_inverter_ids = client.get("allowed_inverter_ids")
+
+        if scoped_inverter_id and scoped_inverter_id != inverter_id:
+            continue
+        if allowed_inverter_ids is not None and inverter_id not in allowed_inverter_ids:
+            continue
+
         try:
-            await client.write(f"data: {data}\n\n".encode('utf-8'))
+            await response.write(f"data: {data}\n\n".encode('utf-8'))
         except Exception as e:
             logger.error(f"Error sending to SSE client: {e}")
             if client in sse_clients:
@@ -222,6 +269,7 @@ async def broadcast_sse(data: str):
 
 async def websocket_handler(request):
     global last_inverter_data
+    global last_inverter_data_by_id
     ws = web.WebSocketResponse()
     await ws.prepare(request)
     try:
@@ -231,6 +279,14 @@ async def websocket_handler(request):
             if msg.type == aiohttp.WSMsgType.TEXT:
                 if "inverter_data" in msg.data:
                     last_inverter_data = msg.data
+                    try:
+                        parsed = json.loads(msg.data)
+                        inverter_payload = parsed.get("inverter_data") or {}
+                        inverter_id = inverter_payload.get("_inverter_id")
+                        if inverter_id:
+                            last_inverter_data_by_id[str(inverter_id)] = inverter_payload
+                    except Exception:
+                        pass
                 await broadcast_sse(msg.data)
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 logger.error(f"WS connection closed with exception {ws.exception()}")
@@ -242,6 +298,7 @@ VITE_CORS_HEADER = {'Access-Control-Allow-Origin': '*'}
 
 async def state(_: web.Request):
     global last_inverter_data
+    global last_inverter_data_by_id
     user_id = _extract_jwt_user_id(_)
     if user_id is not None:
         try:
@@ -259,7 +316,11 @@ async def state(_: web.Request):
             logger.error("Error in state (multi-tenant): %s", error)
 
     try:
-        data = json.loads(last_inverter_data)["inverter_data"]
+        requested_inverter_id = _.rel_url.query.get("inverter_id", "").strip()
+        if requested_inverter_id:
+            data = last_inverter_data_by_id.get(requested_inverter_id, {})
+        else:
+            data = json.loads(last_inverter_data)["inverter_data"]
     except Exception:
         data = {}
     return web.json_response(data, headers=VITE_CORS_HEADER)
