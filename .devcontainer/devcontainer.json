@@ -1,10 +1,14 @@
 {
+    "privileged": true,
     "runArgs": [
         "--device=/dev/net/tun",
         "--cap-add=NET_ADMIN"
     ],
     "features": {
         // ... other features
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {
+            "version": "latest"
+        },
         "ghcr.io/devcontainers/features/node:1": {
             "version": "24.14.1"
         },
