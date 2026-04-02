@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useState, useEffect, forwardRef } from 'react';
 import Loading from './Loading';
 import * as logUtil from '../utils/logUtil';
+import { apiFetch } from '../utils/fetchUtil';
 import './SettingsPopover.css';
 
 interface SettingsPopoverProps {
@@ -29,6 +30,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
   const { t } = useTranslation();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [originalSettings, setOriginalSettings] = useState<Settings | null>(null);
+  const [isPgMode, setIsPgMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
@@ -42,10 +44,17 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`);
+      const authConfigRes = await apiFetch('/auth/config');
+      const authConfig = await authConfigRes.json();
+      const pgMode = Boolean(authConfig?.auth_required);
+      setIsPgMode(pgMode);
+
+      const res = await apiFetch('/settings', {
+        withAuth: pgMode,
+      });
       const data = await res.json();
       // Set defaults if missing
-      const defaults = {
+      const defaults: Settings = {
         ABNORMAL_DETECTION_ENABLED: 'true',
         ABNORMAL_CHECK_COOLDOWN_HOURS: '3',
         ABNORMAL_MIN_POWER: '900',
@@ -56,16 +65,16 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
         BATTERY_FULL_NOTIFY_ENABLED: 'true',
         BATTERY_FULL_NOTIFY_BODY: 'Pin đã sạc đầy 100%. Có thể bật bình nóng lạnh để tối ưu sử dụng.',
         ABNORMAL_NOTIFY_BODY: 'Tiêu thụ điện bất thường, vui lòng kiểm tra xem vòi nước đã khoá chưa.'
-        ,AUTH_ENABLED: 'false'
-        ,AUTH_USERNAME: 'admin'
-        ,AUTH_PASSWORD: 'changeme'
-        ,AUTH_BYPASS_CIDR: '127.0.0.1/32,::1/128'
+        ,AUTH_ENABLED: pgMode ? '' : 'false'
+        ,AUTH_USERNAME: pgMode ? '' : 'admin'
+        ,AUTH_PASSWORD: pgMode ? '' : 'changeme'
+        ,AUTH_BYPASS_CIDR: pgMode ? '' : '127.0.0.1/32,::1/128'
       };
       const merged = { ...defaults, ...data };
       setSettings(merged);
       setOriginalSettings(merged);
       // If auth already enabled in saved settings, pre-fill confirm password
-      if (merged.AUTH_ENABLED === 'true') {
+      if (!pgMode && merged.AUTH_ENABLED === 'true') {
         setPasswordConfirm(merged.AUTH_PASSWORD || '');
       }
     } catch (err) {
@@ -81,7 +90,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
     setSaving(true);
     setMessage(null);
     // If auth enabled, ensure username and password present and confirmation match
-    if (settings.AUTH_ENABLED === 'true') {
+    if (!isPgMode && settings.AUTH_ENABLED === 'true') {
       if (!settings.AUTH_USERNAME || settings.AUTH_USERNAME.trim() === '') {
         setMessage({text: t('settings.authUsernameRequired'), type: 'error'});
         setSaving(false);
@@ -102,20 +111,27 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
       // Do not send password confirmation to backend
       const payload = { ...settings } as unknown as Record<string, string>;
       delete payload.AUTH_PASSWORD_CONFIRM;
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/settings`, {
+      if (isPgMode) {
+        delete payload.AUTH_ENABLED;
+        delete payload.AUTH_USERNAME;
+        delete payload.AUTH_PASSWORD;
+        delete payload.AUTH_BYPASS_CIDR;
+      }
+      const res = await apiFetch('/settings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        withAuth: isPgMode,
         body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success) {
-        const prevAuthEnabled = originalSettings ? originalSettings.AUTH_ENABLED === 'true' : false;
+        const prevAuthEnabled = !isPgMode && originalSettings ? originalSettings.AUTH_ENABLED === 'true' : false;
         setOriginalSettings(settings);
         setMessage({text: t('settings.saveSuccess'), type: 'success'});
         // If auth changed from disabled -> enabled, reload page to ensure auth middleware and client state take effect
-        if (!prevAuthEnabled && settings.AUTH_ENABLED === 'true') {
+        if (!isPgMode && !prevAuthEnabled && settings.AUTH_ENABLED === 'true') {
           // small delay to allow UI message to show briefly
           setTimeout(() => window.location.reload(), 300);
         }
@@ -133,7 +149,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
   const updateSetting = (key: keyof Settings, value: string) => {
     if (settings) {
       // If enabling auth, reset password fields so user must re-enter
-      if (key === 'AUTH_ENABLED' && value === 'true' && settings.AUTH_ENABLED !== 'true') {
+      if (!isPgMode && key === 'AUTH_ENABLED' && value === 'true' && settings.AUTH_ENABLED !== 'true') {
         // When enabling auth from disabled state, require re-entering the password
         // but keep the existing username so user doesn't have to retype it.
         setPasswordConfirm('');
@@ -295,6 +311,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
               />
             </div>
           </div>
+          {!isPgMode && (
           <div className="settings-section">
             <h4>{t("settings.authSection")}</h4>
             <div className="setting-item">
@@ -364,7 +381,10 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
                 {t("settings.authBypassCidrDescription")}
               </p>
             </div>
+          </div>
+          )}
 
+          <div className="settings-section">
             <h4>{t("settings.offGridWarningSection")}</h4>
             <div className="setting-item">
               <label>

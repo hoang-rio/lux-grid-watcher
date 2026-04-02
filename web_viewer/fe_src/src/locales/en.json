@@ -180,8 +180,7 @@
     "saveError": "Failed to save settings",
     "hours": "hours",
     "watts": "W",
-    "percent": "%",
-    "adminAccessCheckFailed": "Admin access check failed"
+    "percent": "%"
   },
   "getStateError": "API get state error"
 }

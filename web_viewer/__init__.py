@@ -193,9 +193,6 @@ async def sse_handler(request):
     requested_inverter_id = request.rel_url.query.get("inverter_id", "").strip() or None
 
     user_id = _extract_jwt_user_id(request)
-    if user_id is None:
-        token_qs = request.rel_url.query.get("access_token", "").strip()
-        user_id = _extract_jwt_user_id_from_token(token_qs)
 
     if USE_PG and user_id is None:
         return web.json_response(
@@ -920,21 +917,6 @@ async def options_settings(_: web.Request):
     })
 
 
-async def has_admin_access(request: web.Request):
-    """Return whether the requesting client IP is allowed to access admin features.
-
-    Controlled only via the `ADMIN_ALLOWED_CIDR` environment variable. Returns
-    JSON with boolean key `has_admin_access`.
-    """
-    if USE_PG:
-        return web.json_response({"has_admin_access": False}, headers=VITE_CORS_HEADER)
-
-    peer = request.transport
-    remote_ip = _peer_ip_from_transport(peer)
-    allowed = _ip_in_cidrs(remote_ip, ADMIN_ALLOWED_CIDR)
-    return web.json_response({"has_admin_access": allowed}, headers=VITE_CORS_HEADER)
-
-
 def _auth_html_response(status: int, title: str, message: str, include_www_authenticate: bool = False) -> web.Response:
         """Return a small friendly HTML response for auth errors."""
         safe_title = escape(title)
@@ -1037,7 +1019,6 @@ def create_runner():
         web.post("/notification-mark-read", mark_notifications_read),
         web.get("/notification-unread-count", notification_unread_count),
         web.get("/settings", get_settings),
-        web.get("/has-admin-access", has_admin_access),
         web.post("/settings", update_settings),
         web.options("/settings", cors_options_handler("GET, POST, OPTIONS")),
         *AUTH_ROUTES,

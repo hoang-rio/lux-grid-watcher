@@ -37,6 +37,7 @@ function App() {
   const [selectedInverterId, setSelectedInverterId] = useState<string>("");
   const [accessToken, setAccessToken] = useState<string>("");
   const eventSourceRef = useRef<EventSource>(undefined);
+  const sseAbortControllerRef = useRef<AbortController | null>(null);
   const reconnectCountRef = useRef<number>(0);
   const [isSSEConnected, setIsSSEConnected] = useState<boolean>(false);
   const hourlyChartfRef = useRef<IUpdateChart>(null);
@@ -53,23 +54,115 @@ function App() {
 
   const useBearerAuth = Boolean(accessToken);
 
+  const handleSSEPayload = useCallback((rawData: string) => {
+    const jsonData = JSON.parse(rawData);
+    if (jsonData.event === "new_notification") {
+      setNewNotification(jsonData.data);
+    } else {
+      setInverterData(jsonData.inverter_data);
+      hourlyChartfRef.current?.updateItem(jsonData.hourly_chart_item);
+      setIsLoading(false);
+    }
+  }, []);
+
+  const scheduleSSEReconnect = useCallback((reconnect: () => void) => {
+    if (reconnectCountRef.current >= MAX_RECONNECT_COUNT) {
+      logUtil.warn(i18n.t("sse.stopReconnect"), MAX_RECONNECT_COUNT);
+      return;
+    }
+
+    reconnectCountRef.current++;
+    logUtil.log(i18n.t("sse.reconnecting"), reconnectCountRef.current);
+    setTimeout(() => reconnect(), 1000 * reconnectCountRef.current);
+  }, [i18n]);
+
   const connectSSE = useCallback(() => {
     if (authRequired && !authUser) {
       return;
     }
-    if (eventSourceRef.current) {
+    if (eventSourceRef.current || sseAbortControllerRef.current) {
       return;
     }
     logUtil.log(i18n.t("sse.connecting"));
     const sseParams = new URLSearchParams();
-    const sseToken = localStorage.getItem(ACCESS_TOKEN_KEY) || accessToken;
-    if (sseToken) {
-      sseParams.set("access_token", sseToken);
-    }
     if (selectedInverterId) {
       sseParams.set("inverter_id", selectedInverterId);
     }
     const ssePath = sseParams.toString() ? `/events?${sseParams.toString()}` : "/events";
+
+    if (useBearerAuth) {
+      const abortController = new AbortController();
+      sseAbortControllerRef.current = abortController;
+
+      void (async () => {
+        try {
+          const response = await apiFetch(ssePath, {
+            withAuth: true,
+            headers: {
+              Accept: "text/event-stream",
+            },
+            signal: abortController.signal,
+          });
+
+          if (!response.ok || !response.body) {
+            throw new Error(`SSE request failed with status ${response.status}`);
+          }
+
+          reconnectCountRef.current = 0;
+          logUtil.log(i18n.t("sse.connected"));
+          if (deviceTimeRef.current) {
+            document.title = `[${deviceTimeRef.current}] ${i18n.t("webTitle")}`;
+          }
+          setIsSSEConnected(true);
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) {
+              break;
+            }
+            buffer += decoder.decode(value, { stream: true });
+
+            let separatorIndex = buffer.indexOf("\n\n");
+            while (separatorIndex !== -1) {
+              const rawEvent = buffer.slice(0, separatorIndex);
+              buffer = buffer.slice(separatorIndex + 2);
+
+              const dataLines = rawEvent
+                .split("\n")
+                .filter((line) => line.startsWith("data:"))
+                .map((line) => line.slice(5).trim());
+
+              if (dataLines.length > 0) {
+                handleSSEPayload(dataLines.join("\n"));
+              }
+
+              separatorIndex = buffer.indexOf("\n\n");
+            }
+          }
+
+          sseAbortControllerRef.current = null;
+          setIsSSEConnected(false);
+          scheduleSSEReconnect(connectSSE);
+        } catch (error) {
+          sseAbortControllerRef.current = null;
+          if (abortController.signal.aborted) {
+            return;
+          }
+          if (!isNoInverterOnboarding && !isAuthScreen) {
+            document.title = `[${i18n.t("offline")}] ${i18n.t("webTitle")}`;
+          }
+          setIsSSEConnected(false);
+          logUtil.error(i18n.t("sse.error"), error);
+          scheduleSSEReconnect(connectSSE);
+        }
+      })();
+      return;
+    }
+
     const eventSource = new EventSource(`${import.meta.env.VITE_API_BASE_URL}${ssePath}`);
     eventSourceRef.current = eventSource;
 
@@ -83,14 +176,7 @@ function App() {
     };
 
     eventSource.onmessage = (event) => {
-      const jsonData = JSON.parse(event.data);
-      if (jsonData.event === "new_notification") {
-        setNewNotification(jsonData.data);
-      } else {
-        setInverterData(jsonData.inverter_data);
-        hourlyChartfRef.current?.updateItem(jsonData.hourly_chart_item);
-        setIsLoading(false);
-      }
+      handleSSEPayload(event.data);
     };
 
     eventSource.onerror = (event) => {
@@ -101,16 +187,9 @@ function App() {
       logUtil.error(i18n.t("sse.error"), event);
       eventSource.close();
       eventSourceRef.current = undefined;
-      if (reconnectCountRef.current >= MAX_RECONNECT_COUNT) {
-        logUtil.warn(i18n.t("sse.stopReconnect"), MAX_RECONNECT_COUNT);
-        return;
-      }
-
-      reconnectCountRef.current++;
-      logUtil.log(i18n.t("sse.reconnecting"), reconnectCountRef.current);
-      setTimeout(() => connectSSE(), 1000 * reconnectCountRef.current);
+      scheduleSSEReconnect(connectSSE);
     };
-  }, [accessToken, authRequired, authUser, i18n, isAuthScreen, isNoInverterOnboarding, selectedInverterId]);
+  }, [authRequired, authUser, handleSSEPayload, i18n, isAuthScreen, isNoInverterOnboarding, scheduleSSEReconnect, selectedInverterId, useBearerAuth]);
 
   const closeSSE = useCallback(() => {
     logUtil.log(i18n.t("sse.closing"));
@@ -121,6 +200,10 @@ function App() {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
       eventSourceRef.current = undefined;
+    }
+    if (sseAbortControllerRef.current) {
+      sseAbortControllerRef.current.abort();
+      sseAbortControllerRef.current = null;
     }
   }, [i18n, isAuthScreen, isNoInverterOnboarding]);
 

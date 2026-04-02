@@ -42,7 +42,6 @@ function SystemInformation({
   const [loadingNotifications, setLoadingNotifications] = useState(false); // new state
   const [unreadCount, setUnreadCount] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
-  const [allowAdmin, setAllowAdmin] = useState<boolean>(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const notificationButtonRef = useRef<HTMLDivElement>(null);
   const settingsButtonRef = useRef<HTMLDivElement>(null);
@@ -80,25 +79,6 @@ function SystemInformation({
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [fetchUnreadCount]);
-
-  // Determine whether this client can access admin features (settings)
-  useEffect(() => {
-    let cancelled = false;
-    const check = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/has-admin-access`);
-        const data = await res.json();
-        if (!cancelled) setAllowAdmin(Boolean(data.has_admin_access));
-      } catch (err) {
-        logUtil.error(i18n.t("settings.adminAccessCheckFailed"), err);
-        // If the request fails, be conservative and hide admin features
-        if (!cancelled) setAllowAdmin(false);
-      }
-    };
-    check();
-    return () => { cancelled = true };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Extracted fetchNotifications function
   const fetchNotifications = useCallback(async () => {
@@ -242,32 +222,30 @@ function SystemInformation({
               <span className="system-title-serial">({inverterData.serial})</span>
             )}
             <span>{inverterData.deviceTime}</span>
-            {allowAdmin && (
-              <div className="settings-button" ref={settingsButtonRef}>
-                <button
-                  onClick={() => setShowSettings((prev) => !prev)}
-                  className={showSettings ? "active" : "inactive"}
-                  title={t("settings.title")}
-                >
-                {/* Gear icon SVG */}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  viewBox="0 0 24 24"
-                  strokeLinejoin="round"
-                  className="feather feather-settings"
-                >
-                  <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                </svg>
-                </button>
-              </div>
-            )}
+            <div className="settings-button" ref={settingsButtonRef}>
+              <button
+                onClick={() => setShowSettings((prev) => !prev)}
+                className={showSettings ? "active" : "inactive"}
+                title={t("settings.title")}
+              >
+              {/* Gear icon SVG */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                viewBox="0 0 24 24"
+                strokeLinejoin="round"
+                className="feather feather-settings"
+              >
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+              </button>
+            </div>
             <div className="notification-button" ref={notificationButtonRef}>
               <button
                 onClick={handleShowNotifications}

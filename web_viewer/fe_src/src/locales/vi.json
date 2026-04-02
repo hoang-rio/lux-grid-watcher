@@ -178,8 +178,7 @@
     "saveError": "Lưu cài đặt thất bại",
     "hours": "giờ",
     "watts": "W",
-    "percent": "%",
-    "adminAccessCheckFailed": "Kiểm tra quyền truy cập admin thất bại"
+    "percent": "%"
   },
   "getStateError": "Lỗi lấy API trạng thái"
 }
