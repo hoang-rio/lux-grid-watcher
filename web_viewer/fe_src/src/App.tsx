@@ -11,6 +11,7 @@ import {
 import Footer from "./components/Footer";
 import Loading from "./components/Loading";
 import * as logUtil from "./utils/logUtil";
+import { apiFetch } from "./utils/fetchUtil";
 
 const SystemInformation = lazy(() => import("./components/SystemInformation"));
 const Summary = lazy(() => import("./components/Summary"));
@@ -45,15 +46,6 @@ function App() {
     useState<INotificationData | null>(null);
 
   const useBearerAuth = Boolean(accessToken);
-
-  const authHeaders = useCallback(() => {
-    if (!accessToken) {
-      return undefined;
-    }
-    return {
-      Authorization: `Bearer ${accessToken}`,
-    } as HeadersInit;
-  }, [accessToken]);
 
   const connectSSE = useCallback(() => {
     if (useBearerAuth || authRequired) {
@@ -99,7 +91,6 @@ function App() {
 
       reconnectCountRef.current++;
       logUtil.log(i18n.t("sse.reconnecting"), reconnectCountRef.current);
-      // eslint-disable-next-line react-hooks/immutability
       setTimeout(() => connectSSE(), 1000 * reconnectCountRef.current);
     };
   }, [authRequired, i18n, useBearerAuth]);
@@ -127,8 +118,8 @@ function App() {
       if (selectedInverterId) {
         stateUrl.searchParams.set("inverter_id", selectedInverterId);
       }
-      const res = await fetch(stateUrl.toString(), {
-        headers: authHeaders(),
+      const res = await apiFetch(stateUrl.toString(), {
+        withAuth: true,
       });
       const json = await res.json();
       if (Object.keys(json).length !== 0) {
@@ -139,11 +130,11 @@ function App() {
       logUtil.error(i18n.t("getStateError"), err);
     }
     isFetchingRef.current = false;
-  }, [accessToken, authHeaders, authRequired, i18n, selectedInverterId]);
+  }, [accessToken, authRequired, i18n, selectedInverterId]);
 
   const loadAuthConfig = useCallback(async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/config`);
+      const res = await apiFetch("/auth/config");
       const json = await res.json();
       setAuthRequired(Boolean(json?.auth_required));
     } catch {
@@ -178,8 +169,8 @@ function App() {
 
     setAccessToken(token);
     try {
-      const profileRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const profileRes = await apiFetch("/auth/profile", {
+        withAuth: true,
       });
       const profileJson = await profileRes.json();
       if (!profileRes.ok || !profileJson.success) {
@@ -188,8 +179,8 @@ function App() {
       }
       setAuthUser(profileJson.user);
 
-      const invRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/inverters`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const invRes = await apiFetch("/inverters", {
+        withAuth: true,
       });
       const invJson = await invRes.json();
       if (!invRes.ok || !invJson.success || !Array.isArray(invJson.inverters)) {

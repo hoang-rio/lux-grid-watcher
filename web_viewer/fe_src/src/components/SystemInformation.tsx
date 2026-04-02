@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react";
 import Loading from "./Loading";
 import * as logUtil from "../utils/logUtil";
+import { apiFetch } from "../utils/fetchUtil";
 
 const SettingsPopover = lazy(() => import("./SettingsPopover"));
 
@@ -49,16 +50,6 @@ function SystemInformation({
   const notificationOpened = useRef(false); // Track if notification popover was opened
   const useBearerAuth = Boolean(authUser);
 
-  const authHeaders = useCallback(() => {
-    const token = localStorage.getItem("lux_access_token") || "";
-    if (!token) {
-      return {};
-    }
-    return {
-      Authorization: `Bearer ${token}`,
-    };
-  }, []);
-
   // Added helper function to format datetime
   const formatDateTime = useCallback((dateInput: string | number) => {
     const date = new Date(dateInput);
@@ -69,17 +60,15 @@ function SystemInformation({
   const fetchUnreadCount = useCallback(async () => {
     try {
       logUtil.log(i18n.t("notification.fetchingUnreadCount"));
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-unread-count`, {
-        headers: {
-          ...authHeaders(),
-        },
+      const res = await apiFetch("/notification-unread-count", {
+        withAuth: true,
       });
       const data = await res.json();
       setUnreadCount(data.unread_count);
     } catch (err) {
       logUtil.error(i18n.t("notification.failedFetchUnreadCount"), err);
     }
-  }, [authHeaders, i18n]);
+  }, [i18n]);
 
   useEffect(() => {
     fetchUnreadCount();
@@ -116,10 +105,8 @@ function SystemInformation({
     setLoadingNotifications(true); // start loading
     try {
       logUtil.log(i18n.t("notification.fetchingNotifications"));
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-history`, {
-        headers: {
-          ...authHeaders(),
-        },
+      const res = await apiFetch("/notification-history", {
+        withAuth: true,
       });
       const data = await res.json();
       setNotifications(data.notifications);
@@ -129,7 +116,7 @@ function SystemInformation({
     } finally {
       setLoadingNotifications(false); // end loading
     }
-  }, [authHeaders, i18n]);
+  }, [i18n]);
 
   useEffect(() => {
     if (showNotifications) {
@@ -185,11 +172,9 @@ function SystemInformation({
       notificationOpened.current = true;
     } else {
       if (notificationOpened.current && unreadCount > 0) {
-        fetch(`${import.meta.env.VITE_API_BASE_URL}/notification-mark-read`, {
+        apiFetch("/notification-mark-read", {
           method: 'POST',
-          headers: {
-            ...authHeaders(),
-          },
+          withAuth: true,
         })
           .then((res) => {
             if (!res.ok) {
@@ -200,7 +185,7 @@ function SystemInformation({
       }
       notificationOpened.current = false;
     }
-  }, [authHeaders, showNotifications, unreadCount, fetchUnreadCount]);
+  }, [showNotifications, unreadCount, fetchUnreadCount]);
 
   const handleShowNotifications = useCallback(() => {
     setShowNotifications((prev) => !prev);
