@@ -4,6 +4,11 @@ pychromecast
 python-dotenv
 google-auth
 typing_extensions
+SQLAlchemy>=2.0.36
+alembic>=1.14.0
+psycopg[binary]>=3.2.3
+PyJWT>=2.9.0
+passlib[bcrypt]>=1.7.4
 aiohappyeyeballs >= 2.3.0
 aiosignal >= 1.1.2
 async-timeout >= 4.0, < 6.0 ; python_version < "3.11"

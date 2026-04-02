@@ -19,6 +19,20 @@ See wiki from `lxp-bridge` [here](https://github.com/celsworth/lxp-bridge/wiki/I
 * Copy `.env.example` to `.env`
 * Update configuration in `.env` with your info
 
+### Multi-tenant foundation (PostgreSQL)
+
+This branch now includes a PostgreSQL + Alembic foundation for upcoming multi-user and multi-inverter support.
+
+Required new `.env` variables:
+
+* `POSTGRES_DB_URL` (example: `postgresql+psycopg://postgres:postgres@localhost:5432/lux_web_viewer`)
+* `JWT_SECRET`, `JWT_ACCESS_EXPIRE_MINUTES`, `JWT_REFRESH_EXPIRE_DAYS`
+* `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_TLS`, `SMTP_SSL`
+
+Run initial migration:
+
+* `alembic upgrade head`
+
 ### ReadInput Mode (DONGLE/SERVER)
 You can control which inverter input frame is requested by setting `READ_INPUT_MODE` in `.env`:
 
