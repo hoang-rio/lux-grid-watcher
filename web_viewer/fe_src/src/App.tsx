@@ -32,6 +32,7 @@ function App() {
   const [authUser, setAuthUser] = useState<IAuthUser | null>(null);
   const [authRequired, setAuthRequired] = useState(false);
   const [authConfigLoaded, setAuthConfigLoaded] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [userInverters, setUserInverters] = useState<IUserInverter[]>([]);
   const [selectedInverterId, setSelectedInverterId] = useState<string>("");
   const [accessToken, setAccessToken] = useState<string>("");
@@ -123,11 +124,12 @@ function App() {
         return;
       }
       isFetchingRef.current = true;
-      const stateUrl = new URL(`${import.meta.env.VITE_API_BASE_URL}/state`);
+      const params = new URLSearchParams();
       if (selectedInverterId) {
-        stateUrl.searchParams.set("inverter_id", selectedInverterId);
+        params.set("inverter_id", selectedInverterId);
       }
-      const res = await apiFetch(stateUrl.toString(), {
+      const path = params.toString() ? `/state?${params.toString()}` : "/state";
+      const res = await apiFetch(path, {
         withAuth: true,
       });
       const json = await res.json();
@@ -167,12 +169,17 @@ function App() {
       return;
     }
     if (!authRequired) {
+      setIsAuthChecking(false);
       return;
     }
+
+    setIsAuthChecking(true);
+
     const token = localStorage.getItem(ACCESS_TOKEN_KEY) || "";
     if (!token) {
       clearAuthSession();
       setIsLoading(false);
+      setIsAuthChecking(false);
       return;
     }
 
@@ -184,6 +191,7 @@ function App() {
       const profileJson = await profileRes.json();
       if (!profileRes.ok || !profileJson.success) {
         clearAuthSession();
+        setIsLoading(false);
         return;
       }
       setAuthUser(profileJson.user);
@@ -214,6 +222,8 @@ function App() {
       logUtil.error("load auth session error", err);
       clearAuthSession();
       setIsLoading(false);
+    } finally {
+      setIsAuthChecking(false);
     }
   }, [authConfigLoaded, authRequired, clearAuthSession]);
 
@@ -291,14 +301,11 @@ function App() {
   }, [accessToken, authRequired, fetchState]);
 
   useEffect(() => {
-    if (!useBearerAuth) {
+    if (!useBearerAuth || !selectedInverterId) {
       return;
     }
-    const timer = setInterval(() => {
-      fetchState();
-    }, 15000);
-    return () => clearInterval(timer);
-  }, [fetchState, useBearerAuth]);
+    fetchState();
+  }, [fetchState, selectedInverterId, useBearerAuth]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -341,6 +348,17 @@ function App() {
     );
   }
 
+  if (authConfigLoaded && authRequired && isAuthChecking) {
+    return (
+      <>
+        <div className="d-flex card loading align-center justify-center flex-1">
+          <Loading />
+        </div>
+        <Footer />
+      </>
+    );
+  }
+
   if (authConfigLoaded && authRequired && !authUser) {
     return (
       <>
@@ -363,12 +381,12 @@ function App() {
   if (inverterData) {
     return (
       <>
+        {authUser && <TopAuthBar authUser={authUser} onLogout={handleLogout} />}
         <Summary
           invertData={inverterData}
           selectedInverterId={selectedInverterId}
           authToken={accessToken}
         />
-        {authUser && <TopAuthBar authUser={authUser} onLogout={handleLogout} />}
         <SystemInformation
           inverterData={inverterData}
           isSSEConnected={isSSEConnected}

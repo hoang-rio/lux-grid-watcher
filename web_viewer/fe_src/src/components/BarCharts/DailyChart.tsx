@@ -14,6 +14,7 @@ import { IFetchChart, SeriesItem } from "../../Intefaces";
 import Loading from "../Loading";
 import { roundTo } from "../utils";
 import BarChart from "./BarChart";
+import { apiFetch } from "../../utils/fetchUtil";
 
 interface DailyChartProps {
   month?: string;
@@ -87,18 +88,15 @@ const DailyChart = forwardRef((props: DailyChartProps, ref: ForwardedRef<IFetchC
     }
     isFetchingRef.current = true;
     setIsLoading(true);
-    const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/daily-chart`);
+    const params = new URLSearchParams();
     if (month) {
-      url.searchParams.set("month", month);
+      params.set("month", month);
     }
     if (props.selectedInverterId) {
-      url.searchParams.set("inverter_id", props.selectedInverterId);
+      params.set("inverter_id", props.selectedInverterId);
     }
-    const headers: Record<string, string> = {};
-    if (props.authToken) {
-      headers.Authorization = `Bearer ${props.authToken}`;
-    }
-    const res = await fetch(url.toString(), { headers });
+    const path = `/daily-chart?${params.toString()}`;
+    const res = await apiFetch(path, { withAuth: Boolean(props.authToken) });
     const json = await res.json();
     setChartData(json);
     isFetchingRef.current = false;

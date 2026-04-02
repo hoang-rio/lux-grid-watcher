@@ -94,7 +94,7 @@ export async function apiFetch(pathOrUrl: string, options: ApiFetchOptions = {})
     headers: mergedHeaders,
   });
 
-  if (withAuth && retryOnUnauthorized && response.status === 401) {
+  if (withAuth && retryOnUnauthorized && response.status === 401 && getRefreshToken()) {
     const refreshed = await ensureRefreshed(import.meta.env.VITE_API_BASE_URL);
     if (refreshed) {
       const retryHeaders = toHeadersObject(headers);

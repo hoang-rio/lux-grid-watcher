@@ -14,6 +14,7 @@ import { IFetchChart, SeriesItem } from "../../Intefaces";
 import Loading from "../Loading";
 import { roundTo } from "../utils";
 import BarChart from "./BarChart";
+import { apiFetch } from "../../utils/fetchUtil";
 
 interface YearlyChartProps {
   selectedInverterId?: string;
@@ -79,15 +80,12 @@ const YearlyChart = forwardRef((props: YearlyChartProps, ref: ForwardedRef<IFetc
     }
     isFetchingRef.current = true;
     setState((prev) => ({ ...prev, isLoading: true }));
-    const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/yearly-chart`);
+    const params = new URLSearchParams();
     if (props.selectedInverterId) {
-      url.searchParams.set("inverter_id", props.selectedInverterId);
+      params.set("inverter_id", props.selectedInverterId);
     }
-    const headers: Record<string, string> = {};
-    if (props.authToken) {
-      headers.Authorization = `Bearer ${props.authToken}`;
-    }
-    const res = await fetch(url.toString(), { headers });
+    const path = params.toString() ? `/yearly-chart?${params.toString()}` : "/yearly-chart";
+    const res = await apiFetch(path, { withAuth: Boolean(props.authToken) });
     const json = await res.json();
     setState((prev) => ({ ...prev, chartData: json }));
     isFetchingRef.current = false;

@@ -7,6 +7,7 @@ import YieldChart from "./YieldChart";
 import { fixedIfNeed } from "./utils";
 import { useTranslation } from 'react-i18next';
 import * as logUtil from "../utils/logUtil";
+import { apiFetch } from "../utils/fetchUtil";
 
 interface IProps {
   invertData: IInverterData;
@@ -49,15 +50,12 @@ function Summary({ invertData, selectedInverterId, authToken }: IProps) {
     try {
       logUtil.log(i18n.t('fetchingTotal'));
       isFetchingRef.current = true;
-      const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/total`);
+      const params = new URLSearchParams();
       if (selectedInverterId) {
-        url.searchParams.set("inverter_id", selectedInverterId);
+        params.set("inverter_id", selectedInverterId);
       }
-      const headers: Record<string, string> = {};
-      if (authToken) {
-        headers.Authorization = `Bearer ${authToken}`;
-      }
-      const res = await fetch(url.toString(), { headers });
+      const path = params.toString() ? `/total?${params.toString()}` : "/total";
+      const res = await apiFetch(path, { withAuth: Boolean(authToken) });
       const json = await res.json();
       setTotal(json);
     } catch (err) {

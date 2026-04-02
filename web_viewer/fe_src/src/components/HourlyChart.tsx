@@ -14,6 +14,7 @@ import Chart from "react-apexcharts";
 import { IClassNameProps, IUpdateChart, SeriesItem } from "../Intefaces";
 import Loading from "./Loading";
 import { useTranslation } from "react-i18next";
+import { apiFetch } from "../utils/fetchUtil";
 
 interface HourlyChartProps extends IClassNameProps {
   selectedInverterId?: string;
@@ -111,16 +112,13 @@ const HourlyChart = forwardRef(
       isFetchingRef.current = true;
       setIsLoading(true);
       const dStr = dateStr || selectedDateRef.current;
-      const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/hourly-chart`);
-      url.searchParams.set("date", dStr);
+      const params = new URLSearchParams();
+      params.set("date", dStr);
       if (selectedInverterId) {
-        url.searchParams.set("inverter_id", selectedInverterId);
+        params.set("inverter_id", selectedInverterId);
       }
-      const headers: Record<string, string> = {};
-      if (authToken) {
-        headers.Authorization = `Bearer ${authToken}`;
-      }
-      const res = await fetch(url.toString(), { headers });
+      const path = `/hourly-chart?${params.toString()}`;
+      const res = await apiFetch(path, { withAuth: Boolean(authToken) });
       const json = await res.json();
       setChartData(json);
       setIsLoading(false);

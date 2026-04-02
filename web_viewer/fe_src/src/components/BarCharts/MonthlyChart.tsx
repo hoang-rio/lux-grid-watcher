@@ -14,6 +14,7 @@ import { IFetchChart, SeriesItem } from "../../Intefaces";
 import Loading from "../Loading";
 import { roundTo } from "../utils";
 import BarChart from "./BarChart";
+import { apiFetch } from "../../utils/fetchUtil";
 
 interface MonthlyChartProps {
   year?: number;
@@ -85,16 +86,13 @@ const MonthlyChart = forwardRef((props: MonthlyChartProps, ref: ForwardedRef<IFe
     setIsLoading(true);
     try {
       const useYear = year ?? new Date().getFullYear();
-      const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/monthly-chart`);
-      url.searchParams.set("year", String(useYear));
+      const params = new URLSearchParams();
+      params.set("year", String(useYear));
       if (props.selectedInverterId) {
-        url.searchParams.set("inverter_id", props.selectedInverterId);
+        params.set("inverter_id", props.selectedInverterId);
       }
-      const headers: Record<string, string> = {};
-      if (props.authToken) {
-        headers.Authorization = `Bearer ${props.authToken}`;
-      }
-      const res = await fetch(url.toString(), { headers });
+      const path = `/monthly-chart?${params.toString()}`;
+      const res = await apiFetch(path, { withAuth: Boolean(props.authToken) });
       const json = await res.json();
       setChartData(json && json.chart ? json.chart : json || []);
       // report available years to parent once on first successful fetch
