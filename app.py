@@ -72,13 +72,27 @@ def play_audio(audio_file: str, repeat=3):
 
 # Number of hours to skip check when detect abnormal usage
 abnormal_skip_check_count = 0
-def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
-    if not settings.get_abnormal_detection_enabled():
+def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM, inverter_ctx: dict | None = None):
+    abnormal_detection_enabled = _to_bool(
+        _get_user_setting(
+            inverter_ctx,
+            "ABNORMAL_DETECTION_ENABLED",
+            str(settings.get_abnormal_detection_enabled()),
+        )
+    )
+    if not abnormal_detection_enabled:
         return  # Skip check if abnormal detection is disabled
     now = datetime.now()
     # now = now.replace(minute=0, second=0, hour=6)
     sleep_time = int(config["SLEEP_TIME"])
-    abnormal_check_cooldown_hours = settings.get_abnormal_check_cooldown_hours()
+    abnormal_check_cooldown_hours = _to_int(
+        _get_user_setting(
+            inverter_ctx,
+            "ABNORMAL_CHECK_COOLDOWN_HOURS",
+            str(settings.get_abnormal_check_cooldown_hours()),
+        ),
+        settings.get_abnormal_check_cooldown_hours(),
+    )
     if (sleep_time >= 60 and now.minute <= sleep_time / 60) or (now.minute == 0 and now.second <= sleep_time):
         global abnormal_skip_check_count
         if abnormal_skip_check_count > 0:
@@ -97,9 +111,16 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
         min_power = 0
         max_power = 0
         consumption_count: dict = {}
-        abnormal_min_power = settings.get_abnormal_min_power()
-        abnormal_usage_count = settings.get_abnormal_usage_count()
-        normal_min_usage_count = settings.get_normal_min_usage_count()
+        abnormal_min_power = _to_int(
+            _get_user_setting(
+                inverter_ctx,
+                "ABNORMAL_MIN_POWER",
+                str(settings.get_abnormal_min_power()),
+            ),
+            settings.get_abnormal_min_power(),
+        )
+        abnormal_usage_count = 32 * abnormal_check_cooldown_hours
+        normal_min_usage_count = 5 * abnormal_check_cooldown_hours
         for item in all_items:
             rounded_consumption = item["consumption"] - item["consumption"] % 200
             consumption_count[rounded_consumption] = consumption_count.get(rounded_consumption, 0) + 1
@@ -119,8 +140,12 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
                 max_power,
                 min_power
             )
-            warning_body = settings.get_abnormal_notify_body()
-            fcm_service.abnormal_notify(warning_body)
+            warning_body = _get_user_setting(
+                inverter_ctx,
+                "ABNORMAL_NOTIFY_BODY",
+                settings.get_abnormal_notify_body(),
+            )
+            fcm_service.abnormal_notify(warning_body, inverter_ctx)
             play_audio("warning.mp3", 5)
             # Skip next abnormal_check_cooldown_hours hours when detect abnormal usage
             abnormal_skip_check_count = abnormal_check_cooldown_hours
@@ -139,8 +164,15 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM):
 
 dectect_off_grid_warning_skip_check_count = 0
 last_battery_full_notify_date = None
-def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: int, soc: int, fcm_service: FCM):
-    if not settings.get_off_grid_warning_enabled() or is_grid_connected:
+def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: int, soc: int, fcm_service: FCM, inverter_ctx: dict | None = None):
+    off_grid_warning_enabled = _to_bool(
+        _get_user_setting(
+            inverter_ctx,
+            "OFF_GRID_WARNING_ENABLED",
+            str(settings.get_off_grid_warning_enabled()),
+        )
+    )
+    if not off_grid_warning_enabled or is_grid_connected:
         return
     if pv_power > eps_power:
         # No need to check off grid warning if pv power is greater than eps power
@@ -148,9 +180,30 @@ def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: 
     global dectect_off_grid_warning_skip_check_count
     # Notify off grid warning if eps power >= OFF_GRID_WARNING_POWER and pv power < eps power / 2
     # and (battery percent (soc) < OFF_GRID_WARNING_SOC or battery discharge > MAX_BATTERY_POWER)
-    off_grid_warning_power = settings.get_off_grid_warning_power()
-    off_grid_warning_soc = settings.get_off_grid_warning_soc()
-    max_battery_power = settings.get_max_battery_power()
+    off_grid_warning_power = _to_int(
+        _get_user_setting(
+            inverter_ctx,
+            "OFF_GRID_WARNING_POWER",
+            str(settings.get_off_grid_warning_power()),
+        ),
+        settings.get_off_grid_warning_power(),
+    )
+    off_grid_warning_soc = _to_int(
+        _get_user_setting(
+            inverter_ctx,
+            "OFF_GRID_WARNING_SOC",
+            str(settings.get_off_grid_warning_soc()),
+        ),
+        settings.get_off_grid_warning_soc(),
+    )
+    max_battery_power = _to_int(
+        _get_user_setting(
+            inverter_ctx,
+            "MAX_BATTERY_POWER",
+            str(settings.get_max_battery_power()),
+        ),
+        settings.get_max_battery_power(),
+    )
 
     high_load = eps_power >= off_grid_warning_power
     insufficient_pv = pv_power < eps_power / 2
@@ -167,23 +220,38 @@ def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: 
             eps_power,
             soc
         )
-        fcm_service.offgrid_warning_notify(off_grid_warning_power, None if high_battery_discharge else off_grid_warning_soc)
+        fcm_service.offgrid_warning_notify(
+            off_grid_warning_power,
+            None if high_battery_discharge else off_grid_warning_soc,
+            inverter_ctx,
+        )
         play_audio("warning_power_off_grid.mp3")
         # Skip next OFF_GRID_WARNING_SKIP_CHECK_COUNT time when detect off grid warning
         dectect_off_grid_warning_skip_check_count = 60 // int(config["SLEEP_TIME"])
     else:
         dectect_off_grid_warning_skip_check_count = 0
 
-def detect_battery_full(soc: int, fcm_service: FCM):
-    if not settings.get_battery_full_notify_enabled():
+def detect_battery_full(soc: int, fcm_service: FCM, inverter_ctx: dict | None = None):
+    battery_full_notify_enabled = _to_bool(
+        _get_user_setting(
+            inverter_ctx,
+            "BATTERY_FULL_NOTIFY_ENABLED",
+            str(settings.get_battery_full_notify_enabled()),
+        )
+    )
+    if not battery_full_notify_enabled:
         return
     global last_battery_full_notify_date
     now = datetime.now()
     today = now.date()
     if soc == 100 and (last_battery_full_notify_date is None or last_battery_full_notify_date != today):
         logger.info("_________Battery full detected with soc: %s%%_________", soc)
-        body = settings.get_battery_full_notify_body()
-        fcm_service.battery_full_notify(body)
+        body = _get_user_setting(
+            inverter_ctx,
+            "BATTERY_FULL_NOTIFY_BODY",
+            settings.get_battery_full_notify_body(),
+        )
+        fcm_service.battery_full_notify(body, inverter_ctx)
         last_battery_full_notify_date = today
 
 
@@ -292,6 +360,213 @@ def _pg_upsert_inverter_data(inverter_data: dict) -> None:
     except Exception as exc:
         logger.warning("PostgreSQL upsert failed for inverter_id=%s: %s", inverter_id_str, exc)
 
+
+def _resolve_inverter_context(inverter_data: dict) -> dict | None:
+    """Resolve inverter/user context for multi-tenant operations.
+
+    Returns dict with keys: id, user_id, name
+    """
+    if not USE_PG:
+        return None
+    try:
+        import uuid
+        from multi_tenant.db import get_db_session
+        from multi_tenant import repository as repo
+
+        inverter_id_str = inverter_data.get("_inverter_id")
+        session = next(get_db_session())
+        try:
+            inverter = None
+            if inverter_id_str:
+                try:
+                    inverter = repo.get_inverter_by_id(session, uuid.UUID(str(inverter_id_str)))
+                except Exception:
+                    inverter = None
+            if inverter is None:
+                dongle_serial = inverter_data.get("dongle_serial") or inverter_data.get("serial")
+                if dongle_serial:
+                    inverter = repo.get_inverter_by_dongle_serial(session, str(dongle_serial))
+            if inverter is None:
+                return None
+            inverter_data["_inverter_id"] = str(inverter.id)
+            return {
+                "id": str(inverter.id),
+                "user_id": str(inverter.user_id),
+                "name": inverter.name,
+            }
+        finally:
+            session.close()
+    except Exception as exc:
+        logger.debug("Failed to resolve inverter context: %s", exc)
+        return None
+
+
+def _get_user_setting(inverter_ctx: dict | None, key: str, default: str) -> str:
+    if not USE_PG or not inverter_ctx or not inverter_ctx.get("user_id"):
+        return default
+    try:
+        import uuid
+        from multi_tenant.db import get_db_session
+        from multi_tenant import repository as repo
+
+        session = next(get_db_session())
+        try:
+            value = repo.get_user_setting(session, uuid.UUID(inverter_ctx["user_id"]), key)
+            return value if value is not None else default
+        finally:
+            session.close()
+    except Exception:
+        return default
+
+
+def _to_bool(value: str) -> bool:
+    return str(value).lower() == "true"
+
+
+def _to_int(value: str, fallback: int) -> int:
+    try:
+        return int(value)
+    except Exception:
+        return fallback
+
+
+def _migrate_sqlite_to_pg_if_needed() -> None:
+    """One-time migration of legacy SQLite runtime data into PostgreSQL.
+
+    Migration is best-effort and keyed to inverter resolved from DONGLE_SERIAL.
+    """
+    if not USE_PG:
+        return
+    sqlite_db = config.get("DB_NAME")
+    if not sqlite_db or not path.exists(sqlite_db):
+        return
+    marker = f"{sqlite_db}.migrated_to_pg"
+    if path.exists(marker):
+        return
+
+    try:
+        from multi_tenant.db import get_db_session
+        from multi_tenant import repository as repo
+
+        session = next(get_db_session())
+        try:
+            dongle_serial = config.get("DONGLE_SERIAL", "")
+            inverter = None
+            if dongle_serial:
+                inverter = repo.get_inverter_by_dongle_serial(session, dongle_serial)
+            if inverter is None:
+                logger.warning("Skip SQLite→PG migration: no inverter matched DONGLE_SERIAL")
+                return
+
+            conn = sqlite3.connect(sqlite_db)
+            cur = conn.cursor()
+            try:
+                # hourly_chart -> hourly_chart_v2
+                try:
+                    rows = cur.execute(
+                        "SELECT datetime, pv, battery, grid, consumption, soc FROM hourly_chart ORDER BY datetime"
+                    ).fetchall()
+                    for r in rows:
+                        dt = datetime.strptime(r[0], "%Y-%m-%d %H:%M:%S")
+                        repo.upsert_hourly_chart(
+                            session,
+                            inverter.id,
+                            dt,
+                            int(config["SLEEP_TIME"]),
+                            int(r[1] or 0),
+                            int(r[2] or 0),
+                            int(r[3] or 0),
+                            int(r[4] or 0),
+                            int(r[5] or 0),
+                        )
+                except Exception as exc:
+                    logger.warning("Skip hourly migration: %s", exc)
+
+                # daily_chart -> daily_chart_v2
+                try:
+                    rows = cur.execute(
+                        "SELECT date, year, month, pv, battery_charged, battery_discharged, grid_import, grid_export, consumption FROM daily_chart ORDER BY date"
+                    ).fetchall()
+                    for r in rows:
+                        d = datetime.strptime(r[0], "%Y-%m-%d").date()
+                        repo.upsert_daily_chart(
+                            session,
+                            inverter.id,
+                            d,
+                            int(r[1]),
+                            int(r[2]),
+                            float(r[3] or 0),
+                            float(r[4] or 0),
+                            float(r[5] or 0),
+                            float(r[6] or 0),
+                            float(r[7] or 0),
+                            float(r[8] or 0),
+                        )
+                except Exception as exc:
+                    logger.warning("Skip daily migration: %s", exc)
+
+                # notification_history -> notification_history_v2
+                try:
+                    rows = cur.execute(
+                        "SELECT title, body, notified_at, read FROM notification_history ORDER BY notified_at"
+                    ).fetchall()
+                    for r in rows:
+                        n = repo.insert_notification(
+                            session,
+                            user_id=inverter.user_id,
+                            title=str(r[0] or ""),
+                            body=str(r[1] or ""),
+                            inverter_id=inverter.id,
+                        )
+                        if r[2]:
+                            try:
+                                n.notified_at = datetime.strptime(r[2], "%Y-%m-%d %H:%M:%S")
+                            except Exception:
+                                pass
+                        n.read = bool(r[3])
+                except Exception as exc:
+                    logger.warning("Skip notification migration: %s", exc)
+
+                # settings -> scoped_settings (user)
+                try:
+                    rows = cur.execute("SELECT key, value FROM settings").fetchall()
+                    for r in rows:
+                        key = str(r[0])
+                        if key in {"AUTH_ENABLED", "AUTH_USERNAME", "AUTH_PASSWORD", "AUTH_BYPASS_CIDR"}:
+                            continue
+                        repo.upsert_user_setting(session, inverter.user_id, key, str(r[1]))
+                except Exception as exc:
+                    logger.warning("Skip settings migration: %s", exc)
+
+            finally:
+                cur.close()
+                conn.close()
+
+            # device ids json -> user_device_tokens
+            try:
+                device_file = config.get("DEVICE_IDS_JSON_FILE", "devices.json")
+                if path.exists(device_file):
+                    with open(device_file, "r") as fh:
+                        tokens = json.loads(fh.read())
+                    if isinstance(tokens, list):
+                        for token in tokens:
+                            if isinstance(token, str) and token.strip():
+                                repo.upsert_device_token(session, inverter.user_id, token.strip())
+            except Exception as exc:
+                logger.warning("Skip device token migration: %s", exc)
+
+            session.commit()
+            with open(marker, "w") as mf:
+                mf.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            logger.info("SQLite→PostgreSQL migration completed")
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+    except Exception as exc:
+        logger.exception("SQLite→PostgreSQL migration failed: %s", exc)
+
 def handle_grid_status(json_data: dict, fcm_service: FCM):
     if not has_input1_data(json_data):
         logger.debug(
@@ -301,6 +576,7 @@ def handle_grid_status(json_data: dict, fcm_service: FCM):
         return
 
     # is_grid_connected = True
+    inverter_ctx = _resolve_inverter_context(json_data)
     is_grid_connected = json_data["fac"] > 0
     last_grid_connected = True
     disconnected_time = json_data["deviceTime"]
@@ -346,17 +622,17 @@ ________Status: \"%s\" (%s) at deviceTime: %s with fac: %s Hz and vacr: %s V____
         with open(config["STATE_FILE"], "w") as fw:
             fw.write(str(is_grid_connected))
         if is_grid_connected:
-            fcm_service.ongrid_notify()
+            fcm_service.ongrid_notify(inverter_ctx)
             play_audio("has-grid.mp3")
         else:
             logger.warning("All json data: %s", json_data)
-            fcm_service.offgrid_notify()
+            fcm_service.offgrid_notify(inverter_ctx)
             play_audio("lost-grid.mp3", 5)
     else:
         logger.info("State did not change. Skip play notify audio")
     dectect_off_grid_warning(
-        is_grid_connected, json_data["p_pv"], json_data["p_eps"], json_data["soc"], fcm_service)
-    detect_battery_full(json_data["soc"], fcm_service)
+        is_grid_connected, json_data["p_pv"], json_data["p_eps"], json_data["soc"], fcm_service, inverter_ctx)
+    detect_battery_full(json_data["soc"], fcm_service, inverter_ctx)
 
 
 async def initialize_web_socket_client(fcm_service: FCM, old_ws_client: WebSocketClient | None = None):
@@ -412,7 +688,7 @@ async def process_inverter_data(
 
     if not USE_PG and db_connection is not None:
         database.insert_daily_chart(db_connection, inverter_data)
-        dectect_abnormal_usage(db_connection, fcm_service)
+        dectect_abnormal_usage(db_connection, fcm_service, _resolve_inverter_context(inverter_data))
 
     return ws_client
 
@@ -422,6 +698,8 @@ async def main():
                     config["WORKING_MODE"])
         fcm_service = FCM(logger, config)
         run_web_view = config["RUN_WEB_VIEWER"] == "True"
+        if USE_PG:
+            _migrate_sqlite_to_pg_if_needed()
         if config["WORKING_MODE"] == DONGLE_MODE:
             if run_web_view:
                 db_connection = None

@@ -17,6 +17,7 @@ from .models import (
     NotificationHistory,
     PasswordResetToken,
     RefreshToken,
+    ScopedSetting,
     User,
     UserDeviceToken,
 )
@@ -194,6 +195,10 @@ def get_inverter_by_id_and_user(
             Inverter.id == inverter_id, Inverter.user_id == user_id
         )
     ).scalar_one_or_none()
+
+
+def get_inverter_by_id(session: Session, inverter_id: uuid.UUID) -> Optional[Inverter]:
+    return session.get(Inverter, inverter_id)
 
 
 def get_inverter_by_dongle_serial(
@@ -575,3 +580,51 @@ def get_device_tokens_by_user(session: Session, user_id: uuid.UUID) -> list[str]
             )
         ).scalars()
     )
+
+
+# ---------------------------------------------------------------------------
+# Scoped settings (user-scoped)
+# ---------------------------------------------------------------------------
+
+def get_user_settings(session: Session, user_id: uuid.UUID) -> dict[str, str]:
+    rows = session.execute(
+        select(ScopedSetting).where(
+            ScopedSetting.scope == "user",
+            ScopedSetting.scope_id == user_id,
+        )
+    ).scalars()
+    return {r.key: r.value for r in rows}
+
+
+def get_user_setting(session: Session, user_id: uuid.UUID, key: str) -> Optional[str]:
+    row = session.execute(
+        select(ScopedSetting).where(
+            ScopedSetting.scope == "user",
+            ScopedSetting.scope_id == user_id,
+            ScopedSetting.key == key,
+        )
+    ).scalar_one_or_none()
+    return row.value if row else None
+
+
+def upsert_user_setting(
+    session: Session,
+    user_id: uuid.UUID,
+    key: str,
+    value: str,
+) -> ScopedSetting:
+    row = session.execute(
+        select(ScopedSetting).where(
+            ScopedSetting.scope == "user",
+            ScopedSetting.scope_id == user_id,
+            ScopedSetting.key == key,
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        row = ScopedSetting(scope="user", scope_id=user_id, key=key, value=value)
+        session.add(row)
+    else:
+        row.value = value
+        row.updated_at = datetime.utcnow()
+    session.flush()
+    return row

@@ -294,6 +294,35 @@ async def register_fcm(request: web.Request):
                 payload = await request.post()
                 token = str(payload.get("token", ""))
 
+        if USE_PG:
+            user_id = _extract_jwt_user_id(request)
+            if user_id is None:
+                return web.json_response(
+                    {"is_success": False, "message": "Unauthorized", "device_count": 0},
+                    status=401,
+                    headers=VITE_CORS_HEADER,
+                )
+            if not token.strip():
+                return web.json_response(
+                    {"is_success": False, "message": "Missing required parameter 'token'", "device_count": 0},
+                    status=400,
+                    headers=VITE_CORS_HEADER,
+                )
+            session = next(get_db_session())
+            try:
+                mt_repo.upsert_device_token(session, user_id, token.strip())
+                count = len(mt_repo.get_device_tokens_by_user(session, user_id))
+                session.commit()
+                return web.json_response(
+                    {"is_success": True, "message": "Device register success", "device_count": count},
+                    headers=VITE_CORS_HEADER,
+                )
+            except Exception:
+                session.rollback()
+                raise
+            finally:
+                session.close()
+
         result = register_device_token(
             config.get("DEVICE_IDS_JSON_FILE", "devices.json"),
             token,
@@ -635,6 +664,32 @@ async def yearly_chart(_: web.Request):
         return web.json_response([], headers=VITE_CORS_HEADER)
 
 async def notification_history(_: web.Request):
+    if USE_PG:
+        user_id = _extract_jwt_user_id(_)
+        if user_id is None:
+            return web.json_response({"notifications": []}, status=401, headers=VITE_CORS_HEADER)
+        try:
+            session = next(get_db_session())
+            try:
+                notifications = mt_repo.get_notification_history(session, user_id)
+                data = [
+                    {
+                        "id": row.id,
+                        "title": row.title,
+                        "body": row.body,
+                        "notified_at": row.notified_at.strftime("%Y-%m-%d %H:%M:%S"),
+                        "read": 1 if row.read else 0,
+                        "inverter_id": str(row.inverter_id) if row.inverter_id else None,
+                    }
+                    for row in notifications
+                ]
+                return web.json_response({"notifications": data}, headers=VITE_CORS_HEADER)
+            finally:
+                session.close()
+        except Exception as e:
+            logger.error(f"Error in notification_history (multi-tenant): {e}")
+            return web.json_response({"notifications": []}, headers=VITE_CORS_HEADER)
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -651,6 +706,22 @@ async def notification_history(_: web.Request):
         return web.json_response({"notifications": []}, headers=VITE_CORS_HEADER)
 
 async def mark_notifications_read(_: web.Request):
+    if USE_PG:
+        user_id = _extract_jwt_user_id(_)
+        if user_id is None:
+            return web.json_response({"success": False}, status=401, headers=VITE_CORS_HEADER)
+        try:
+            session = next(get_db_session())
+            try:
+                mt_repo.mark_notifications_read(session, user_id)
+                session.commit()
+                return web.json_response({"success": True}, headers=VITE_CORS_HEADER)
+            finally:
+                session.close()
+        except Exception as e:
+            logger.error(f"Error in mark_notifications_read (multi-tenant): {e}")
+            return web.json_response({"success": False}, headers=VITE_CORS_HEADER)
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -662,6 +733,21 @@ async def mark_notifications_read(_: web.Request):
         return web.json_response({"success": False}, headers=VITE_CORS_HEADER)
 
 async def notification_unread_count(_: web.Request):
+    if USE_PG:
+        user_id = _extract_jwt_user_id(_)
+        if user_id is None:
+            return web.json_response({"unread_count": 0}, status=401, headers=VITE_CORS_HEADER)
+        try:
+            session = next(get_db_session())
+            try:
+                unread_count = mt_repo.get_unread_notification_count(session, user_id)
+                return web.json_response({"unread_count": unread_count}, headers=VITE_CORS_HEADER)
+            finally:
+                session.close()
+        except Exception as e:
+            logger.error(f"Error in notification_unread_count (multi-tenant): {e}")
+            return web.json_response({"unread_count": 0}, headers=VITE_CORS_HEADER)
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -672,6 +758,29 @@ async def notification_unread_count(_: web.Request):
         return web.json_response({"unread_count": 0}, headers=VITE_CORS_HEADER)
 
 async def get_settings(_: web.Request):
+    if USE_PG:
+        user_id = _extract_jwt_user_id(_)
+        if user_id is None:
+            return web.json_response({}, status=401, headers=VITE_CORS_HEADER)
+        try:
+            import settings
+            session = next(get_db_session())
+            try:
+                user_settings = mt_repo.get_user_settings(session, user_id)
+            finally:
+                session.close()
+            merged = dict(settings.settings)
+            merged.update(user_settings)
+            # Basic Auth settings are redundant in multi-tenant mode
+            merged.pop("AUTH_ENABLED", None)
+            merged.pop("AUTH_USERNAME", None)
+            merged.pop("AUTH_PASSWORD", None)
+            merged.pop("AUTH_BYPASS_CIDR", None)
+            return web.json_response(merged, headers=VITE_CORS_HEADER)
+        except Exception as e:
+            logger.error(f"Error in get_settings (multi-tenant): {e}")
+            return web.json_response({}, headers=VITE_CORS_HEADER)
+
     try:
         import settings
         return web.json_response(settings.settings, headers=VITE_CORS_HEADER)
@@ -680,6 +789,30 @@ async def get_settings(_: web.Request):
         return web.json_response({}, headers=VITE_CORS_HEADER)
 
 async def update_settings(request: web.Request):
+    if USE_PG:
+        user_id = _extract_jwt_user_id(request)
+        if user_id is None:
+            return web.json_response({"success": False}, status=401, headers=VITE_CORS_HEADER)
+        try:
+            data = await request.json()
+            session = next(get_db_session())
+            try:
+                for key, value in data.items():
+                    # Basic auth settings are deprecated in multi-tenant mode.
+                    if key in {"AUTH_ENABLED", "AUTH_USERNAME", "AUTH_PASSWORD", "AUTH_BYPASS_CIDR"}:
+                        continue
+                    mt_repo.upsert_user_setting(session, user_id, key, str(value))
+                session.commit()
+                return web.json_response({"success": True}, headers=VITE_CORS_HEADER)
+            except Exception:
+                session.rollback()
+                raise
+            finally:
+                session.close()
+        except Exception as e:
+            logger.error(f"Error in update_settings (multi-tenant): {e}")
+            return web.json_response({"success": False}, headers=VITE_CORS_HEADER)
+
     try:
         data = await request.json()
         conn = get_db_connection()
@@ -705,6 +838,9 @@ async def has_admin_access(request: web.Request):
     Controlled only via the `ADMIN_ALLOWED_CIDR` environment variable. Returns
     JSON with boolean key `has_admin_access`.
     """
+    if USE_PG:
+        return web.json_response({"has_admin_access": False}, headers=VITE_CORS_HEADER)
+
     peer = request.transport
     remote_ip = _peer_ip_from_transport(peer)
     allowed = _ip_in_cidrs(remote_ip, ADMIN_ALLOWED_CIDR)
@@ -746,6 +882,10 @@ async def basic_auth_middleware(request, handler):
             return await handler(request)
         else:
             return _auth_html_response(403, "Forbidden", "Access to the websocket endpoint is restricted to localhost.")
+    if USE_PG:
+        # Multi-tenant mode uses JWT auth and user-scoped settings.
+        return await handler(request)
+
     # Auth and inverter management endpoints use JWT; bypass HTTP Basic Auth for them.
     if request.path.startswith("/auth/") or request.path.startswith("/auth") or request.path.startswith("/inverters"):
         return await handler(request)
