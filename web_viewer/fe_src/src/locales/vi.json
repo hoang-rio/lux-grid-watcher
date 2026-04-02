@@ -109,6 +109,33 @@
   "auth": {
     "verifyEmailWarning": "Email của bạn chưa được xác thực. Hãy xác thực để bật chức năng đặt lại mật khẩu qua email."
   },
+  "authPanel": {
+    "title": "Tài khoản",
+    "login": "Đăng nhập",
+    "register": "Đăng ký",
+    "forgot": "Quên mật khẩu",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "newPassword": "Mật khẩu mới",
+    "sendResetLink": "Gửi link đặt lại",
+    "resetPassword": "Đặt lại mật khẩu",
+    "loginFailed": "Đăng nhập thất bại",
+    "registerFailed": "Đăng ký thất bại",
+    "registerSuccess": "Đăng ký thành công. Hãy xác thực email rồi đăng nhập.",
+    "requestFailed": "Yêu cầu thất bại",
+    "forgotSent": "Nếu email đã đăng ký, hệ thống sẽ gửi link đặt lại mật khẩu.",
+    "resetFailed": "Đặt lại mật khẩu thất bại",
+    "resetSuccess": "Đặt lại mật khẩu thành công. Vui lòng đăng nhập."
+  },
+  "inverterSetup": {
+    "title": "Tạo Inverter Đầu Tiên",
+    "description": "Thêm thông tin inverter để bắt đầu nhận dữ liệu.",
+    "name": "Tên hiển thị",
+    "dongleSerial": "Serial dongle",
+    "invertSerial": "Serial inverter",
+    "create": "Tạo inverter",
+    "createFailed": "Tạo inverter thất bại"
+  },
   "settings": {
     "title": "Cài đặt",
     "abnormalUsageSection": "Phát hiện sử dụng bất thường",

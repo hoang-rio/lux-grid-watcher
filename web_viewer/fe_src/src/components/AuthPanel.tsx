@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { IAuthUser } from "../Intefaces";
 import "./AuthPanel.css";
 
@@ -9,6 +10,7 @@ interface AuthPanelProps {
 type Mode = "login" | "register" | "forgot" | "reset";
 
 function AuthPanel({ onAuthSuccess }: AuthPanelProps) {
+  const { t } = useTranslation();
   const search = new URLSearchParams(window.location.search);
   const resetToken = search.get("token") || "";
   const initialMode: Mode = useMemo(() => (resetToken ? "reset" : "login"), [resetToken]);
@@ -39,12 +41,12 @@ function AuthPanel({ onAuthSuccess }: AuthPanelProps) {
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
-        setError(json.message || "Login failed");
+        setError(json.message || t("authPanel.loginFailed"));
         return;
       }
       onAuthSuccess(json.access_token, json.refresh_token, json.user);
     } catch {
-      setError("Login failed");
+      setError(t("authPanel.loginFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -61,13 +63,13 @@ function AuthPanel({ onAuthSuccess }: AuthPanelProps) {
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
-        setError(json.message || "Register failed");
+        setError(json.message || t("authPanel.registerFailed"));
         return;
       }
-      setMessage("Register success. Please verify your email, then login.");
+      setMessage(t("authPanel.registerSuccess"));
       setMode("login");
     } catch {
-      setError("Register failed");
+      setError(t("authPanel.registerFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -84,12 +86,12 @@ function AuthPanel({ onAuthSuccess }: AuthPanelProps) {
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
-        setError(json.message || "Request failed");
+        setError(json.message || t("authPanel.requestFailed"));
         return;
       }
-      setMessage(json.message || "If your email is registered, a reset link has been sent.");
+      setMessage(json.message || t("authPanel.forgotSent"));
     } catch {
-      setError("Request failed");
+      setError(t("authPanel.requestFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -106,14 +108,14 @@ function AuthPanel({ onAuthSuccess }: AuthPanelProps) {
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
-        setError(json.message || "Reset failed");
+        setError(json.message || t("authPanel.resetFailed"));
         return;
       }
-      setMessage("Password reset success. Please login.");
+      setMessage(t("authPanel.resetSuccess"));
       window.history.replaceState({}, document.title, window.location.pathname);
       setMode("login");
     } catch {
-      setError("Reset failed");
+      setError(t("authPanel.resetFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -122,19 +124,19 @@ function AuthPanel({ onAuthSuccess }: AuthPanelProps) {
   return (
     <div className="auth-shell">
       <div className="auth-card">
-        <h2>Account</h2>
+        <h2>{t("authPanel.title")}</h2>
 
         {mode !== "reset" && (
           <div className="auth-tabs">
-            <button className={mode === "login" ? "active" : ""} onClick={() => setMode("login")}>Login</button>
-            <button className={mode === "register" ? "active" : ""} onClick={() => setMode("register")}>Register</button>
-            <button className={mode === "forgot" ? "active" : ""} onClick={() => setMode("forgot")}>Forgot</button>
+            <button className={mode === "login" ? "active" : ""} onClick={() => setMode("login")}>{t("authPanel.login")}</button>
+            <button className={mode === "register" ? "active" : ""} onClick={() => setMode("register")}>{t("authPanel.register")}</button>
+            <button className={mode === "forgot" ? "active" : ""} onClick={() => setMode("forgot")}>{t("authPanel.forgot")}</button>
           </div>
         )}
 
         {(mode === "login" || mode === "register" || mode === "forgot") && (
           <>
-            <label>Email</label>
+            <label>{t("authPanel.email")}</label>
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -146,7 +148,7 @@ function AuthPanel({ onAuthSuccess }: AuthPanelProps) {
 
         {(mode === "login" || mode === "register") && (
           <>
-            <label>Password</label>
+            <label>{t("authPanel.password")}</label>
             <input
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -158,7 +160,7 @@ function AuthPanel({ onAuthSuccess }: AuthPanelProps) {
 
         {mode === "reset" && (
           <>
-            <label>New Password</label>
+            <label>{t("authPanel.newPassword")}</label>
             <input
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
@@ -172,16 +174,16 @@ function AuthPanel({ onAuthSuccess }: AuthPanelProps) {
         {message && <div className="auth-message">{message}</div>}
 
         {mode === "login" && (
-          <button disabled={isSubmitting} onClick={handleLogin}>Login</button>
+          <button disabled={isSubmitting} onClick={handleLogin}>{t("authPanel.login")}</button>
         )}
         {mode === "register" && (
-          <button disabled={isSubmitting} onClick={handleRegister}>Register</button>
+          <button disabled={isSubmitting} onClick={handleRegister}>{t("authPanel.register")}</button>
         )}
         {mode === "forgot" && (
-          <button disabled={isSubmitting} onClick={handleForgotPassword}>Send reset link</button>
+          <button disabled={isSubmitting} onClick={handleForgotPassword}>{t("authPanel.sendResetLink")}</button>
         )}
         {mode === "reset" && (
-          <button disabled={isSubmitting} onClick={handleResetPassword}>Reset password</button>
+          <button disabled={isSubmitting} onClick={handleResetPassword}>{t("authPanel.resetPassword")}</button>
         )}
       </div>
     </div>

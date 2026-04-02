@@ -18,6 +18,7 @@ const Summary = lazy(() => import("./components/Summary"));
 const HourlyChart = lazy(() => import("./components/HourlyChart"));
 const EnergyChart = lazy(() => import("./components/EnergyChart"));
 const AuthPanel = lazy(() => import("./components/AuthPanel"));
+const InverterSetupPanel = lazy(() => import("./components/InverterSetupPanel"));
 
 const MAX_RECONNECT_COUNT = 5;
 const ACCESS_TOKEN_KEY = "lux_access_token";
@@ -44,6 +45,9 @@ function App() {
   // Changed to hold notification object or null
   const [newNotification, setNewNotification] =
     useState<INotificationData | null>(null);
+
+  const isNoInverterOnboarding = authConfigLoaded && authRequired && !!authUser && userInverters.length === 0;
+  const isAuthScreen = authConfigLoaded && authRequired && !authUser;
 
   const useBearerAuth = Boolean(accessToken);
 
@@ -79,7 +83,9 @@ function App() {
     };
 
     eventSource.onerror = (event) => {
-      document.title = `[${i18n.t("offline")}] ${i18n.t("webTitle")}`;
+      if (!isNoInverterOnboarding && !isAuthScreen) {
+        document.title = `[${i18n.t("offline")}] ${i18n.t("webTitle")}`;
+      }
       setIsSSEConnected(false);
       logUtil.error(i18n.t("sse.error"), event);
       eventSource.close();
@@ -93,17 +99,19 @@ function App() {
       logUtil.log(i18n.t("sse.reconnecting"), reconnectCountRef.current);
       setTimeout(() => connectSSE(), 1000 * reconnectCountRef.current);
     };
-  }, [authRequired, i18n, useBearerAuth]);
+  }, [authRequired, i18n, isAuthScreen, isNoInverterOnboarding, useBearerAuth]);
 
   const closeSSE = useCallback(() => {
     logUtil.log(i18n.t("sse.closing"));
-    document.title = `[${i18n.t("offline")}] ${i18n.t("webTitle")}`;
+    if (!isNoInverterOnboarding && !isAuthScreen) {
+      document.title = `[${i18n.t("offline")}] ${i18n.t("webTitle")}`;
+    }
     setIsSSEConnected(false);
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
       eventSourceRef.current = undefined;
     }
-  }, [i18n]);
+  }, [i18n, isAuthScreen, isNoInverterOnboarding]);
 
   const fetchState = useCallback(async () => {
     try {
@@ -216,6 +224,12 @@ function App() {
     await fetchState();
   }, [fetchState, loadAuthSession]);
 
+  const onInverterCreated = useCallback(async () => {
+    setIsLoading(true);
+    await loadAuthSession();
+    await fetchState();
+  }, [fetchState, loadAuthSession]);
+
   useEffect(() => {
     loadAuthConfig();
   }, [loadAuthConfig]);
@@ -300,6 +314,15 @@ function App() {
     return (
       <>
         <AuthPanel onAuthSuccess={onAuthSuccess} />
+        <Footer />
+      </>
+    );
+  }
+
+  if (authConfigLoaded && authRequired && authUser && userInverters.length === 0) {
+    return (
+      <>
+        <InverterSetupPanel onCreated={onInverterCreated} />
         <Footer />
       </>
     );

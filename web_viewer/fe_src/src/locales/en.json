@@ -111,6 +111,33 @@
   "auth": {
     "verifyEmailWarning": "Your email is not verified yet. Verify it to enable password reset via email."
   },
+  "authPanel": {
+    "title": "Account",
+    "login": "Login",
+    "register": "Register",
+    "forgot": "Forgot",
+    "email": "Email",
+    "password": "Password",
+    "newPassword": "New Password",
+    "sendResetLink": "Send reset link",
+    "resetPassword": "Reset password",
+    "loginFailed": "Login failed",
+    "registerFailed": "Register failed",
+    "registerSuccess": "Register success. Please verify your email, then login.",
+    "requestFailed": "Request failed",
+    "forgotSent": "If your email is registered, a reset link has been sent.",
+    "resetFailed": "Reset failed",
+    "resetSuccess": "Password reset success. Please login."
+  },
+  "inverterSetup": {
+    "title": "Create Your First Inverter",
+    "description": "Add inverter information to start receiving data.",
+    "name": "Display name",
+    "dongleSerial": "Dongle serial",
+    "invertSerial": "Inverter serial",
+    "create": "Create inverter",
+    "createFailed": "Failed to create inverter"
+  },
   "settings": {
     "title": "Settings",
     "abnormalUsageSection": "Abnormal usage detection",
