@@ -191,6 +191,10 @@ function SystemInformation({
     setShowNotifications((prev) => !prev);
   }, []);
 
+  const inverterNameById = useMemo(() => {
+    return new Map(inverters.map((inv) => [inv.id, inv.name]));
+  }, [inverters]);
+
   const status = useMemo(() => {
     if (!isSSEConnected) {
       return "offline";
@@ -238,9 +242,6 @@ function SystemInformation({
               <span className="system-title-serial">({inverterData.serial})</span>
             )}
             <span>{inverterData.deviceTime}</span>
-            {authUser && !authUser.email_confirmed && (
-              <div className="email-warning-banner">{t("auth.verifyEmailWarning")}</div>
-            )}
             {allowAdmin && (
               <div className="settings-button" ref={settingsButtonRef}>
                 <button
@@ -372,6 +373,11 @@ function SystemInformation({
                       <div>
                         <strong>{note.title}</strong>
                       </div>
+                      {note.inverter_id && (
+                        <div className="notification-meta">
+                          {t("notification.source")}: {inverterNameById.get(note.inverter_id) || t("notification.unknownInverter")}
+                        </div>
+                      )}
                       <div className="notification-body">{note.body}</div>
                       <div className="notification-date">
                         {formatDateTime(note.notified_at)}

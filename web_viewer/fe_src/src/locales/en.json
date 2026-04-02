@@ -106,10 +106,16 @@
     "fetchingNotifications": "Fetching notifications...",
     "failedFetchNotifications": "Failed to fetch notifications",
     "fetchingUnreadCount": "Fetching unread notification count...",
-    "failedFetchUnreadCount": "Failed to fetch unread notification count"
+    "failedFetchUnreadCount": "Failed to fetch unread notification count",
+    "source": "Source",
+    "unknownInverter": "Unknown inverter"
   },
   "auth": {
-    "verifyEmailWarning": "Your email is not verified yet. Verify it to enable password reset via email."
+    "verifyEmailWarning": "Your email is not verified yet. Verify it to enable password reset via email.",
+    "sendVerifyEmail": "Send verification email",
+    "sendVerifyEmailSuccess": "Verification email sent.",
+    "sendVerifyEmailFailed": "Failed to send verification email",
+    "logout": "Logout"
   },
   "authPanel": {
     "title": "Account",

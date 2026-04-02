@@ -104,10 +104,16 @@
     "fetchingNotifications": "Đang lấy thông báo...",
     "failedFetchNotifications": "Lấy thông báo thất bại",
     "fetchingUnreadCount": "Đang lấy số lượng thông báo chưa đọc...",
-    "failedFetchUnreadCount": "Lấy số lượng thông báo chưa đọc thất bại"
+    "failedFetchUnreadCount": "Lấy số lượng thông báo chưa đọc thất bại",
+    "source": "Nguồn",
+    "unknownInverter": "Inverter không xác định"
   },
   "auth": {
-    "verifyEmailWarning": "Email của bạn chưa được xác thực. Hãy xác thực để bật chức năng đặt lại mật khẩu qua email."
+    "verifyEmailWarning": "Email của bạn chưa được xác thực. Hãy xác thực để bật chức năng đặt lại mật khẩu qua email.",
+    "sendVerifyEmail": "Gửi email xác thực",
+    "sendVerifyEmailSuccess": "Đã gửi email xác thực.",
+    "sendVerifyEmailFailed": "Gửi email xác thực thất bại",
+    "logout": "Đăng xuất"
   },
   "authPanel": {
     "title": "Tài khoản",

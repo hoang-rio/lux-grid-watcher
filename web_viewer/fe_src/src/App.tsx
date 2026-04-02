@@ -19,6 +19,7 @@ const HourlyChart = lazy(() => import("./components/HourlyChart"));
 const EnergyChart = lazy(() => import("./components/EnergyChart"));
 const AuthPanel = lazy(() => import("./components/AuthPanel"));
 const InverterSetupPanel = lazy(() => import("./components/InverterSetupPanel"));
+const TopAuthBar = lazy(() => import("./components/TopAuthBar"));
 
 const MAX_RECONNECT_COUNT = 5;
 const ACCESS_TOKEN_KEY = "lux_access_token";
@@ -230,6 +231,25 @@ function App() {
     await fetchState();
   }, [fetchState, loadAuthSession]);
 
+  const handleLogout = useCallback(async () => {
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY) || "";
+    try {
+      await apiFetch("/auth/logout", {
+        method: "POST",
+        withAuth: true,
+        body: JSON.stringify({ refresh_token: refreshToken }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (err) {
+      logUtil.error("logout request failed", err);
+    } finally {
+      clearAuthSession();
+      setIsLoading(false);
+    }
+  }, [clearAuthSession]);
+
   useEffect(() => {
     loadAuthConfig();
   }, [loadAuthConfig]);
@@ -333,6 +353,7 @@ function App() {
   if (authConfigLoaded && authRequired && authUser && userInverters.length === 0) {
     return (
       <>
+        <TopAuthBar authUser={authUser} onLogout={handleLogout} />
         <InverterSetupPanel onCreated={onInverterCreated} />
         <Footer />
       </>
@@ -347,6 +368,7 @@ function App() {
           selectedInverterId={selectedInverterId}
           authToken={accessToken}
         />
+        {authUser && <TopAuthBar authUser={authUser} onLogout={handleLogout} />}
         <SystemInformation
           inverterData={inverterData}
           isSSEConnected={isSSEConnected}
@@ -377,6 +399,7 @@ function App() {
 
   return (
     <>
+      {authUser && <TopAuthBar authUser={authUser} onLogout={handleLogout} />}
       <div className="d-flex card server-offline align-center justify-center flex-1">
         {t("server.offline")}
       </div>

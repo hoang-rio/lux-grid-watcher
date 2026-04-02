@@ -84,6 +84,7 @@ export interface INotificationData {
   body: string;
   notified_at: string | number;
   read: number;
+  inverter_id?: string | null;
 }
 
 export interface IAuthUser {

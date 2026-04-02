@@ -31,17 +31,6 @@
     min-width: 220px;
 }
 
-.email-warning-banner {
-    margin-top: 8px;
-    margin-bottom: 8px;
-    max-width: 550px;
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: 1px solid #f0b429;
-    background: #fff7db;
-    color: #7a5600;
-    font-size: 14px;
-}
 
 .settings-button {
     position: absolute;
@@ -400,6 +389,11 @@
     font-size: 14px;
 }
 
+.notification-meta {
+    color: #666;
+    font-size: 12px;
+}
+
 .close-popover {
     background: transparent;
     border: none;
@@ -416,6 +410,12 @@
     background: transparent;
     border: none;
     cursor: pointer;
+}
+
+@media (prefers-color-scheme: dark) {
+    .notification-meta {
+        color: #b8b8b8;
+    }
 }
 
 .notification-no-record {

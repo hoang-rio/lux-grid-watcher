@@ -1,0 +1,83 @@
+.top-auth-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+}
+
+.top-auth-bar-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.top-auth-verify-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: #7a5600;
+}
+
+.top-auth-verify-btn {
+  border: 1px solid #d7a025;
+  background: #fff;
+  color: #7a5600;
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.top-auth-verify-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.top-auth-message {
+  font-size: 13px;
+}
+
+.top-auth-logout-btn {
+  border: 1px solid #bbb;
+  background: #fff;
+  color: #333;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.top-auth-logout-btn:hover {
+  background: #f5f5f5;
+}
+
+@media (max-width: 640px) {
+  .top-auth-bar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .top-auth-verify-wrap {
+    color: #ffd98a;
+  }
+
+  .top-auth-verify-btn {
+    background: #3a2f14;
+    color: #ffd98a;
+    border-color: #8f6d1f;
+  }
+
+  .top-auth-logout-btn {
+    background: #1f1f1f;
+    color: #f0f0f0;
+    border-color: #555;
+  }
+
+  .top-auth-logout-btn:hover {
+    background: #2a2a2a;
+  }
+}
