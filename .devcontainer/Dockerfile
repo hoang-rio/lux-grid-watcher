@@ -2,6 +2,7 @@ ARG VARIANT="3.13-bookworm"
 FROM mcr.microsoft.com/devcontainers/python:${VARIANT}
 
 ARG DOCKER_COMPOSE_VERSION="v2.36.0"
+ARG CONTAINER_TIMEZONE="Asia/Ho_Chi_Minh"
 
 # Optional: install extra CLI tools commonly used in this repo.
 RUN apt-get update \
@@ -10,7 +11,12 @@ RUN apt-get update \
 		iproute2 \
 		iputils-ping \
 		net-tools \
+		tzdata \
+	&& ln -snf /usr/share/zoneinfo/${CONTAINER_TIMEZONE} /etc/localtime \
+	&& echo "${CONTAINER_TIMEZONE}" > /etc/timezone \
 	&& rm -rf /var/lib/apt/lists/*
+
+ENV TZ=${CONTAINER_TIMEZONE}
 
 # Install Docker Compose v2 CLI plugin (docker compose).
 RUN set -eux; \

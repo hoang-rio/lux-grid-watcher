@@ -22,7 +22,8 @@
     "postStartCommand": "sudo tailscaled --state=/var/lib/tailscale/tailscaled.state & sleep 1",
     "remoteUser": "vscode",
     "containerEnv": {
-        "SHELL": "/bin/bash"
+        "SHELL": "/bin/bash",
+        "TZ": "Asia/Ho_Chi_Minh"
     },
     "customizations": {
         "vscode": {
