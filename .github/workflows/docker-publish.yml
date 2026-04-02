@@ -15,6 +15,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   TAG_TO_RELEASE: ${{ github.event.inputs.tag || github.ref_name }}
+  BRANCH_TAG: ${{ github.ref_name == 'SaaS' && 'SaaS' || 'latest' }}
 
 concurrency:
   group: build_${{ github.ref_name }}
@@ -54,7 +55,7 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_TO_RELEASE }},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_TO_RELEASE }},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BRANCH_TAG }}
 
       - name: Get previous tag
         id: previoustag
@@ -85,6 +86,7 @@ jobs:
         with:
           tag: ${{ env.TAG_TO_RELEASE }}
           name: Release ${{ env.TAG_TO_RELEASE }}
+          makeLatest: ${{ github.ref_name == 'SaaS' && 'false' || 'legacy' }}
           body: |
             ## Docker Image
             [View on GitHub Container Registry](https://github.com/${{github.repository}}/pkgs/container/lux-web-viewer)
