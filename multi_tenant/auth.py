@@ -10,7 +10,13 @@ from dotenv import dotenv_values
 from passlib.context import CryptContext
 
 
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Prefer pbkdf2_sha256 to avoid runtime issues caused by bcrypt backend
+# incompatibilities in some environments. Keep bcrypt schemes for compatibility
+# with existing hashes.
+_pwd_context = CryptContext(
+    schemes=["pbkdf2_sha256", "bcrypt_sha256", "bcrypt"], deprecated="auto"
+)
+_pwd_fallback_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 _config: dict = {**dotenv_values(".env"), **environ}
 
 
@@ -34,11 +40,36 @@ def get_refresh_token_exp_days() -> int:
 
 
 def hash_password(password: str) -> str:
-    return _pwd_context.hash(password)
+    try:
+        return _pwd_context.hash(password)
+    except ValueError as exc:
+        # Extra safety for environments where bcrypt backend still enforces
+        # 72-byte password limit despite bcrypt_sha256 being configured.
+        if "72 bytes" in str(exc):
+            digest = hashlib.sha256(password.encode("utf-8")).hexdigest()
+            try:
+                return _pwd_context.hash(digest)
+            except ValueError:
+                return _pwd_fallback_context.hash(password)
+        raise
 
 
 def verify_password(password: str, password_hash: str) -> bool:
-    return _pwd_context.verify(password, password_hash)
+    try:
+        if _pwd_context.verify(password, password_hash):
+            return True
+    except ValueError:
+        # Fall back to sha256 prehash variant for legacy/fallback writes.
+        pass
+
+    digest = hashlib.sha256(password.encode("utf-8")).hexdigest()
+    try:
+        if _pwd_context.verify(digest, password_hash):
+            return True
+    except ValueError:
+        pass
+
+    return _pwd_fallback_context.verify(password, password_hash)
 
 
 def create_access_token(user_id: str, email: str) -> str:
