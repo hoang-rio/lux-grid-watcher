@@ -5,6 +5,30 @@ from typing import Optional
 import dongle_handler
 
 
+def _resolve_inverter_id(dongle_serial: str, logger: logging.Logger) -> Optional[str]:
+    """Look up the PostgreSQL inverter UUID for the given dongle serial.
+
+    Returns the inverter UUID string when found, or None when PostgreSQL is not
+    configured or the dongle is not registered.
+    """
+    try:
+        from multi_tenant.db import get_db_session
+        from multi_tenant import repository as repo
+        session = next(get_db_session())
+        try:
+            inverter = repo.get_inverter_by_dongle_serial(session, dongle_serial)
+            if inverter:
+                return str(inverter.id)
+        finally:
+            session.close()
+    except RuntimeError:
+        # POSTGRES_DB_URL not configured — multi-tenant mode disabled
+        pass
+    except Exception as exc:
+        logger.warning("Failed to resolve inverter_id for dongle_serial=%s: %s", dongle_serial, exc)
+    return None
+
+
 class DongleServer:
     __server: asyncio.Server | None = None
     __config: dict
@@ -301,7 +325,19 @@ class DongleServer:
             return None
 
     async def __enqueue_inverter_data(self, data: dict, client_addr) -> None:
-        """Queue parsed inverter data so client handlers never overwrite each other."""
+        """Queue parsed inverter data so client handlers never overwrite each other.
+
+        Tags ``_inverter_id`` in the dict when the dongle is registered in PostgreSQL.
+        """
+        dongle_serial = data.get("dongle_serial") or data.get("serial", "")
+        if dongle_serial:
+            inverter_id = _resolve_inverter_id(dongle_serial, self.__logger)
+            if inverter_id:
+                data = dict(data)  # avoid mutating the shared all_mode_buffer
+                data["_inverter_id"] = inverter_id
+                self.__logger.info(
+                    "Resolved inverter_id=%s for dongle_serial=%s", inverter_id, dongle_serial
+                )
         await self.__data_queue.put(data)
         self.__logger.debug(
             "Queued inverter data from %s. Pending queue size: %s",

@@ -15,6 +15,8 @@ from base64 import b64decode
 from html import escape
 
 from api_storage import read_grid_state, register_device_token
+from web_viewer.routes_auth import AUTH_ROUTES
+from web_viewer.routes_inverters import INVERTER_ROUTES
 
 # Load config from .env and environment
 config: dict = {**dotenv_values(".env"), **environ}
@@ -498,6 +500,9 @@ async def basic_auth_middleware(request, handler):
             return await handler(request)
         else:
             return _auth_html_response(403, "Forbidden", "Access to the websocket endpoint is restricted to localhost.")
+    # Auth and inverter management endpoints use JWT; bypass HTTP Basic Auth for them.
+    if request.path.startswith("/auth/") or request.path.startswith("/auth") or request.path.startswith("/inverters"):
+        return await handler(request)
     # Read auth settings from persistent `settings` (updated by web UI).
     auth_bypass_cidr = config.get("AUTH_BYPASS_CIDR", "127.0.0.1/32,::1/128")
     try:
@@ -561,6 +566,8 @@ def create_runner():
         web.get("/has-admin-access", has_admin_access),
         web.post("/settings", update_settings),
         web.options("/settings", cors_options_handler("GET, POST, OPTIONS")),
+        *AUTH_ROUTES,
+        *INVERTER_ROUTES,
         web.static("/", path.join(path.dirname(__file__), "build"))
     ])
     return web.AppRunner(app, access_log=None)
