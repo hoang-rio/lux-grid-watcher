@@ -15,7 +15,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   TAG_TO_RELEASE: ${{ github.event.inputs.tag || github.ref_name }}
-  BRANCH_TAG: ${{ github.ref_name == 'SaaS' && 'SaaS' || 'latest' }}
+  BRANCH_TAG: ${{ (github.ref_name == 'SaaS' || startsWith(github.ref_name, 'SaaS-v')) && 'SaaS' || 'latest' }}
 
 concurrency:
   group: build_${{ github.ref_name }}
