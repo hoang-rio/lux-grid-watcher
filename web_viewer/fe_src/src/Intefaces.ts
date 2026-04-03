@@ -100,4 +100,6 @@ export interface IUserInverter {
   invert_serial: string;
   is_active: boolean;
   created_at?: string;
+  last_communication_at?: string | null;
+  is_online?: boolean;
 }

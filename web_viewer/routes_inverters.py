@@ -1,6 +1,7 @@
 """Inverter management API routes: list, create, delete."""
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 import uuid
 from logging import getLogger
 
@@ -14,6 +15,7 @@ from multi_tenant import repository as repo
 logger = getLogger(__name__)
 
 CORS = {"Access-Control-Allow-Origin": "*"}
+INVERTER_OFFLINE_TIMEOUT = timedelta(minutes=10)
 
 
 # ---------------------------------------------------------------------------
@@ -45,14 +47,32 @@ def _session():
     return next(get_db_session())
 
 
-def _inverter_dict(inv) -> dict:
+def _is_inverter_online(last_communication_at: datetime | None) -> bool:
+    if last_communication_at is None:
+        return False
+    return (datetime.utcnow() - last_communication_at) <= INVERTER_OFFLINE_TIMEOUT
+
+
+def _to_utc_iso(value: datetime | None) -> str | None:
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    else:
+        value = value.astimezone(timezone.utc)
+    return value.isoformat()
+
+
+def _inverter_dict(inv, last_communication_at: datetime | None = None) -> dict:
     return {
         "id": str(inv.id),
         "name": inv.name,
         "dongle_serial": inv.dongle_serial,
         "invert_serial": inv.invert_serial,
         "is_active": inv.is_active,
-        "created_at": inv.created_at.isoformat() if inv.created_at else None,
+        "created_at": _to_utc_iso(inv.created_at),
+        "last_communication_at": _to_utc_iso(last_communication_at),
+        "is_online": _is_inverter_online(last_communication_at),
     }
 
 
@@ -68,7 +88,12 @@ async def list_inverters(request: web.Request) -> web.Response:
     session = _session()
     try:
         inverters = repo.get_inverters_by_user(session, uuid.UUID(payload["sub"]))
-        return _ok(inverters=[_inverter_dict(i) for i in inverters])
+        inverter_items = []
+        for inverter in inverters:
+            latest_state = repo.get_inverter_latest_state(session, inverter.id)
+            last_communication_at = latest_state.updated_at if latest_state else None
+            inverter_items.append(_inverter_dict(inverter, last_communication_at))
+        return _ok(inverters=inverter_items)
     except Exception as exc:
         logger.error("list_inverters error: %s", exc)
         return _err("Failed to load inverters", 500)

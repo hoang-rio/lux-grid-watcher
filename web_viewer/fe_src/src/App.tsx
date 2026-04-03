@@ -22,9 +22,34 @@ const InverterSetupPanel = lazy(() => import("./components/InverterSetupPanel"))
 const TopAuthBar = lazy(() => import("./components/TopAuthBar"));
 
 const MAX_RECONNECT_COUNT = 5;
+const INVERTER_OFFLINE_TIMEOUT_MS = 10 * 60 * 1000;
 const ACCESS_TOKEN_KEY = "lux_access_token";
 const REFRESH_TOKEN_KEY = "lux_refresh_token";
 const INVERTER_ID_KEY = "lux_selected_inverter_id";
+
+function toTimestamp(value?: string | null): number {
+  if (!value) {
+    return 0;
+  }
+
+  // Treat timezone-naive datetime as UTC to match backend utcnow storage.
+  const hasTimezone = /([zZ]|[+-]\d{2}:\d{2})$/.test(value);
+  const normalizedValue = hasTimezone ? value : `${value}Z`;
+
+  const parsed = Date.parse(normalizedValue);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeInvertersWithOnline(inverters: IUserInverter[]): IUserInverter[] {
+  const now = Date.now();
+  return inverters.map((inv) => {
+    const lastTs = toTimestamp(inv.last_communication_at);
+    return {
+      ...inv,
+      is_online: Boolean(lastTs) && now - lastTs <= INVERTER_OFFLINE_TIMEOUT_MS,
+    };
+  });
+}
 
 function App() {
   const { t, i18n } = useTranslation();
@@ -82,10 +107,20 @@ function App() {
       setNewNotification(jsonData.data);
     } else {
       setInverterData(jsonData.inverter_data);
+      if (selectedInverterId) {
+        const nowIso = new Date().toISOString();
+        setUserInverters((prev) =>
+          prev.map((inv) =>
+            inv.id === selectedInverterId
+              ? { ...inv, is_online: true, last_communication_at: nowIso }
+              : inv
+          )
+        );
+      }
       hourlyChartfRef.current?.updateItem(jsonData.hourly_chart_item);
       setIsLoading(false);
     }
-  }, []);
+  }, [selectedInverterId]);
 
   const scheduleSSEReconnect = useCallback((reconnect: () => void) => {
     if (document.hidden) {
@@ -355,7 +390,7 @@ function App() {
         return;
       }
 
-      setUserInverters(invJson.inverters);
+      setUserInverters(normalizeInvertersWithOnline(invJson.inverters));
       const savedInverterId = localStorage.getItem(INVERTER_ID_KEY) || "";
       const defaultInverterId =
         invJson.inverters.find((inv: IUserInverter) => inv.id === savedInverterId)?.id ||
@@ -374,6 +409,15 @@ function App() {
       setIsAuthChecking(false);
     }
   }, [authConfigLoaded, authRequired, clearAuthSession]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setUserInverters((prev) => normalizeInvertersWithOnline(prev));
+    }, 30 * 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const selectedInverter = userInverters.find((inv) => inv.id === selectedInverterId);
 
   const onAuthSuccess = useCallback(async (token: string, refreshToken: string) => {
     localStorage.setItem(ACCESS_TOKEN_KEY, token);
@@ -551,6 +595,7 @@ function App() {
           authUser={authUser}
           inverters={userInverters}
           selectedInverterId={selectedInverterId}
+          selectedInverterIsOnline={selectedInverter?.is_online}
         />
         <div className="row chart">
           <HourlyChart

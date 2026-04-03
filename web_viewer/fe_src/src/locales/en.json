@@ -28,6 +28,7 @@
     "closed": "[SSE] SSE connection closed",
     "connectionLost": "[SSE] Connection lost - no data received for 60 seconds"
   },
+  "online": "Online",
   "offline": "Offline",
   "normal": "Normal",
   "fault": "Fault",

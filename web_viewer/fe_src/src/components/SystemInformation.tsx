@@ -23,6 +23,7 @@ interface Props {
   authUser?: IAuthUser | null;
   inverters?: IUserInverter[];
   selectedInverterId?: string;
+  selectedInverterIsOnline?: boolean;
 }
 
 function SystemInformation({
@@ -33,6 +34,7 @@ function SystemInformation({
   authUser,
   inverters = [],
   selectedInverterId = "",
+  selectedInverterIsOnline,
 }: Props) {
   const { t, i18n } = useTranslation();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -177,8 +179,15 @@ function SystemInformation({
     return inverterNameById.get(selectedInverterId) || inverterData.serial || "";
   }, [inverterData.serial, inverterNameById, selectedInverterId]);
 
+  const effectiveSSEConnected = useMemo(() => {
+    if (selectedInverterId && selectedInverterIsOnline !== undefined) {
+      return Boolean(selectedInverterIsOnline);
+    }
+    return isSSEConnected;
+  }, [isSSEConnected, selectedInverterId, selectedInverterIsOnline]);
+
   const status = useMemo(() => {
-    if (!isSSEConnected) {
+    if (!effectiveSSEConnected) {
       return "offline";
     }
     if (inverterData.status === 1) {
@@ -194,7 +203,7 @@ function SystemInformation({
     }
     return "normal";
   }, [
-    isSSEConnected,
+    effectiveSSEConnected,
     inverterData.status,
     inverterData.internal_fault,
     inverterData.status_text,
@@ -284,7 +293,7 @@ function SystemInformation({
                 className="system-status-reconnect"
                 onClick={onReconnect}
                 title={t("reconnect")}
-                disabled={isSSEConnected || useBearerAuth}
+                disabled={effectiveSSEConnected || useBearerAuth}
               >
                 {t("reconnect")}
               </button>
@@ -293,33 +302,33 @@ function SystemInformation({
               <div className="flex-1"></div>
               <SolarPV
                 inverterData={inverterData}
-                isSSEConnected={isSSEConnected}
+                isSSEConnected={effectiveSSEConnected}
               />
               <div className="flex-1"></div>
             </div>
             <div className="row">
               <Battery
                 inverterData={inverterData}
-                isSSEConnected={isSSEConnected}
+                isSSEConnected={effectiveSSEConnected}
               />
               <Inverter
                 inverterData={inverterData}
-                isSSEConnected={isSSEConnected}
+                isSSEConnected={effectiveSSEConnected}
               />
               <Grid
                 inverterData={inverterData}
-                isSSEConnected={isSSEConnected}
+                isSSEConnected={effectiveSSEConnected}
               />
             </div>
             <div className="row">
               <div className="flex-1"></div>
               <EPS
                 inverterData={inverterData}
-                isSSEConnected={isSSEConnected}
+                isSSEConnected={effectiveSSEConnected}
               />
               <Consumption
                 inverterData={inverterData}
-                isSSEConnected={isSSEConnected}
+                isSSEConnected={effectiveSSEConnected}
               />
             </div>
           </div>

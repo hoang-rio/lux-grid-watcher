@@ -28,6 +28,7 @@
     "closed": "[SSE] Đã đóng kết nối SSE",
     "connectionLost": "[SSE] Mất kết nối - không nhận được dữ liệu trong 60 giây"
   },
+  "online": "Trực tuyến",
   "offline": "Ngoại tuyến",
   "normal": "Bình thường",
   "fault": "Lỗi",
