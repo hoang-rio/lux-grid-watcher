@@ -5,16 +5,12 @@ services:
     restart: unless-stopped
     env_file:
       - ./env/dev.env
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-lux_web_viewer}
-      POSTGRES_USER: ${POSTGRES_USER:-lux}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lux_dev_password}
     ports:
       - "5433:5432"
     volumes:
       - pg_data_dev:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lux} -d ${POSTGRES_DB:-lux_web_viewer}"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,10 +27,9 @@ services:
     env_file:
       - ./env/dev.env
     environment:
-      POSTGRES_DB_URL: postgresql+psycopg://${POSTGRES_USER:-lux}:${POSTGRES_PASSWORD:-lux_dev_password}@postgres:5432/${POSTGRES_DB:-lux_web_viewer}
       AUTH_ENABLED: "false"
     command: >
-      sh -c "alembic upgrade head && python app.py"
+      sh -c "export POSTGRES_DB_URL=postgresql+psycopg://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@postgres:5432/$${POSTGRES_DB} && alembic upgrade head && python app.py"
     volumes:
       - ..:/app
     working_dir: /app

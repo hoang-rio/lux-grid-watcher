@@ -5,14 +5,10 @@ services:
     restart: unless-stopped
     env_file:
       - ./env/prod.env
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pg_data_prod:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -30,10 +26,9 @@ services:
     env_file:
       - ./env/prod.env
     environment:
-      POSTGRES_DB_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       AUTH_ENABLED: "false"
     command: >
-      sh -c "alembic upgrade head && python app.py"
+      sh -c "export POSTGRES_DB_URL=postgresql+psycopg://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@postgres:5432/$${POSTGRES_DB} && alembic upgrade head && python app.py"
     ports:
       - "8088:88"
       - "8443:8443"
