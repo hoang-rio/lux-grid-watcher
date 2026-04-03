@@ -54,6 +54,8 @@ function App() {
   const isAuthScreen = authConfigLoaded && authRequired && !authUser;
 
   const useBearerAuth = Boolean(accessToken);
+  const authSessionReady = authConfigLoaded && (!authRequired || !isAuthChecking);
+  const hasSSEPrerequisites = !authRequired || (!!authUser && (!useBearerAuth || !!selectedInverterId));
 
   const setConnectedTitle = useCallback((deviceTimeOnly?: string) => {
     if (document.hidden) {
@@ -108,6 +110,9 @@ function App() {
   }, [i18n]);
 
   const connectSSE = useCallback(() => {
+    if (!authSessionReady) {
+      return;
+    }
     if (authRequired && !authUser) {
       return;
     }
@@ -228,7 +233,7 @@ function App() {
       eventSourceRef.current = undefined;
       scheduleSSEReconnect(connectSSE);
     };
-  }, [authRequired, authUser, handleSSEPayload, i18n, scheduleSSEReconnect, selectedInverterId, setConnectedTitle, setOfflineTitle, useBearerAuth]);
+  }, [authRequired, authSessionReady, authUser, handleSSEPayload, i18n, scheduleSSEReconnect, selectedInverterId, setConnectedTitle, setOfflineTitle, useBearerAuth]);
 
   const closeSSE = useCallback(() => {
     logUtil.log(i18n.t("sse.closing"));
@@ -251,6 +256,9 @@ function App() {
 
   const fetchState = useCallback(async () => {
     try {
+      if (!authSessionReady) {
+        return;
+      }
       if (document.hidden) {
         return;
       }
@@ -281,7 +289,7 @@ function App() {
       logUtil.error(i18n.t("getStateError"), err);
     }
     isFetchingRef.current = false;
-  }, [accessToken, authRequired, i18n, selectedInverterId, useBearerAuth]);
+  }, [accessToken, authRequired, authSessionReady, i18n, selectedInverterId, useBearerAuth]);
 
   const loadAuthConfig = useCallback(async () => {
     try {
@@ -420,7 +428,7 @@ function App() {
   }, [clearAuthSession]);
 
   useEffect(() => {
-    if (authRequired && !accessToken) {
+    if (!authSessionReady || !hasSSEPrerequisites) {
       return;
     }
     if (!document.hidden) {
@@ -431,21 +439,21 @@ function App() {
       window.removeEventListener("beforeunload", closeSSE);
       closeSSE();
     };
-  }, [accessToken, authRequired, connectSSE, closeSSE]);
+  }, [authSessionReady, closeSSE, connectSSE, hasSSEPrerequisites]);
 
   useEffect(() => {
-    if (authRequired && !accessToken) {
+    if (!authSessionReady || !hasSSEPrerequisites) {
       return;
     }
     fetchState();
-  }, [accessToken, authRequired, fetchState]);
+  }, [authSessionReady, fetchState, hasSSEPrerequisites]);
 
   useEffect(() => {
-    if (!useBearerAuth || !selectedInverterId) {
+    if (!authSessionReady || !useBearerAuth || !selectedInverterId) {
       return;
     }
     fetchState();
-  }, [fetchState, selectedInverterId, useBearerAuth]);
+  }, [authSessionReady, fetchState, selectedInverterId, useBearerAuth]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
