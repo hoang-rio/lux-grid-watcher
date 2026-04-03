@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect, forwardRef } from 'react';
+import { useState, useEffect, forwardRef, useRef } from 'react';
 import Loading from './Loading';
 import * as logUtil from '../utils/logUtil';
 import { apiFetch } from '../utils/fetchUtil';
@@ -29,8 +29,34 @@ interface Settings {
 
 const SLEEP_TIME_OPTIONS = ["3", "5", "10", "15", "30"];
 
+let settingsBootstrapInFlight: Promise<{ pgMode: boolean; data: Record<string, string> }> | null = null;
+
+const fetchSettingsBootstrap = async (): Promise<{ pgMode: boolean; data: Record<string, string> }> => {
+  if (!settingsBootstrapInFlight) {
+    settingsBootstrapInFlight = (async () => {
+      const authConfigRes = await apiFetch('/auth/config');
+      const authConfig = await authConfigRes.json();
+      const pgMode = Boolean(authConfig?.auth_required);
+
+      const res = await apiFetch('/settings', {
+        withAuth: pgMode,
+      });
+      const data = await res.json();
+
+      return { pgMode, data };
+    })();
+  }
+
+  try {
+    return await settingsBootstrapInFlight;
+  } finally {
+    settingsBootstrapInFlight = null;
+  }
+};
+
 const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onClose }, ref) => {
   const { t } = useTranslation();
+  const isMountedRef = useRef(true);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [originalSettings, setOriginalSettings] = useState<Settings | null>(null);
   const [isPgMode, setIsPgMode] = useState(false);
@@ -41,21 +67,18 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
   const [cidrError, setCidrError] = useState<string | null>(null);
 
   useEffect(() => {
+    isMountedRef.current = true;
     fetchSettings();
+    return () => {
+      isMountedRef.current = false;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchSettings = async () => {
     try {
-      const authConfigRes = await apiFetch('/auth/config');
-      const authConfig = await authConfigRes.json();
-      const pgMode = Boolean(authConfig?.auth_required);
+      const { pgMode, data } = await fetchSettingsBootstrap();
       setIsPgMode(pgMode);
-
-      const res = await apiFetch('/settings', {
-        withAuth: pgMode,
-      });
-      const data = await res.json();
       // Set defaults if missing
       const defaults: Settings = {
         SLEEP_TIME: '30',
@@ -78,6 +101,9 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
       merged.SLEEP_TIME = SLEEP_TIME_OPTIONS.includes(String(merged.SLEEP_TIME))
         ? String(merged.SLEEP_TIME)
         : defaults.SLEEP_TIME;
+      if (!isMountedRef.current) {
+        return;
+      }
       setSettings(merged);
       setOriginalSettings(merged);
       // If auth already enabled in saved settings, pre-fill confirm password
@@ -86,9 +112,14 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
       }
     } catch (err) {
       logUtil.error('Failed to fetch settings', err);
+      if (!isMountedRef.current) {
+        return;
+      }
       setMessage({text: t('settings.saveError'), type: 'error'});
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
