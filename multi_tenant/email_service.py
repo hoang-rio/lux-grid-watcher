@@ -6,6 +6,7 @@ from email.mime.text import MIMEText
 from logging import getLogger
 
 from .email_config import smtp_settings
+from .i18n import Locale, email_body_html, email_subject
 
 logger = getLogger(__name__)
 
@@ -41,22 +42,13 @@ def _send_email(to: str, subject: str, html_body: str) -> None:
         logger.error("Failed to send email to %s: %s", to, exc)
 
 
-def send_verification_email(to: str, token: str, base_url: str) -> None:
+def send_verification_email(to: str, token: str, base_url: str, locale: Locale = "en") -> None:
     verify_url = f"{base_url.rstrip('/')}/auth/verify-email?token={token}"
-    html = f"""
-    <p>Please verify your email address by clicking the link below:</p>
-    <p><a href="{verify_url}">{verify_url}</a></p>
-    <p>This link expires in 24 hours.</p>
-    <p>If you did not register, you can ignore this email.</p>
-    """
-    _send_email(to, "Confirm your email address", html)
+    html = email_body_html("verification", locale, url=verify_url)
+    _send_email(to, email_subject("verification", locale), html)
 
 
-def send_password_reset_email(to: str, token: str, base_url: str) -> None:
+def send_password_reset_email(to: str, token: str, base_url: str, locale: Locale = "en") -> None:
     reset_url = f"{base_url.rstrip('/')}/auth/reset-password?token={token}"
-    html = f"""
-    <p>You requested a password reset. Click the link below to set a new password:</p>
-    <p><a href="{reset_url}">{reset_url}</a></p>
-    <p>This link expires in 1 hour. If you did not request this, please ignore this email.</p>
-    """
-    _send_email(to, "Reset your password", html)
+    html = email_body_html("reset_password", locale, url=reset_url)
+    _send_email(to, email_subject("reset_password", locale), html)

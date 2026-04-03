@@ -81,6 +81,8 @@
   "consumptionPower": "Công suất tiêu thụ",
   "allowAutoUpdate": "Cho phép cập nhật tự động",
   "pauseAutoUpdate": "Tạm dừng cập nhật tự động",
+  "chargedToday": "Sạc hôm nay",
+  "dischargedToday": "Xả hôm nay",
   "charged": "Đã sạc",
   "discharged": "Đã xả",
   "export": "Đẩy lưới",

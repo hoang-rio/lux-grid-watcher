@@ -11,6 +11,7 @@ from aiohttp.aiohttp import web
 from multi_tenant.auth import decode_access_token
 from multi_tenant.db import get_db_session
 from multi_tenant import repository as repo
+from multi_tenant.i18n import get_locale_from_accept_language, translate
 
 logger = getLogger(__name__)
 
@@ -26,21 +27,33 @@ def _ok(**kwargs) -> web.Response:
     return web.json_response({"success": True, **kwargs}, headers=CORS)
 
 
-def _err(message: str, status: int = 400) -> web.Response:
-    return web.json_response({"success": False, "message": message}, status=status, headers=CORS)
+def _locale(request: web.Request) -> str:
+    return get_locale_from_accept_language(request.headers.get("Accept-Language"))
+
+
+def _msg(request: web.Request, message: str) -> str:
+    return translate(message, _locale(request))
+
+
+def _err(request: web.Request, message: str, status: int = 400) -> web.Response:
+    return web.json_response(
+        {"success": False, "message": _msg(request, message)},
+        status=status,
+        headers=CORS,
+    )
 
 
 def _require_jwt(request: web.Request):
     auth = request.headers.get("Authorization", "")
     if not auth.startswith("Bearer "):
-        return None, _err("Unauthorized", 401)
+        return None, _err(request, "Unauthorized", 401)
     try:
         payload = decode_access_token(auth[7:])
         return payload, None
     except _jwt.ExpiredSignatureError:
-        return None, _err("Token expired", 401)
+        return None, _err(request, "Token expired", 401)
     except Exception:
-        return None, _err("Invalid token", 401)
+        return None, _err(request, "Invalid token", 401)
 
 
 def _session():
@@ -96,7 +109,7 @@ async def list_inverters(request: web.Request) -> web.Response:
         return _ok(inverters=inverter_items)
     except Exception as exc:
         logger.error("list_inverters error: %s", exc)
-        return _err("Failed to load inverters", 500)
+        return _err(request, "Failed to load inverters", 500)
     finally:
         session.close()
 
@@ -113,16 +126,16 @@ async def create_inverter(request: web.Request) -> web.Response:
     try:
         body = await request.json()
     except Exception:
-        return _err("Invalid JSON body")
+        return _err(request, "Invalid JSON body")
 
     name = str(body.get("name", "")).strip()
     dongle_serial = str(body.get("dongle_serial", "")).strip()
     invert_serial = str(body.get("invert_serial", "")).strip()
 
     if not dongle_serial:
-        return _err("dongle_serial is required")
+        return _err(request, "dongle_serial is required")
     if not invert_serial:
-        return _err("invert_serial is required")
+        return _err(request, "invert_serial is required")
     if not name:
         name = dongle_serial
 
@@ -130,9 +143,9 @@ async def create_inverter(request: web.Request) -> web.Response:
     try:
         # Check uniqueness
         if repo.get_inverter_by_dongle_serial(session, dongle_serial):
-            return _err("dongle_serial already registered")
+            return _err(request, "dongle_serial already registered")
         if repo.get_inverter_by_invert_serial(session, invert_serial):
-            return _err("invert_serial already registered")
+            return _err(request, "invert_serial already registered")
 
         inverter = repo.create_inverter(
             session,
@@ -146,7 +159,7 @@ async def create_inverter(request: web.Request) -> web.Response:
     except Exception as exc:
         session.rollback()
         logger.error("create_inverter error: %s", exc)
-        return _err("Failed to create inverter", 500)
+        return _err(request, "Failed to create inverter", 500)
     finally:
         session.close()
 
@@ -164,20 +177,20 @@ async def delete_inverter(request: web.Request) -> web.Response:
     try:
         inverter_id = uuid.UUID(inverter_id_str)
     except ValueError:
-        return _err("Invalid inverter id")
+        return _err(request, "Invalid inverter id")
 
     session = _session()
     try:
         inverter = repo.get_inverter_by_id_and_user(session, inverter_id, uuid.UUID(payload["sub"]))
         if inverter is None:
-            return _err("Inverter not found", 404)
+            return _err(request, "Inverter not found", 404)
         repo.delete_inverter_hard(session, inverter)
         session.commit()
-        return _ok(message="Inverter removed")
+        return _ok(message=_msg(request, "Inverter removed"))
     except Exception as exc:
         session.rollback()
         logger.error("delete_inverter error: %s", exc)
-        return _err("Failed to remove inverter", 500)
+        return _err(request, "Failed to remove inverter", 500)
     finally:
         session.close()
 
@@ -195,31 +208,31 @@ async def update_inverter(request: web.Request) -> web.Response:
     try:
         inverter_id = uuid.UUID(inverter_id_str)
     except ValueError:
-        return _err("Invalid inverter id")
+        return _err(request, "Invalid inverter id")
 
     try:
         body = await request.json()
     except Exception:
-        return _err("Invalid JSON body")
+        return _err(request, "Invalid JSON body")
 
     name = str(body.get("name", "")).strip()
     invert_serial = str(body.get("invert_serial", "")).strip()
 
     if not name:
-        return _err("name is required")
+        return _err(request, "name is required")
     if not invert_serial:
-        return _err("invert_serial is required")
+        return _err(request, "invert_serial is required")
 
     session = _session()
     try:
         user_id = uuid.UUID(payload["sub"])
         inverter = repo.get_inverter_by_id_and_user(session, inverter_id, user_id)
         if inverter is None:
-            return _err("Inverter not found", 404)
+            return _err(request, "Inverter not found", 404)
 
         existed = repo.get_inverter_by_invert_serial(session, invert_serial)
         if existed is not None and existed.id != inverter.id:
-            return _err("invert_serial already registered")
+            return _err(request, "invert_serial already registered")
 
         updated = repo.update_inverter(
             session,
@@ -234,7 +247,7 @@ async def update_inverter(request: web.Request) -> web.Response:
     except Exception as exc:
         session.rollback()
         logger.error("update_inverter error: %s", exc)
-        return _err("Failed to update inverter", 500)
+        return _err(request, "Failed to update inverter", 500)
     finally:
         session.close()
 

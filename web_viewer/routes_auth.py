@@ -23,6 +23,7 @@ from multi_tenant.auth import (
 from multi_tenant.db import get_db_session
 from multi_tenant import repository as repo
 from multi_tenant.email_service import send_password_reset_email, send_verification_email
+from multi_tenant.i18n import get_locale_from_accept_language, translate
 
 logger = getLogger(__name__)
 _config: dict = {**dotenv_values(".env"), **environ}
@@ -39,23 +40,35 @@ def _ok(**kwargs) -> web.Response:
     return web.json_response({"success": True, **kwargs}, headers=CORS)
 
 
-def _err(message: str, status: int = 400) -> web.Response:
-    return web.json_response({"success": False, "message": message}, status=status, headers=CORS)
+def _locale(request: web.Request) -> str:
+    return get_locale_from_accept_language(request.headers.get("Accept-Language"))
+
+
+def _msg(request: web.Request, message: str) -> str:
+    return translate(message, _locale(request))
+
+
+def _err(request: web.Request, message: str, status: int = 400) -> web.Response:
+    return web.json_response(
+        {"success": False, "message": _msg(request, message)},
+        status=status,
+        headers=CORS,
+    )
 
 
 def _require_jwt(request: web.Request):
     """Decode Bearer token → (payload_dict, None) or (None, error_response)."""
     auth = request.headers.get("Authorization", "")
     if not auth.startswith("Bearer "):
-        return None, _err("Unauthorized", 401)
+        return None, _err(request, "Unauthorized", 401)
     token = auth[7:]
     try:
         payload = decode_access_token(token)
         return payload, None
     except _jwt.ExpiredSignatureError:
-        return None, _err("Token expired", 401)
+        return None, _err(request, "Token expired", 401)
     except Exception:
-        return None, _err("Invalid token", 401)
+        return None, _err(request, "Invalid token", 401)
 
 
 def _session():
@@ -89,20 +102,20 @@ async def register(request: web.Request) -> web.Response:
     try:
         body = await request.json()
     except Exception:
-        return _err("Invalid JSON body")
+        return _err(request, "Invalid JSON body")
 
     email = str(body.get("email", "")).strip().lower()
     password = str(body.get("password", ""))
 
     if not _EMAIL_RE.match(email):
-        return _err("Invalid email address")
+        return _err(request, "Invalid email address")
     if len(password) < 8:
-        return _err("Password must be at least 8 characters")
+        return _err(request, "Password must be at least 8 characters")
 
     session = _session()
     try:
         if repo.get_user_by_email(session, email):
-            return _err("Email already registered")
+            return _err(request, "Email already registered")
 
         pw_hash = hash_password(password)
         user = repo.create_user(session, email, pw_hash)
@@ -116,13 +129,17 @@ async def register(request: web.Request) -> web.Response:
         # Send verification email in background (non-blocking)
         base_url = _get_base_url(request)
         loop = asyncio.get_event_loop()
-        loop.run_in_executor(None, partial(send_verification_email, email, token_plain, base_url))
+        locale = _locale(request)
+        loop.run_in_executor(None, partial(send_verification_email, email, token_plain, base_url, locale))
 
-        return _ok(message="Registration successful. Please check your email to verify your account.", user=_user_dict(user))
+        return _ok(
+            message=_msg(request, "Registration successful. Please check your email to verify your account."),
+            user=_user_dict(user),
+        )
     except Exception as exc:
         session.rollback()
         logger.error("register error: %s", exc)
-        return _err("Registration failed", 500)
+        return _err(request, "Registration failed", 500)
     finally:
         session.close()
 
@@ -135,7 +152,7 @@ async def login(request: web.Request) -> web.Response:
     try:
         body = await request.json()
     except Exception:
-        return _err("Invalid JSON body")
+        return _err(request, "Invalid JSON body")
 
     email = str(body.get("email", "")).strip().lower()
     password = str(body.get("password", ""))
@@ -144,7 +161,7 @@ async def login(request: web.Request) -> web.Response:
     try:
         user = repo.get_user_by_email(session, email)
         if not user or not verify_password(password, user.password_hash):
-            return _err("Invalid email or password", 401)
+            return _err(request, "Invalid email or password", 401)
 
         access_token = create_access_token(str(user.id), user.email)
         token_plain, token_hash, expires_at = create_refresh_token()
@@ -159,7 +176,7 @@ async def login(request: web.Request) -> web.Response:
     except Exception as exc:
         session.rollback()
         logger.error("login error: %s", exc)
-        return _err("Login failed", 500)
+        return _err(request, "Login failed", 500)
     finally:
         session.close()
 
@@ -172,21 +189,21 @@ async def refresh(request: web.Request) -> web.Response:
     try:
         body = await request.json()
     except Exception:
-        return _err("Invalid JSON body")
+        return _err(request, "Invalid JSON body")
 
     token_plain = str(body.get("refresh_token", ""))
     if not token_plain:
-        return _err("refresh_token is required")
+        return _err(request, "refresh_token is required")
 
     session = _session()
     try:
         rt = repo.get_active_refresh_token(session, token_plain)
         if rt is None:
-            return _err("Invalid or expired refresh token", 401)
+            return _err(request, "Invalid or expired refresh token", 401)
 
         user = repo.get_user_by_id(session, rt.user_id)
         if user is None:
-            return _err("User not found", 401)
+            return _err(request, "User not found", 401)
 
         # Rotate tokens (revoke old, issue new)
         repo.revoke_refresh_token(session, rt)
@@ -199,7 +216,7 @@ async def refresh(request: web.Request) -> web.Response:
     except Exception as exc:
         session.rollback()
         logger.error("refresh error: %s", exc)
-        return _err("Token refresh failed", 500)
+        return _err(request, "Token refresh failed", 500)
     finally:
         session.close()
 
@@ -230,11 +247,11 @@ async def logout(request: web.Request) -> web.Response:
             # Revoke all sessions for this user
             repo.revoke_all_user_refresh_tokens(session, uuid.UUID(payload["sub"]))
         session.commit()
-        return _ok(message="Logged out")
+        return _ok(message=_msg(request, "Logged out"))
     except Exception as exc:
         session.rollback()
         logger.error("logout error: %s", exc)
-        return _err("Logout failed", 500)
+        return _err(request, "Logout failed", 500)
     finally:
         session.close()
 
@@ -252,11 +269,11 @@ async def profile(request: web.Request) -> web.Response:
     try:
         user = repo.get_user_by_id(session, uuid.UUID(payload["sub"]))
         if user is None:
-            return _err("User not found", 404)
+            return _err(request, "User not found", 404)
         return _ok(user=_user_dict(user))
     except Exception as exc:
         logger.error("profile error: %s", exc)
-        return _err("Failed to load profile", 500)
+        return _err(request, "Failed to load profile", 500)
     finally:
         session.close()
 
@@ -274,9 +291,9 @@ async def send_verify_email(request: web.Request) -> web.Response:
     try:
         user = repo.get_user_by_id(session, uuid.UUID(payload["sub"]))
         if user is None:
-            return _err("User not found", 404)
+            return _err(request, "User not found", 404)
         if user.email_confirmed:
-            return _ok(message="Email already verified")
+            return _ok(message=_msg(request, "Email already verified"))
 
         token_plain = secrets.token_urlsafe(32)
         token_hash = __import__("hashlib").sha256(token_plain.encode()).hexdigest()
@@ -285,13 +302,14 @@ async def send_verify_email(request: web.Request) -> web.Response:
 
         base_url = _get_base_url(request)
         loop = asyncio.get_event_loop()
-        loop.run_in_executor(None, partial(send_verification_email, user.email, token_plain, base_url))
+        locale = _locale(request)
+        loop.run_in_executor(None, partial(send_verification_email, user.email, token_plain, base_url, locale))
 
-        return _ok(message="Verification email sent")
+        return _ok(message=_msg(request, "Verification email sent"))
     except Exception as exc:
         session.rollback()
         logger.error("send_verify_email error: %s", exc)
-        return _err("Failed to send verification email", 500)
+        return _err(request, "Failed to send verification email", 500)
     finally:
         session.close()
 
@@ -303,27 +321,27 @@ async def send_verify_email(request: web.Request) -> web.Response:
 async def verify_email(request: web.Request) -> web.Response:
     token_plain = request.rel_url.query.get("token", "")
     if not token_plain:
-        return _err("token is required")
+        return _err(request, "token is required")
 
     session = _session()
     try:
         evt = repo.get_valid_email_verification_token(session, token_plain)
         if evt is None:
-            return _err("Invalid or expired verification token")
+            return _err(request, "Invalid or expired verification token")
 
         user = repo.get_user_by_id(session, evt.user_id)
         if user is None:
-            return _err("User not found", 404)
+            return _err(request, "User not found", 404)
 
         repo.use_email_verification_token(session, evt)
         repo.mark_user_email_confirmed(session, user)
         session.commit()
 
-        return _ok(message="Email verified successfully")
+        return _ok(message=_msg(request, "Email verified successfully"))
     except Exception as exc:
         session.rollback()
         logger.error("verify_email error: %s", exc)
-        return _err("Email verification failed", 500)
+        return _err(request, "Email verification failed", 500)
     finally:
         session.close()
 
@@ -336,11 +354,11 @@ async def forgot_password(request: web.Request) -> web.Response:
     try:
         body = await request.json()
     except Exception:
-        return _err("Invalid JSON body")
+        return _err(request, "Invalid JSON body")
 
     email = str(body.get("email", "")).strip().lower()
     if not email:
-        return _err("email is required")
+        return _err(request, "email is required")
 
     # Always return success to avoid user enumeration
     session = _session()
@@ -354,7 +372,8 @@ async def forgot_password(request: web.Request) -> web.Response:
 
             base_url = _get_base_url(request)
             loop = asyncio.get_event_loop()
-            loop.run_in_executor(None, partial(send_password_reset_email, email, token_plain, base_url))
+            locale = _locale(request)
+            loop.run_in_executor(None, partial(send_password_reset_email, email, token_plain, base_url, locale))
         else:
             session.rollback()
     except Exception as exc:
@@ -363,7 +382,7 @@ async def forgot_password(request: web.Request) -> web.Response:
     finally:
         session.close()
 
-    return _ok(message="If that email is registered and verified, a reset link has been sent.")
+    return _ok(message=_msg(request, "If that email is registered and verified, a reset link has been sent."))
 
 
 # ---------------------------------------------------------------------------
@@ -374,25 +393,25 @@ async def reset_password(request: web.Request) -> web.Response:
     try:
         body = await request.json()
     except Exception:
-        return _err("Invalid JSON body")
+        return _err(request, "Invalid JSON body")
 
     token_plain = str(body.get("token", ""))
     new_password = str(body.get("new_password", ""))
 
     if not token_plain:
-        return _err("token is required")
+        return _err(request, "token is required")
     if len(new_password) < 8:
-        return _err("Password must be at least 8 characters")
+        return _err(request, "Password must be at least 8 characters")
 
     session = _session()
     try:
         prt = repo.get_valid_password_reset_token(session, token_plain)
         if prt is None:
-            return _err("Invalid or expired reset token")
+            return _err(request, "Invalid or expired reset token")
 
         user = repo.get_user_by_id(session, prt.user_id)
         if user is None:
-            return _err("User not found", 404)
+            return _err(request, "User not found", 404)
 
         pw_hash = hash_password(new_password)
         repo.update_user_password(session, user, pw_hash)
@@ -401,11 +420,11 @@ async def reset_password(request: web.Request) -> web.Response:
         repo.revoke_all_user_refresh_tokens(session, user.id)
         session.commit()
 
-        return _ok(message="Password reset successfully. Please log in with your new password.")
+        return _ok(message=_msg(request, "Password reset successfully. Please log in with your new password."))
     except Exception as exc:
         session.rollback()
         logger.error("reset_password error: %s", exc)
-        return _err("Password reset failed", 500)
+        return _err(request, "Password reset failed", 500)
     finally:
         session.close()
 

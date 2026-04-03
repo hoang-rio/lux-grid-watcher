@@ -22,6 +22,7 @@ from web_viewer.routes_inverters import INVERTER_ROUTES
 from multi_tenant.auth import decode_access_token
 from multi_tenant.db import get_db_session
 from multi_tenant import repository as mt_repo
+from multi_tenant.i18n import get_locale_from_accept_language, translate
 
 # Load config from .env and environment
 config: dict = {**dotenv_values(".env"), **environ}
@@ -142,7 +143,7 @@ def _deny_if_not_allowed_cidr(request: web.Request, path_prefix: str, allowed_me
         return None
     body = response_body
     if body is None:
-        body = {"success": False, "message": "Forbidden"}
+        body = {"success": False, "message": _lmsg(request, "Forbidden")}
     return web.json_response(body, status=403, headers=VITE_CORS_HEADER)
 
 
@@ -163,6 +164,11 @@ def _extract_jwt_user_id_from_token(token: str) -> Optional[uuid.UUID]:
         return None
     except Exception:
         return None
+
+
+def _lmsg(request: web.Request, message: str) -> str:
+    locale = get_locale_from_accept_language(request.headers.get("Accept-Language"))
+    return translate(message, locale)
 
 
 def _resolve_request_inverter(session, user_id: uuid.UUID, request: web.Request):
@@ -196,14 +202,14 @@ async def sse_handler(request):
 
     if USE_PG and user_id is None:
         return web.json_response(
-            {"success": False, "message": "Unauthorized"},
+            {"success": False, "message": _lmsg(request, "Unauthorized")},
             status=401,
             headers=VITE_CORS_HEADER,
         )
 
     if USE_PG and user_id is not None and not requested_inverter_id:
         return web.json_response(
-            {"success": False, "message": "inverter_id is required"},
+            {"success": False, "message": _lmsg(request, "inverter_id is required")},
             status=400,
             headers=VITE_CORS_HEADER,
         )
@@ -220,14 +226,14 @@ async def sse_handler(request):
         except Exception as exc:
             logger.error("Failed to resolve SSE user inverter scope: %s", exc)
             return web.json_response(
-                {"success": False, "message": "Failed to resolve inverter scope"},
+                {"success": False, "message": _lmsg(request, "Failed to resolve inverter scope")},
                 status=500,
                 headers=VITE_CORS_HEADER,
             )
 
     if requested_inverter_id and allowed_inverter_ids is not None and requested_inverter_id not in allowed_inverter_ids:
         return web.json_response(
-            {"success": False, "message": "Forbidden inverter scope"},
+            {"success": False, "message": _lmsg(request, "Forbidden inverter scope")},
             status=403,
             headers=VITE_CORS_HEADER,
         )
@@ -335,7 +341,7 @@ async def state(_: web.Request):
 
     if USE_PG and user_id is not None and not requested_inverter_id:
         return web.json_response(
-            {"success": False, "message": "inverter_id is required"},
+            {"success": False, "message": _lmsg(_, "inverter_id is required")},
             status=400,
             headers=VITE_CORS_HEADER,
         )
@@ -398,13 +404,13 @@ async def register_fcm(request: web.Request):
             user_id = _extract_jwt_user_id(request)
             if user_id is None:
                 return web.json_response(
-                    {"is_success": False, "message": "Unauthorized", "device_count": 0},
+                    {"is_success": False, "message": _lmsg(request, "Unauthorized"), "device_count": 0},
                     status=401,
                     headers=VITE_CORS_HEADER,
                 )
             if not token.strip():
                 return web.json_response(
-                    {"is_success": False, "message": "Missing required parameter 'token'", "device_count": 0},
+                    {"is_success": False, "message": _lmsg(request, "Missing required parameter 'token'"), "device_count": 0},
                     status=400,
                     headers=VITE_CORS_HEADER,
                 )
@@ -414,7 +420,7 @@ async def register_fcm(request: web.Request):
                 count = len(mt_repo.get_device_tokens_by_user(session, user_id))
                 session.commit()
                 return web.json_response(
-                    {"is_success": True, "message": "Device register success", "device_count": count},
+                    {"is_success": True, "message": _lmsg(request, "Device register success"), "device_count": count},
                     headers=VITE_CORS_HEADER,
                 )
             except Exception:
