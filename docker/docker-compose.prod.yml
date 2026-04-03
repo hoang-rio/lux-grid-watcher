@@ -39,6 +39,10 @@ services:
       - "8443:8443"
       - "4346:4346"
     volumes:
-      - fcm_admin_key.json:/app/fcm_admin_key.json:ro
+      - lux_logs_prod:/app/logs
+      - lux_state_prod:/app/state
+      - ./fcm_admin_key.json:/app/fcm_admin_key.json:ro
 volumes:
   pg_data_prod:
+  lux_logs_prod:
+  lux_state_prod:
