@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { IAuthUser } from "../Intefaces";
+import { IAuthUser, IUserInverter } from "../Intefaces";
 import { apiFetch } from "../utils/fetchUtil";
 import * as logUtil from "../utils/logUtil";
 import "./TopAuthBar.css";
@@ -8,9 +8,18 @@ import "./TopAuthBar.css";
 interface TopAuthBarProps {
   authUser: IAuthUser;
   onLogout: () => void;
+  inverters?: IUserInverter[];
+  selectedInverterId?: string;
+  onSelectInverter?: (inverterId: string) => void;
 }
 
-function TopAuthBar({ authUser, onLogout }: TopAuthBarProps) {
+function TopAuthBar({
+  authUser,
+  onLogout,
+  inverters = [],
+  selectedInverterId = "",
+  onSelectInverter,
+}: TopAuthBarProps) {
   const { t } = useTranslation();
   const [verifyMessage, setVerifyMessage] = useState("");
   const [verifySubmitting, setVerifySubmitting] = useState(false);
@@ -54,9 +63,25 @@ function TopAuthBar({ authUser, onLogout }: TopAuthBarProps) {
           </div>
         )}
       </div>
-      <button className="top-auth-logout-btn" onClick={onLogout}>
-        {t("auth.logout")}
-      </button>
+      <div className="top-auth-bar-right">
+        {inverters.length > 0 && (
+          <select
+            className="top-auth-inverter-select"
+            value={selectedInverterId}
+            onChange={(e) => onSelectInverter?.(e.target.value)}
+            aria-label={t("systemInformation")}
+          >
+            {inverters.map((inv) => (
+              <option key={inv.id} value={inv.id}>
+                {`${inv.name} (${inv.invert_serial})`}
+              </option>
+            ))}
+          </select>
+        )}
+        <button className="top-auth-logout-btn" onClick={onLogout}>
+          {t("auth.logout")}
+        </button>
+      </div>
     </div>
   );
 }

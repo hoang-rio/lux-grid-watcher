@@ -23,7 +23,6 @@ interface Props {
   authUser?: IAuthUser | null;
   inverters?: IUserInverter[];
   selectedInverterId?: string;
-  onSelectInverter?: (inverterId: string) => void;
 }
 
 function SystemInformation({
@@ -34,7 +33,6 @@ function SystemInformation({
   authUser,
   inverters = [],
   selectedInverterId = "",
-  onSelectInverter,
 }: Props) {
   const { t, i18n } = useTranslation();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -175,6 +173,10 @@ function SystemInformation({
     return new Map(inverters.map((inv) => [inv.id, inv.name]));
   }, [inverters]);
 
+  const selectedInverterName = useMemo(() => {
+    return inverterNameById.get(selectedInverterId) || inverterData.serial || "";
+  }, [inverterData.serial, inverterNameById, selectedInverterId]);
+
   const status = useMemo(() => {
     if (!isSSEConnected) {
       return "offline";
@@ -204,20 +206,11 @@ function SystemInformation({
       <div className="card system-information">
         <div className="system-content">
           <div className="system-title">
-            <span className="system-title-text">{t("systemInformation")}</span>
-            {inverters.length > 0 && (
-              <select
-                className="inverter-select"
-                value={selectedInverterId}
-                onChange={(e) => onSelectInverter?.(e.target.value)}
-              >
-                {inverters.map((inv) => (
-                  <option key={inv.id} value={inv.id}>
-                    {inv.name} ({inv.dongle_serial})
-                  </option>
-                ))}
-              </select>
-            )}
+            <span className="system-title-text">
+              {selectedInverterName
+                ? `${t("systemInformation")} (${selectedInverterName})`
+                : t("systemInformation")}
+            </span>
             {inverters.length === 0 && inverterData.serial && (
               <span className="system-title-serial">({inverterData.serial})</span>
             )}

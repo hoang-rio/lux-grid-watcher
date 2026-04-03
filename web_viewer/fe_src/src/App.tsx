@@ -529,7 +529,15 @@ function App() {
   if (inverterData) {
     return (
       <>
-        {authUser && <TopAuthBar authUser={authUser} onLogout={handleLogout} />}
+        {authUser && (
+          <TopAuthBar
+            authUser={authUser}
+            onLogout={handleLogout}
+            inverters={userInverters}
+            selectedInverterId={selectedInverterId}
+            onSelectInverter={setSelectedInverterId}
+          />
+        )}
         <Summary
           invertData={inverterData}
           selectedInverterId={selectedInverterId}
@@ -543,7 +551,6 @@ function App() {
           authUser={authUser}
           inverters={userInverters}
           selectedInverterId={selectedInverterId}
-          onSelectInverter={setSelectedInverterId}
         />
         <div className="row chart">
           <HourlyChart
@@ -565,7 +572,15 @@ function App() {
 
   return (
     <>
-      {authUser && <TopAuthBar authUser={authUser} onLogout={handleLogout} />}
+      {authUser && (
+        <TopAuthBar
+          authUser={authUser}
+          onLogout={handleLogout}
+          inverters={userInverters}
+          selectedInverterId={selectedInverterId}
+          onSelectInverter={setSelectedInverterId}
+        />
+      )}
       <div className="d-flex card server-offline align-center justify-center flex-1">
         {t("server.offline")}
       </div>
