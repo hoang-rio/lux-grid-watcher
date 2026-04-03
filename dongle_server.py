@@ -4,6 +4,18 @@ import queue
 from typing import Optional
 import dongle_handler
 
+# Per-user sleep_time cache to avoid repeated DB queries
+_sleep_time_cache: dict[str, int] = {}
+
+
+def _normalize_sleep_time(value, fallback: int = 30) -> int:
+    allowed_values = {3, 5, 10, 15, 30}
+    try:
+        parsed = int(value)
+    except Exception:
+        parsed = fallback
+    return parsed if parsed in allowed_values else fallback
+
 
 def _resolve_inverter_id(dongle_serial: str, logger: logging.Logger) -> Optional[str]:
     """Look up the PostgreSQL inverter UUID for the given dongle serial.
@@ -27,6 +39,37 @@ def _resolve_inverter_id(dongle_serial: str, logger: logging.Logger) -> Optional
     except Exception as exc:
         logger.warning("Failed to resolve inverter_id for dongle_serial=%s: %s", dongle_serial, exc)
     return None
+
+
+def _resolve_sleep_time(dongle_serial: str, default_sleep_time: int, logger: logging.Logger) -> int:
+    if not dongle_serial:
+        return default_sleep_time
+    try:
+        from multi_tenant.db import get_db_session
+        from multi_tenant import repository as repo
+        session = next(get_db_session())
+        try:
+            inverter = repo.get_inverter_by_dongle_serial(session, dongle_serial)
+            if inverter is None:
+                return default_sleep_time
+            
+            user_id_str = str(inverter.user_id)
+            # Check cache first
+            if user_id_str in _sleep_time_cache:
+                return _sleep_time_cache[user_id_str]
+            
+            # Query and cache
+            user_sleep_time = repo.get_user_setting(session, inverter.user_id, "SLEEP_TIME")
+            cached_value = _normalize_sleep_time(user_sleep_time, default_sleep_time)
+            _sleep_time_cache[user_id_str] = cached_value
+            return cached_value
+        finally:
+            session.close()
+    except RuntimeError:
+        return default_sleep_time
+    except Exception as exc:
+        logger.warning("Failed to resolve sleep_time for dongle_serial=%s: %s", dongle_serial, exc)
+        return default_sleep_time
 
 
 class DongleServer:
@@ -74,7 +117,7 @@ class DongleServer:
         try:
             dongle_serial = self.__config.get("DONGLE_SERIAL", "")
             inverter_serial = self.__config.get("INVERT_SERIAL", "")
-            sleep_time = int(self.__config.get("SLEEP_TIME", 120))
+            sleep_time = _normalize_sleep_time(self.__config.get("SLEEP_TIME", 30))
             read_mode = dongle_handler.normalize_read_input_mode(
                 self.__config.get("READ_INPUT_MODE", dongle_handler.READ_INPUT_MODE_ALL)
             )
@@ -158,6 +201,8 @@ class DongleServer:
                     raw_data = list(data)
                     parsed_data = self.__parse_inverter_data(raw_data)
                     if parsed_data is not None:
+                        resolved_dongle_serial = str(parsed_data.get("dongle_serial") or dongle_serial)
+                        sleep_time = _resolve_sleep_time(resolved_dongle_serial, sleep_time, self.__logger)
                         if read_mode == dongle_handler.READ_INPUT_MODE_INPUT1_ONLY:
                             await self.__enqueue_inverter_data(parsed_data, client_addr)
                             self.__logger.info(

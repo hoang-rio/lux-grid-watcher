@@ -146,6 +146,9 @@
   },
   "settings": {
     "title": "Settings",
+    "inverterSurveySection": "Inverter polling",
+    "inverterSurveyInterval": "Inverter survey interval",
+    "inverterSurveyIntervalDescription": "Sets the polling interval for checking inverter data. Note: The actual update interval may vary due to network conditions, data processing time, and system load. This is the target interval, not a guaranteed update frequency.",
     "abnormalUsageSection": "Abnormal usage detection",
     "abnormalDetectionEnabled": "Enable detection",
     "abnormalSkipCheckHours": "Cooldown hours after abnormal detection",
@@ -179,6 +182,7 @@
     "saveSuccess": "Settings saved successfully",
     "saveError": "Failed to save settings",
     "hours": "hours",
+    "seconds": "seconds",
     "watts": "W",
     "percent": "%"
   },

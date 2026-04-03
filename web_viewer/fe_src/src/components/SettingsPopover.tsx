@@ -10,6 +10,7 @@ interface SettingsPopoverProps {
 }
 
 interface Settings {
+  SLEEP_TIME: string;
   ABNORMAL_DETECTION_ENABLED: string;
   ABNORMAL_CHECK_COOLDOWN_HOURS: string;
   ABNORMAL_MIN_POWER: string;
@@ -25,6 +26,8 @@ interface Settings {
   AUTH_PASSWORD: string;
   AUTH_BYPASS_CIDR: string;
 }
+
+const SLEEP_TIME_OPTIONS = ["3", "5", "10", "15", "30"];
 
 const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onClose }, ref) => {
   const { t } = useTranslation();
@@ -55,6 +58,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
       const data = await res.json();
       // Set defaults if missing
       const defaults: Settings = {
+        SLEEP_TIME: '30',
         ABNORMAL_DETECTION_ENABLED: 'true',
         ABNORMAL_CHECK_COOLDOWN_HOURS: '3',
         ABNORMAL_MIN_POWER: '900',
@@ -71,6 +75,9 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
         ,AUTH_BYPASS_CIDR: pgMode ? '' : '127.0.0.1/32,::1/128'
       };
       const merged = { ...defaults, ...data };
+      merged.SLEEP_TIME = SLEEP_TIME_OPTIONS.includes(String(merged.SLEEP_TIME))
+        ? String(merged.SLEEP_TIME)
+        : defaults.SLEEP_TIME;
       setSettings(merged);
       setOriginalSettings(merged);
       // If auth already enabled in saved settings, pre-fill confirm password
@@ -226,6 +233,23 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
         </div>
         <div className="settings-content">
           <div className="settings-section">
+            <h4>{t("settings.inverterSurveySection")}</h4>
+            <div className="setting-item">
+              <label>{t("settings.inverterSurveyInterval")}</label>
+              <select
+                value={settings.SLEEP_TIME}
+                onChange={(e) => updateSetting("SLEEP_TIME", e.target.value)}
+              >
+                {SLEEP_TIME_OPTIONS.map((value) => (
+                  <option key={value} value={value}>
+                    {`${value} ${t("settings.seconds")}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="setting-description">{t("settings.inverterSurveyIntervalDescription")}</p>
+          </div>
+          <div className="settings-section">
             <h4>{t("settings.batterySection")}</h4>
             <div className="setting-item">
               <label>
@@ -329,7 +353,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
                 {t("settings.authEnabled")}
               </label>
             </div>
-            <p className="setting-descrtiption">
+            <p className="setting-description">
               {t("settings.authDescription")}
             </p>
             <div className="setting-item">
@@ -377,7 +401,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
                   {cidrError}
                 </div>
               )}
-              <p className="setting-descrtiption">
+              <p className="setting-description">
                 {t("settings.authBypassCidrDescription")}
               </p>
             </div>
@@ -437,7 +461,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
               />
               <span>{t("settings.watts")}</span>
             </div>
-            <p className="setting-descrtiption">
+            <p className="setting-description">
               {t("settings.offGridWarningDescription")}
             </p>
           </div>

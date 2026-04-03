@@ -857,6 +857,12 @@ async def notification_unread_count(_: web.Request):
         logger.error(f"Error in notification_unread_count: {e}")
         return web.json_response({"unread_count": 0}, headers=VITE_CORS_HEADER)
 
+ALLOWED_SLEEP_TIME_VALUES = {"3", "5", "10", "15", "30"}
+
+# Per-user sleep_time cache to avoid repeated DB queries
+_sleep_time_cache: dict[str, int] = {}
+
+
 async def get_settings(_: web.Request):
     if USE_PG:
         user_id = _extract_jwt_user_id(_)
@@ -870,6 +876,7 @@ async def get_settings(_: web.Request):
             finally:
                 session.close()
             merged = dict(settings.settings)
+            merged["SLEEP_TIME"] = str(settings.get_sleep_time())
             merged.update(user_settings)
             # Basic Auth settings are redundant in multi-tenant mode
             merged.pop("AUTH_ENABLED", None)
@@ -883,7 +890,9 @@ async def get_settings(_: web.Request):
 
     try:
         import settings
-        return web.json_response(settings.settings, headers=VITE_CORS_HEADER)
+        merged = dict(settings.settings)
+        merged["SLEEP_TIME"] = str(settings.get_sleep_time())
+        return web.json_response(merged, headers=VITE_CORS_HEADER)
     except Exception as e:
         logger.error(f"Error in get_settings: {e}")
         return web.json_response({}, headers=VITE_CORS_HEADER)
@@ -897,12 +906,20 @@ async def update_settings(request: web.Request):
             data = await request.json()
             session = next(get_db_session())
             try:
+                sleep_time_changed = False
                 for key, value in data.items():
                     # Basic auth settings are deprecated in multi-tenant mode.
                     if key in {"AUTH_ENABLED", "AUTH_USERNAME", "AUTH_PASSWORD", "AUTH_BYPASS_CIDR"}:
                         continue
+                    if key == "SLEEP_TIME" and str(value) not in ALLOWED_SLEEP_TIME_VALUES:
+                        return web.json_response({"success": False}, status=400, headers=VITE_CORS_HEADER)
+                    if key == "SLEEP_TIME":
+                        sleep_time_changed = True
                     mt_repo.upsert_user_setting(session, user_id, key, str(value))
                 session.commit()
+                # Invalidate sleep_time cache only if SLEEP_TIME was changed
+                if sleep_time_changed:
+                    _sleep_time_cache.pop(str(user_id), None)
                 return web.json_response({"success": True}, headers=VITE_CORS_HEADER)
             except Exception:
                 session.rollback()
@@ -918,6 +935,8 @@ async def update_settings(request: web.Request):
         conn = get_db_connection()
         import settings
         for key, value in data.items():
+            if key == "SLEEP_TIME" and str(value) not in ALLOWED_SLEEP_TIME_VALUES:
+                return web.json_response({"success": False}, status=400, headers=VITE_CORS_HEADER)
             settings.save_setting(key, value, conn)
         return web.json_response({"success": True}, headers=VITE_CORS_HEADER)
     except Exception as e:

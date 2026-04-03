@@ -36,6 +36,9 @@ config: dict = {
 settings.init_config(config)
 USE_PG = bool(config.get("POSTGRES_DB_URL") or config.get("DATABASE_URL"))
 
+# Per-user sleep_time cache to avoid repeated DB queries
+_sleep_time_cache: dict[str, int] = {}
+
 log_level = logging.DEBUG if config["IS_DEBUG"] == 'True' else logging.INFO
 
 logger = logging.getLogger(__file__)
@@ -84,7 +87,7 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM, 
         return  # Skip check if abnormal detection is disabled
     now = datetime.now()
     # now = now.replace(minute=0, second=0, hour=6)
-    sleep_time = int(config["SLEEP_TIME"])
+    sleep_time = _get_sleep_time(inverter_ctx)
     abnormal_check_cooldown_hours = _to_int(
         _get_user_setting(
             inverter_ctx,
@@ -227,7 +230,8 @@ def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: 
         )
         play_audio("warning_power_off_grid.mp3")
         # Skip next OFF_GRID_WARNING_SKIP_CHECK_COUNT time when detect off grid warning
-        dectect_off_grid_warning_skip_check_count = 60 // int(config["SLEEP_TIME"])
+        sleep_time = max(_get_sleep_time(inverter_ctx), 1)
+        dectect_off_grid_warning_skip_check_count = max(60 // sleep_time, 1)
     else:
         dectect_off_grid_warning_skip_check_count = 0
 
@@ -281,7 +285,7 @@ def _build_hourly_chart_item(inverter_data: dict) -> list:
     ]
 
 
-def _pg_upsert_inverter_data(inverter_data: dict) -> None:
+def _pg_upsert_inverter_data(inverter_data: dict, sleep_time: int) -> None:
     """Write inverter runtime/energy data to PostgreSQL when inverter is mapped."""
     inverter_id_str = inverter_data.get("_inverter_id")
     if not inverter_id_str:
@@ -318,7 +322,7 @@ def _pg_upsert_inverter_data(inverter_data: dict) -> None:
                 session,
                 inverter_id,
                 hour_dt,
-                int(config["SLEEP_TIME"]),
+                sleep_time,
                 pv,
                 battery,
                 grid,
@@ -465,6 +469,42 @@ def _to_int(value: str, fallback: int) -> int:
         return int(value)
     except Exception:
         return fallback
+
+
+def _normalize_sleep_time(value, fallback: int = 30) -> int:
+    allowed_values = {3, 5, 10, 15, 30}
+    try:
+        parsed = int(value)
+    except Exception:
+        parsed = fallback
+    return parsed if parsed in allowed_values else fallback
+
+
+def _clear_sleep_time_cache(user_id: str) -> None:
+    """Clear sleep_time cache for a user."""
+    _sleep_time_cache.pop(user_id, None)
+
+
+def _get_sleep_time(inverter_ctx: dict | None = None) -> int:
+    configured_sleep_time = _normalize_sleep_time(config.get("SLEEP_TIME", 30))
+    if not USE_PG or not inverter_ctx:
+        return configured_sleep_time
+    
+    user_id = inverter_ctx.get("user_id")
+    if not user_id:
+        return configured_sleep_time
+    
+    # Check cache first
+    if user_id in _sleep_time_cache:
+        return _sleep_time_cache[user_id]
+    
+    # Query and cache
+    cached_value = _normalize_sleep_time(
+        _get_user_setting(inverter_ctx, "SLEEP_TIME", str(configured_sleep_time)),
+        configured_sleep_time,
+    )
+    _sleep_time_cache[user_id] = cached_value
+    return cached_value
 
 
 def _migrate_sqlite_to_pg_if_needed() -> None:
@@ -705,17 +745,19 @@ async def process_inverter_data(
 
     handle_grid_status(inverter_data, fcm_service, inverter_ctx)
     
+    sleep_time = _get_sleep_time(inverter_ctx)
+
     # Store data in database regardless of web viewer status
     hourly_chart_item = None
     if USE_PG:
-        _pg_upsert_inverter_data(inverter_data)
+        _pg_upsert_inverter_data(inverter_data, sleep_time)
         hourly_chart_item = _build_hourly_chart_item(inverter_data)
     elif db_connection is not None:
         # SQLite mode: insert hourly and daily chart data
         hourly_chart_item = database.insert_hourly_chart(
             db_connection,
             inverter_data,
-            int(config["SLEEP_TIME"]),
+            sleep_time,
         )
         database.insert_daily_chart(db_connection, inverter_data)
         dectect_abnormal_usage(db_connection, fcm_service, inverter_ctx)
@@ -724,7 +766,7 @@ async def process_inverter_data(
     if not run_web_view or ws_client is None:
         return ws_client
 
-    timeout_duration = int(config["SLEEP_TIME"]) * 3
+    timeout_duration = sleep_time * 3
 
     try:
         sent = await asyncio.wait_for(
@@ -770,7 +812,7 @@ async def main():
             dongle = dongle_handler.Dongle(logger, config)
             while True:
                 try:
-                    timeout_duration = int(config["SLEEP_TIME"]) * 3
+                    timeout_duration = _normalize_sleep_time(config.get("SLEEP_TIME", 30)) * 3
                     inverter_data = None
                     try:
                         inverter_data = await asyncio.wait_for(
@@ -789,9 +831,12 @@ async def main():
                         )
                 except Exception as e:
                     logger.exception("Got error when get dongle input %s", e)
+                current_sleep_time = _normalize_sleep_time(config.get("SLEEP_TIME", 30))
+                if inverter_data is not None and USE_PG:
+                    current_sleep_time = _get_sleep_time(_resolve_inverter_context(inverter_data))
                 logger.info("Wating for %s second before next check",
-                                config["SLEEP_TIME"])
-                time.sleep(int(config["SLEEP_TIME"]))
+                                current_sleep_time)
+                time.sleep(current_sleep_time)
         elif config["WORKING_MODE"] == SERVER_MODE:
             from dongle_server import DongleServer
             if run_web_view:

@@ -41,8 +41,9 @@
     margin-right: 8px;
 }
 
-.setting-item input[type="number"] {
-    width: 80px;
+.setting-item input[type="number"],
+.setting-item select {
+    width: 110px;
     padding: 4px;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -143,7 +144,7 @@
     right: 8px;
 }
 
-.settings-popover .setting-descrtiption {
+.settings-popover .setting-description {
     font-size: 13px;
     color: #888;
     margin: 4px 0 0 0;
@@ -180,7 +181,7 @@
     .settings-message.success.error {
         color: #FF7F7F;
     }
-    .settings-popover .setting-descrtiption {
+    .settings-popover .setting-description {
         color: #bbb;
     }
 }

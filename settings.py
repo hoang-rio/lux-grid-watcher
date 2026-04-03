@@ -70,3 +70,13 @@ def get_auth_bypass_cidr():
         "AUTH_BYPASS_CIDR",
         config.get("AUTH_BYPASS_CIDR", "127.0.0.1/32,::1/128")
     )
+
+
+def get_sleep_time() -> int:
+    raw_value = str(get_setting("SLEEP_TIME", config.get("SLEEP_TIME", 30)))
+    allowed_values = {3, 5, 10, 15, 30}
+    try:
+        parsed = int(raw_value)
+    except Exception:
+        parsed = 30
+    return parsed if parsed in allowed_values else 30
