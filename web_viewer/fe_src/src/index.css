@@ -1,26 +1,33 @@
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --ui-bg-start: #e7f7f8;
+  --ui-bg-end: #fcf4de;
+  --ui-surface: #ffffff;
+  --ui-surface-soft: #f5fbfb;
+  --ui-border: #cfe1e3;
+  --ui-text: #183b42;
+  --ui-muted: #65858b;
+  --ui-primary: #0f737d;
+  --ui-primary-strong: #179b9c;
+  --ui-primary-soft: #e4f5f5;
+  --ui-success: #1b7a43;
+  --ui-danger: #8d1f1f;
+  --ui-shadow: rgba(25, 58, 65, 0.14);
+  --ui-shadow-strong: rgba(22, 53, 60, 0.22);
+
+  color-scheme: light;
+  font-family: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
+  color: var(--ui-text);
+  background-color: var(--ui-bg-start);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
+* {
+  box-sizing: border-box;
 }
 
 body {
@@ -28,11 +35,25 @@ body {
   display: flex;
   min-width: 320px;
   min-height: 100vh;
+  color: var(--ui-text);
+  background: linear-gradient(130deg, var(--ui-bg-start), var(--ui-bg-end));
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+a {
+  font-weight: 600;
+  color: var(--ui-primary);
+  text-decoration: inherit;
+}
+
+a:hover {
+  color: var(--ui-primary-strong);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 .code {
@@ -44,34 +65,40 @@ h1 {
 }
 
 .connected {
-  color: #01a907;
+  color: var(--ui-success);
 }
 
 .disconected {
-  color: #dc2f26;
+  color: var(--ui-danger);
 }
 
 .card {
-  background-color: #5c5c5c;
+  background: color-mix(in srgb, var(--ui-surface) 95%, var(--ui-surface-soft) 5%);
+  border: 1px solid var(--ui-border);
+  border-radius: 18px;
   padding: 1rem;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #f2f7f8;
-  }
-
-  a:hover {
-    color: #747bff;
-  }
-
-  .card {
-    background-color: #ffffff;
-  }
+  box-shadow: 0 12px 24px var(--ui-shadow);
 }
 
 @media (prefers-color-scheme: dark) {
+  :root {
+    --ui-bg-start: #0f171b;
+    --ui-bg-end: #1a1f24;
+    --ui-surface: #172229;
+    --ui-surface-soft: #1e2d35;
+    --ui-border: #2f464f;
+    --ui-text: #d9edf0;
+    --ui-muted: #95b4ba;
+    --ui-primary: #1f95a1;
+    --ui-primary-strong: #2cb7b8;
+    --ui-primary-soft: #223941;
+    --ui-success: #9de4bb;
+    --ui-danger: #ff9f9f;
+    --ui-shadow: rgba(0, 0, 0, 0.35);
+    --ui-shadow-strong: rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
+
   .apexcharts-canvas svg {
     background-color: unset !important;
   }

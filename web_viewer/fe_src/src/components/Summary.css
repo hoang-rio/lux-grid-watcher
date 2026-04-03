@@ -8,34 +8,46 @@
 }
 
 .summary-item {
-    background-color: #5c5c5c;
+    background: color-mix(in srgb, var(--ui-surface) 95%, var(--ui-surface-soft) 5%);
+    border: 1px solid var(--ui-border);
+    border-radius: 16px;
+    box-shadow: 0 10px 18px var(--ui-shadow);
     margin: 5px;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.summary-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 24px var(--ui-shadow-strong);
 }
 
 .summary-item-content {
-    padding: 10px;
+    padding: 12px;
 }
 
 .summary-item-title {
-    padding: 5px 10px;
+    padding: 8px 12px;
     color: #fff;
     white-space: nowrap;
+    font-weight: 700;
+    letter-spacing: 0.01em;
 }
 
 .yield .summary-item-title {
-    background-color: #63BFE6;
+    background: linear-gradient(130deg, #3ca9d3, #5dc4e4);
 }
 
 .battery .summary-item-title {
-    background-color: rgb(240, 135, 160);
+    background: linear-gradient(130deg, #d97aa4, #ef9ab9);
 }
 
 .feed .summary-item-title {
-    background-color: rgb(240, 156, 107);
+    background: linear-gradient(130deg, #e78f4f, #f2aa77);
 }
 
 .comsumption .summary-item-title {
-    background-color: #57C696;
+    background: linear-gradient(130deg, #43b37f, #68cc9e);
 }
 
 .summary-item-content img {
@@ -43,13 +55,13 @@
     height: 102px;
 }
 
-.summary-item-content>.row>.summary-item-content-texts {
+.summary-item-content > .row > .summary-item-content-texts {
     text-align: right;
 }
 
-@media (prefers-color-scheme: light) {
-    .summary-item {
-        background-color: #fff;
+@media (prefers-color-scheme: dark) {
+    .summary-item-title {
+        color: #eefbfd;
     }
 }
 
@@ -72,7 +84,7 @@
         flex-direction: row-reverse;
     }
 
-    .summary-item-content>.row>.summary-item-content-texts {
+    .summary-item-content > .row > .summary-item-content-texts {
         text-align: left;
     }
 }

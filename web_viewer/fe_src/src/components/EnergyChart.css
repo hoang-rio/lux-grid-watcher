@@ -1,49 +1,150 @@
 .energy-chart {
     margin-top: 10px;
-    height: 480px;
+    height: 560px;
 }
+
+.energy-chart.has-period-selector {
+    height: 610px;
+}
+
 @media screen and (max-width: 768px) {
     .energy-chart {
-        height: 520px;
+        height: 560px;
+    }
+
+    .energy-chart.has-period-selector {
+        height: 620px;
     }
 }
 .energy-chart-title {
-    font-weight: bold;
+    font-weight: 700;
+    font-size: 18px;
 }
 
 .energy-chart-content {
     margin-top: 10px;
+    min-height: 440px;
+    overflow: visible;
 }
 
-/* ...existing code... */
+.energy-chart-buttons {
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
 .energy-chart-buttons > button {
-    margin-right: 10px;
+    margin-right: 6px;
 }
 
+.energy-chart-buttons button,
 .chart-select button {
-    margin: 0 5px;
+    margin: 0;
+    border: 1px solid var(--ui-border);
+    background: var(--ui-surface-soft);
+    color: var(--ui-text);
+    border-radius: 999px;
+    padding: 7px 12px;
+    min-height: 36px;
+    line-height: 1;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.energy-chart-type-label {
+    font-weight: 600;
+    color: var(--ui-muted);
+    margin-left: 2px;
+    margin-right: 2px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.chart-select {
+    align-items: center;
+    gap: 8px;
+}
+
+.energy-chart-buttons button:hover,
+.chart-select button:hover {
+    background: var(--ui-primary-soft);
 }
 
 .chart-select button.active {
-    background-color: #51ad77;
+    border-color: transparent;
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--ui-primary), var(--ui-primary-strong));
 }
 
 .month-select-row {
     display: flex;
     align-items: center;
-    margin-left: 16px;
+    margin-left: 0;
     gap: 8px;
     margin-top: 16px;
+    flex-wrap: wrap;
 }
 
 .month-select-label {
     margin-right: 8px;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .month-select-input {
-    padding: 2px 6px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
+    padding: 6px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--ui-border);
+    color: var(--ui-text);
+    background: var(--ui-surface-soft);
     font-size: 1rem;
+}
+
+@media screen and (max-width: 900px) {
+    .energy-chart-buttons {
+        justify-content: flex-start;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .energy-chart > .row.justify-space-between {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .energy-chart-buttons {
+        width: 100%;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 2px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .chart-select {
+        flex-wrap: nowrap;
+    }
+
+    .month-select-row {
+        margin-top: 12px;
+    }
+
+    .month-select-input {
+        min-height: 38px;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .energy-chart-buttons button,
+    .chart-select button,
+    .month-select-input {
+        background: var(--ui-surface-soft);
+        border-color: var(--ui-border);
+        color: var(--ui-text);
+    }
 }

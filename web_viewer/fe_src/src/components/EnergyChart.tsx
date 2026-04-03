@@ -103,8 +103,10 @@ function EnergyChart({ className, selectedInverterId, authToken }: EnergyChartPr
     setEnergyChartType(type);
   };
 
+  const hasPeriodSelector = energyChartType === EnergyChartType.Daily || energyChartType === EnergyChartType.Monthly;
+
   return (
-    <div className={`card col energy-chart ${className}`}>
+    <div className={`card col energy-chart ${hasPeriodSelector ? "has-period-selector" : ""} ${className}`}>
       <div className="row justify-space-between">
         <div className="energy-chart-title">
           {t("energyChart.title", {
@@ -112,12 +114,13 @@ function EnergyChart({ className, selectedInverterId, authToken }: EnergyChartPr
           })}
         </div>
         <div className="row energy-chart-buttons">
-          <button onClick={() => fetchChartRef?.current?.fetchChart()}>
+          <button type="button" onClick={() => fetchChartRef?.current?.fetchChart()}>
             {t("energyChart.updateChart")}
           </button>
-          <div>{t("energyChart.chartType")}</div>
+          <div className="energy-chart-type-label">{t("energyChart.chartType")}</div>
           <div className="row chart-select">
             <button
+              type="button"
               className={
                 energyChartType === EnergyChartType.Daily ? "active" : undefined
               }
@@ -126,6 +129,7 @@ function EnergyChart({ className, selectedInverterId, authToken }: EnergyChartPr
               {t("energyChart.daily")}
             </button>
             <button
+              type="button"
               className={
                 energyChartType === EnergyChartType.Monthly
                   ? "active"
@@ -136,6 +140,7 @@ function EnergyChart({ className, selectedInverterId, authToken }: EnergyChartPr
               {t("energyChart.monthly")}
             </button>
             <button
+              type="button"
               className={
                 energyChartType === EnergyChartType.Yearly
                   ? "active"
@@ -148,7 +153,7 @@ function EnergyChart({ className, selectedInverterId, authToken }: EnergyChartPr
           </div>
         </div>
       </div>
-      {(energyChartType === EnergyChartType.Daily || energyChartType === EnergyChartType.Monthly) && (
+      {hasPeriodSelector && (
         <div className="month-select-row">
           <label className="month-select-label">
             {energyChartType === EnergyChartType.Daily

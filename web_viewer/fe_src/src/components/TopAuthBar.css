@@ -4,7 +4,7 @@
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 10px;
-  padding: 10px 12px;
+  padding: 12px 14px;
 }
 
 .top-auth-bar-left {
@@ -23,11 +23,11 @@
 .top-auth-inverter-select {
   min-width: 240px;
   max-width: 320px;
-  border: 1px solid #bbb;
-  background: #fff;
-  color: #333;
-  border-radius: 6px;
-  padding: 6px 10px;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface-soft);
+  color: var(--ui-text);
+  border-radius: 10px;
+  padding: 8px 10px;
 }
 
 .top-auth-verify-wrap {
@@ -36,15 +36,15 @@
   gap: 8px;
   flex-wrap: wrap;
   font-size: 14px;
-  color: #7a5600;
+  color: #8a6110;
 }
 
 .top-auth-verify-btn {
   border: 1px solid #d7a025;
-  background: #fff;
+  background: #fff8e8;
   color: #7a5600;
-  border-radius: 6px;
-  padding: 4px 10px;
+  border-radius: 999px;
+  padding: 5px 11px;
   cursor: pointer;
 }
 
@@ -59,17 +59,28 @@
 
 .top-auth-manage-btn,
 .top-auth-logout-btn {
-  border: 1px solid #bbb;
-  background: #fff;
-  color: #333;
-  border-radius: 6px;
-  padding: 6px 10px;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface-soft);
+  color: var(--ui-text);
+  border-radius: 10px;
+  padding: 7px 11px;
   cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
 .top-auth-manage-btn:hover,
 .top-auth-logout-btn:hover {
-  background: #f5f5f5;
+  background: var(--ui-primary-soft);
+  transform: translateY(-1px);
+}
+
+.top-auth-manage-btn {
+  border-color: color-mix(in srgb, var(--ui-primary) 35%, var(--ui-border) 65%);
+}
+
+.top-auth-logout-btn {
+  border-color: color-mix(in srgb, #b73b3b 25%, var(--ui-border) 75%);
 }
 
 @media (max-width: 640px) {
@@ -97,26 +108,26 @@
   }
 
   .top-auth-verify-btn {
-    background: #3a2f14;
+    background: #382f1b;
     color: #ffd98a;
     border-color: #8f6d1f;
   }
 
   .top-auth-manage-btn,
   .top-auth-logout-btn {
-    background: #1f1f1f;
-    color: #f0f0f0;
-    border-color: #555;
+    background: var(--ui-surface-soft);
+    color: var(--ui-text);
+    border-color: var(--ui-border);
   }
 
   .top-auth-inverter-select {
-    background: #1f1f1f;
-    color: #f0f0f0;
-    border-color: #555;
+    background: var(--ui-surface-soft);
+    color: var(--ui-text);
+    border-color: var(--ui-border);
   }
 
   .top-auth-manage-btn:hover,
   .top-auth-logout-btn:hover {
-    background: #2a2a2a;
+    background: #2a3e47;
   }
 }

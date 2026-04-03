@@ -1,17 +1,18 @@
 .footer-lang-link {
   text-decoration: none;
   cursor: pointer;
+  color: var(--ui-primary);
+  font-weight: 600;
 }
 
 .footer-lang-link.active {
-  color: #666;
-  /* active language not highlighted */
+  color: var(--ui-muted);
   cursor: default;
 }
 
 .footer-lang-separator {
   margin: 0 0.5rem;
-  color: #666;
+  color: var(--ui-muted);
 }
 
 .footer-lang-container {
@@ -20,10 +21,9 @@
 
 @media (prefers-color-scheme: dark) {
   .footer-lang-link.active {
-    color: #ccc;
-    /* grey for active link in dark mode */
+    color: var(--ui-muted);
   }
   .footer-lang-separator {
-    color: #aaa; /* improved contrast in dark mode */
+    color: var(--ui-muted);
   }
 }

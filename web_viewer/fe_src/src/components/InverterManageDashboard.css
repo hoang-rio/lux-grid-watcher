@@ -25,7 +25,11 @@
 }
 
 .inverter-manager-card {
-  padding: 14px;
+  padding: 18px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--ui-surface) 95%, var(--ui-surface-soft) 5%);
+  border: 1px solid var(--ui-border);
+  box-shadow: 0 14px 24px var(--ui-shadow);
 }
 
 .inverter-manager-header {
@@ -42,14 +46,14 @@
 
 .inverter-manager-header p {
   margin: 6px 0 0 0;
-  color: #666;
+  color: var(--ui-muted);
 }
 
 .inverter-manager-close-btn {
-  border: 1px solid #bbb;
-  background: #fff;
-  color: #333;
-  border-radius: 6px;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface-soft);
+  color: var(--ui-text);
+  border-radius: 10px;
   padding: 6px 10px;
   cursor: pointer;
 }
@@ -62,9 +66,10 @@
 
 .inverter-manager-list-wrap,
 .inverter-manager-form-wrap {
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 14px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--ui-surface-soft) 75%, transparent 25%);
 }
 
 .inverter-manager-list-wrap h3,
@@ -74,7 +79,7 @@
 }
 
 .inverter-manager-empty {
-  color: #666;
+  color: var(--ui-muted);
   font-size: 14px;
 }
 
@@ -91,14 +96,15 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
   padding: 6px;
+  background: var(--ui-surface);
 }
 
 .inverter-manager-item.active {
-  border-color: #5aa85a;
-  background: #f3fff3;
+  border-color: color-mix(in srgb, var(--ui-primary) 60%, var(--ui-border) 40%);
+  background: color-mix(in srgb, var(--ui-primary-soft) 85%, #ffffff 15%);
 }
 
 .inverter-manager-select {
@@ -116,23 +122,23 @@
 
 .inverter-manager-serial {
   font-size: 12px;
-  color: #666;
+  color: var(--ui-muted);
 }
 
 .inverter-manager-delete {
-  border: 1px solid #d4a1a1;
+  border: 1px solid color-mix(in srgb, #b73b3b 45%, var(--ui-border) 55%);
   color: #8e2222;
-  background: #fff7f7;
-  border-radius: 6px;
+  background: #fff3f3;
+  border-radius: 8px;
   padding: 5px 8px;
   cursor: pointer;
 }
 
 .inverter-manager-edit {
-  border: 1px solid #a0b8d8;
-  color: #1e4f8f;
-  background: #f4f9ff;
-  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--ui-primary) 45%, var(--ui-border) 55%);
+  color: #1c5b9a;
+  background: #eff9ff;
+  border-radius: 8px;
   padding: 5px 8px;
   cursor: pointer;
 }
@@ -146,19 +152,21 @@
 
 .inverter-manager-edit-wrap label {
   font-size: 12px;
-  color: #666;
+  color: var(--ui-muted);
 }
 
 .inverter-manager-edit-wrap input {
   height: 32px;
-  border: 1px solid #bbb;
-  border-radius: 6px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
   padding: 0 10px;
+  background: var(--ui-surface);
+  color: var(--ui-text);
 }
 
 .inverter-manager-edit-wrap input.readonly {
-  background: #f6f6f6;
-  color: #666;
+  background: color-mix(in srgb, var(--ui-surface-soft) 70%, #f8f8f8 30%);
+  color: var(--ui-muted);
 }
 
 .inverter-manager-edit-actions {
@@ -169,17 +177,18 @@
 
 .inverter-manager-save,
 .inverter-manager-cancel {
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 5px 10px;
   cursor: pointer;
-  border: 1px solid #bbb;
-  background: #fff;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  color: var(--ui-text);
 }
 
 .inverter-manager-save {
-  border-color: #5a9f5a;
-  color: #155d15;
-  background: #f1fff1;
+  border-color: color-mix(in srgb, var(--ui-primary) 55%, var(--ui-border) 45%);
+  color: #115f67;
+  background: var(--ui-primary-soft);
 }
 
 .inverter-manager-form-wrap {
@@ -194,18 +203,21 @@
 
 .inverter-manager-form-wrap input {
   height: 34px;
-  border: 1px solid #bbb;
-  border-radius: 7px;
+  border: 1px solid var(--ui-border);
+  border-radius: 9px;
   padding: 0 10px;
+  background: var(--ui-surface);
+  color: var(--ui-text);
 }
 
 .inverter-manager-create {
   height: 36px;
-  border: 1px solid #5a9f5a;
-  background: #f1fff1;
-  color: #155d15;
-  border-radius: 7px;
+  border: none;
+  background: linear-gradient(135deg, var(--ui-primary), var(--ui-primary-strong));
+  color: #ffffff;
+  border-radius: 9px;
   cursor: pointer;
+  font-weight: 700;
 }
 
 .inverter-manager-message {
@@ -216,12 +228,12 @@
 }
 
 .inverter-manager-message.success {
-  background: #ebf9eb;
-  color: #155d15;
+  background: #e7f8ef;
+  color: #176d3b;
 }
 
 .inverter-manager-message.error {
-  background: #ffefef;
+  background: #ffecec;
   color: #8e2222;
 }
 
@@ -235,74 +247,72 @@
   .inverter-manager-header p,
   .inverter-manager-empty,
   .inverter-manager-serial {
-    color: #bbb;
+    color: var(--ui-muted);
   }
 
   .inverter-manager-close-btn,
   .inverter-manager-form-wrap input {
-    background: #1f1f1f;
-    color: #f0f0f0;
-    border-color: #555;
+    background: var(--ui-surface-soft);
+    color: var(--ui-text);
+    border-color: var(--ui-border);
   }
 
   .inverter-manager-list-wrap,
   .inverter-manager-form-wrap,
   .inverter-manager-item {
-    border-color: #4a4a4a;
+    border-color: var(--ui-border);
   }
 
   .inverter-manager-item.active {
-    background: #1f2d1f;
-    border-color: #4b8f4b;
+    background: color-mix(in srgb, var(--ui-primary-soft) 60%, transparent 40%);
+    border-color: color-mix(in srgb, var(--ui-primary) 55%, var(--ui-border) 45%);
   }
 
   .inverter-manager-delete {
-    background: #332424;
+    background: #3a2426;
     border-color: #6d4343;
     color: #f5b8b8;
   }
 
   .inverter-manager-edit {
-    background: #212a38;
-    border-color: #4a6489;
+    background: #22303d;
+    border-color: #496882;
     color: #c5daff;
   }
 
   .inverter-manager-edit-wrap label {
-    color: #bbb;
+    color: var(--ui-muted);
   }
 
   .inverter-manager-edit-wrap input {
-    background: #1f1f1f;
-    color: #f0f0f0;
-    border-color: #555;
+    background: var(--ui-surface-soft);
+    color: var(--ui-text);
+    border-color: var(--ui-border);
   }
 
   .inverter-manager-edit-wrap input.readonly {
-    background: #2a2a2a;
-    color: #aaa;
+    background: #25353d;
+    color: #a4c0c6;
   }
 
   .inverter-manager-save,
   .inverter-manager-cancel {
-    background: #1f1f1f;
-    color: #f0f0f0;
-    border-color: #555;
+    background: var(--ui-surface-soft);
+    color: var(--ui-text);
+    border-color: var(--ui-border);
   }
 
   .inverter-manager-create {
-    background: #1f2f1f;
-    border-color: #4b8f4b;
-    color: #9de39d;
+    color: #efffff;
   }
 
   .inverter-manager-message.success {
-    background: #1f2f1f;
+    background: #1a3729;
     color: #a7f0a7;
   }
 
   .inverter-manager-message.error {
-    background: #392222;
+    background: #3b2325;
     color: #ffc1c1;
   }
 }

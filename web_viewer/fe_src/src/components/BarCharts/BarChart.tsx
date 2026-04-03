@@ -15,7 +15,7 @@ function BarChart({ series, isDark, xaxis }: BarChartProps) {
   return (
     <Chart
       type="bar"
-      height={400}
+      height={440}
       series={series}
       options={{
         chart: {

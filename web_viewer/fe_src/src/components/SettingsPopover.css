@@ -4,13 +4,15 @@
     right: 40px;
     transform: translateX(calc(-10% - 5px));
     padding: 0;
-    border: 1px solid #ccc;
-    background: #fff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    border: 1px solid var(--ui-border);
+    background: color-mix(in srgb, var(--ui-surface) 95%, var(--ui-surface-soft) 5%);
+    box-shadow: 0 14px 26px var(--ui-shadow-strong);
     width: 350px;
     min-height: 400px;
     cursor: default;
     z-index: 1;
+    border-radius: 14px;
+    overflow: hidden;
 }
 
 .settings-content {
@@ -26,7 +28,7 @@
 .settings-section h4 {
     margin: 0 0 8px 0;
     font-size: 16px;
-    font-weight: bold;
+    font-weight: 700;
 }
 
 .setting-item {
@@ -44,9 +46,11 @@
 .setting-item input[type="number"],
 .setting-item select {
     width: 110px;
-    padding: 4px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: 6px;
+    border: 1px solid var(--ui-border);
+    border-radius: 8px;
+    background: var(--ui-surface-soft);
+    color: var(--ui-text);
 }
 
 .setting-item input[type="checkbox"] {
@@ -56,7 +60,7 @@
 .setting-item span {
     margin-left: 4px;
     font-size: 12px;
-    color: #666;
+    color: var(--ui-muted);
     width: 30px;
     display: inline-block;
     text-align: left;
@@ -77,9 +81,11 @@
     width: 100%;
     box-sizing: border-box;
     resize: vertical;
-    padding: 4px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: 6px;
+    border: 1px solid var(--ui-border);
+    border-radius: 8px;
+    color: var(--ui-text);
+    background: var(--ui-surface-soft);
     font-family: inherit;
     font-size: 14px;
 }
@@ -88,16 +94,17 @@
     display: flex;
     justify-content: flex-end;
     padding: 8px;
-    border-top: 1px solid #ddd;
+    border-top: 1px solid var(--ui-border);
 }
 
 .settings-actions button {
-    padding: 6px 12px;
-    background-color: #007bff;
+    padding: 8px 14px;
+    background: linear-gradient(135deg, var(--ui-primary), var(--ui-primary-strong));
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 10px;
     cursor: pointer;
+    font-weight: 700;
 }
 
 .settings-actions button:disabled {
@@ -112,11 +119,11 @@
 }
 
 .settings-message.success {
-    color: green;
+    color: var(--ui-success);
 }
 
 .settings-message.error {
-    color: red;
+    color: var(--ui-danger);
 }
 
 .settings-popover .notification-popover-header {
@@ -146,12 +153,12 @@
 
 .settings-popover .setting-description {
     font-size: 13px;
-    color: #888;
+    color: var(--ui-muted);
     margin: 4px 0 0 0;
 }
 
 .setting-error {
-    color: #d32f2f;
+    color: var(--ui-danger);
     margin-top: 4px;
     font-size: 0.8em;
 }
@@ -168,20 +175,20 @@
 
 @media (prefers-color-scheme: dark) {
     .settings-popover {
-        background: #5c5c5c;
-        border: 1px solid #555;
-        box-shadow: 0 2px 8px rgba(255, 255, 255, 0.2);
+        background: color-mix(in srgb, var(--ui-surface) 92%, var(--ui-surface-soft) 8%);
+        border: 1px solid var(--ui-border);
+        box-shadow: 0 16px 30px var(--ui-shadow-strong);
     }
     .setting-item span {
-        color: #ccc;
+        color: var(--ui-muted);
     }
     .settings-message.success {
-        color: #90EE90;
+        color: var(--ui-success);
     }
     .settings-message.success.error {
-        color: #FF7F7F;
+        color: var(--ui-danger);
     }
     .settings-popover .setting-description {
-        color: #bbb;
+        color: var(--ui-muted);
     }
 }

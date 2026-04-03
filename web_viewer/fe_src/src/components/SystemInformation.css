@@ -456,6 +456,12 @@
 }
 
 @media screen and (max-width: 900px) {
+    .system-status {
+        position: static;
+        justify-content: flex-end;
+        margin-bottom: 8px;
+    }
+
     .consumption-icon img {
         margin-top: 0px;
     }
@@ -560,6 +566,14 @@
 }
 
 @media screen and (max-width: 768px) {
+
+    .system-status {
+        margin-bottom: 10px;
+    }
+
+    .system-status-display {
+        margin-left: auto;
+    }
 
     .pv img,
     .system-graph .battery img,
@@ -724,5 +738,121 @@
     .notification-unread {
         background: #7a2323;
         color: #fff;
+    }
+}
+
+/* Design refresh overrides */
+.system-information {
+    border-radius: 18px;
+    border: 1px solid var(--ui-border);
+    box-shadow: 0 14px 24px var(--ui-shadow);
+}
+
+.system-title-text {
+    color: var(--ui-text);
+}
+
+.system-title-serial,
+.notification-meta {
+    color: var(--ui-muted);
+}
+
+.settings-button button,
+.notification-button button {
+    border: 1px solid var(--ui-border);
+    border-radius: 10px;
+    padding: 6px;
+    background: var(--ui-surface-soft);
+    color: var(--ui-primary);
+    transition: background-color 0.18s ease, transform 0.18s ease;
+}
+
+.settings-button button.active,
+.notification-button button.active {
+    background: var(--ui-primary-soft);
+}
+
+@media screen and (min-width: 901px) {
+    .system-graph {
+        padding-top: 22px;
+    }
+
+    .system-status {
+        top: 8px;
+    }
+}
+
+.settings-button button:not(.active):hover,
+.notification-button button:not(.active):hover {
+    background: var(--ui-primary-soft);
+    transform: translateY(-1px);
+}
+
+.notification-unread-badge {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+}
+
+.system-status-display {
+    background-color: color-mix(in srgb, var(--ui-surface-soft) 80%, transparent 20%);
+    border: 1px solid var(--ui-border);
+}
+
+.system-status-reconnect {
+    border: 1px solid var(--ui-border);
+    background: var(--ui-surface-soft);
+    color: var(--ui-text);
+    border-radius: 9px;
+    padding: 5px 9px;
+    cursor: pointer;
+}
+
+.system-status-reconnect:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.settings-popover,
+.notification-popover,
+.notification-history {
+    border: 1px solid var(--ui-border);
+    background: color-mix(in srgb, var(--ui-surface) 95%, var(--ui-surface-soft) 5%);
+    border-radius: 14px;
+    box-shadow: 0 14px 26px var(--ui-shadow-strong);
+}
+
+.notification-history li {
+    border-bottom: 1px solid var(--ui-border);
+}
+
+.notification-history li:hover {
+    background-color: var(--ui-primary-soft);
+}
+
+.notification-history li.notification-unread:hover {
+    background-color: color-mix(in srgb, #cc4b4b 22%, var(--ui-surface) 78%);
+}
+
+.notification-no-record {
+    color: var(--ui-muted);
+}
+
+@media (prefers-color-scheme: dark) {
+    .settings-button button,
+    .notification-button button,
+    .system-status-reconnect {
+        background: var(--ui-surface-soft);
+        border-color: var(--ui-border);
+        color: var(--ui-text);
+    }
+
+    .settings-button button.active,
+    .notification-button button.active,
+    .settings-button button:not(.active):hover,
+    .notification-button button:not(.active):hover {
+        background: #2a3e47;
+    }
+
+    .notification-history li.notification-unread:hover {
+        background-color: #6f3030;
     }
 }

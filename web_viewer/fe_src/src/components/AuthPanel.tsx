@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IAuthUser } from "../Intefaces";
 import "./AuthPanel.css";
@@ -29,6 +29,15 @@ function AuthPanel({ onAuthSuccess }: AuthPanelProps) {
     setMessage("");
     setError("");
   };
+
+  const isEmailMode = mode === "login" || mode === "register" || mode === "forgot";
+  const isPasswordMode = mode === "login" || mode === "register";
+
+  const canSubmit =
+    (mode === "login" && email.trim().length > 0 && password.trim().length > 0) ||
+    (mode === "register" && email.trim().length > 0 && password.trim().length > 0) ||
+    (mode === "forgot" && email.trim().length > 0) ||
+    (mode === "reset" && newPassword.trim().length > 0);
 
   const handleLogin = async () => {
     setIsSubmitting(true);
@@ -121,70 +130,106 @@ function AuthPanel({ onAuthSuccess }: AuthPanelProps) {
     }
   };
 
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isSubmitting || !canSubmit) {
+      return;
+    }
+
+    if (mode === "login") {
+      await handleLogin();
+      return;
+    }
+    if (mode === "register") {
+      await handleRegister();
+      return;
+    }
+    if (mode === "forgot") {
+      await handleForgotPassword();
+      return;
+    }
+    await handleResetPassword();
+  };
+
+  const getPrimaryActionLabel = () => {
+    if (isSubmitting) {
+      return "...";
+    }
+    if (mode === "login") {
+      return t("authPanel.login");
+    }
+    if (mode === "register") {
+      return t("authPanel.register");
+    }
+    if (mode === "forgot") {
+      return t("authPanel.sendResetLink");
+    }
+    return t("authPanel.resetPassword");
+  };
+
   return (
     <div className="auth-shell">
       <div className="auth-card">
-        <h2>{t("authPanel.title")}</h2>
+        <div className="auth-head">
+          <p className="auth-eyebrow">Lux Web Viewer</p>
+          <h2>{t("authPanel.title")}</h2>
+        </div>
 
         {mode !== "reset" && (
           <div className="auth-tabs">
-            <button className={mode === "login" ? "active" : ""} onClick={() => setMode("login")}>{t("authPanel.login")}</button>
-            <button className={mode === "register" ? "active" : ""} onClick={() => setMode("register")}>{t("authPanel.register")}</button>
-            <button className={mode === "forgot" ? "active" : ""} onClick={() => setMode("forgot")}>{t("authPanel.forgot")}</button>
+            <button type="button" className={mode === "login" ? "active" : ""} onClick={() => setMode("login")}>{t("authPanel.login")}</button>
+            <button type="button" className={mode === "register" ? "active" : ""} onClick={() => setMode("register")}>{t("authPanel.register")}</button>
+            <button type="button" className={mode === "forgot" ? "active" : ""} onClick={() => setMode("forgot")}>{t("authPanel.forgot")}</button>
           </div>
         )}
 
-        {(mode === "login" || mode === "register" || mode === "forgot") && (
-          <>
-            <label>{t("authPanel.email")}</label>
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              type="email"
-              autoComplete="email"
-            />
-          </>
-        )}
+        <form className="auth-form" onSubmit={handleSubmit}>
+          {isEmailMode && (
+            <>
+              <label htmlFor="auth-email">{t("authPanel.email")}</label>
+              <input
+                id="auth-email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                autoComplete="email"
+              />
+            </>
+          )}
 
-        {(mode === "login" || mode === "register") && (
-          <>
-            <label>{t("authPanel.password")}</label>
-            <input
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type="password"
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-            />
-          </>
-        )}
+          {isPasswordMode && (
+            <>
+              <label htmlFor="auth-password">{t("authPanel.password")}</label>
+              <input
+                id="auth-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                type="password"
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+              />
+            </>
+          )}
 
-        {mode === "reset" && (
-          <>
-            <label>{t("authPanel.newPassword")}</label>
-            <input
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              type="password"
-              autoComplete="new-password"
-            />
-          </>
-        )}
+          {mode === "reset" && (
+            <>
+              <label htmlFor="auth-new-password">{t("authPanel.newPassword")}</label>
+              <input
+                id="auth-new-password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                type="password"
+                autoComplete="new-password"
+              />
+            </>
+          )}
 
-        {error && <div className="auth-error">{error}</div>}
-        {message && <div className="auth-message">{message}</div>}
+          {error && <div className="auth-error" role="alert">{error}</div>}
+          {message && <div className="auth-message" aria-live="polite">{message}</div>}
 
-        {mode === "login" && (
-          <button disabled={isSubmitting} onClick={handleLogin}>{t("authPanel.login")}</button>
-        )}
-        {mode === "register" && (
-          <button disabled={isSubmitting} onClick={handleRegister}>{t("authPanel.register")}</button>
-        )}
-        {mode === "forgot" && (
-          <button disabled={isSubmitting} onClick={handleForgotPassword}>{t("authPanel.sendResetLink")}</button>
-        )}
-        {mode === "reset" && (
-          <button disabled={isSubmitting} onClick={handleResetPassword}>{t("authPanel.resetPassword")}</button>
-        )}
+          <button type="submit" className="auth-submit" disabled={isSubmitting || !canSubmit}>
+            {getPrimaryActionLabel()}
+          </button>
+        </form>
       </div>
     </div>
   );

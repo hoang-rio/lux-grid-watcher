@@ -2,6 +2,7 @@
     min-width: 100px;
     white-space: nowrap;
     font-size: 18px;
+    color: var(--ui-text);
 }
 @media screen and (max-width: 900px) {
     .general-value {

@@ -1,16 +1,77 @@
 .hourly-chart {
     margin-top: 10px;
-    height: 480px;
+    height: 560px;
+}
+
+@media screen and (max-width: 768px) {
+    .hourly-chart {
+        height: 560px;
+    }
 }
 
 .hourly-chart-title {
-    font-weight: bold;
+    font-weight: 700;
+    font-size: 18px;
 }
 
 .hourly-chart-content {
     margin-top: 10px;
+    min-height: 400px;
 }
 
-.hourly-chart-buttons button+button {
-    margin-left: 10px;
+.hourly-chart-buttons {
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.hourly-chart-buttons input[type="date"] {
+    border: 1px solid var(--ui-border);
+    background: var(--ui-surface-soft);
+    color: var(--ui-text);
+    border-radius: 10px;
+    padding: 6px 8px;
+    min-height: 36px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.hourly-chart-buttons button {
+    border: 1px solid var(--ui-border);
+    background: var(--ui-surface-soft);
+    color: var(--ui-text);
+    border-radius: 999px;
+    padding: 7px 12px;
+    min-height: 36px;
+    line-height: 1;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.hourly-chart-buttons button:hover:not(:disabled) {
+    background: var(--ui-primary-soft);
+}
+
+.hourly-chart-buttons button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+@media screen and (max-width: 768px) {
+    .hourly-chart > .row.justify-space-between {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .hourly-chart-buttons {
+        width: 100%;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 2px;
+        -webkit-overflow-scrolling: touch;
+    }
 }
