@@ -245,6 +245,25 @@ def deactivate_inverter(session: Session, inverter: Inverter) -> None:
     session.flush()
 
 
+def delete_inverter_hard(session: Session, inverter: Inverter) -> None:
+    session.delete(inverter)
+    session.flush()
+
+
+def update_inverter(
+    session: Session,
+    inverter: Inverter,
+    *,
+    name: str,
+    invert_serial: str,
+) -> Inverter:
+    inverter.name = name
+    inverter.invert_serial = invert_serial
+    inverter.updated_at = datetime.utcnow()
+    session.flush()
+    return inverter
+
+
 # ---------------------------------------------------------------------------
 # Latest state
 # ---------------------------------------------------------------------------

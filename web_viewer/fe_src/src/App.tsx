@@ -18,7 +18,7 @@ const Summary = lazy(() => import("./components/Summary"));
 const HourlyChart = lazy(() => import("./components/HourlyChart"));
 const EnergyChart = lazy(() => import("./components/EnergyChart"));
 const AuthPanel = lazy(() => import("./components/AuthPanel"));
-const InverterSetupPanel = lazy(() => import("./components/InverterSetupPanel"));
+const InverterManageDashboard = lazy(() => import("./components/InverterManageDashboard"));
 const TopAuthBar = lazy(() => import("./components/TopAuthBar"));
 
 const MAX_RECONNECT_COUNT = 5;
@@ -60,6 +60,7 @@ function App() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [userInverters, setUserInverters] = useState<IUserInverter[]>([]);
   const [selectedInverterId, setSelectedInverterId] = useState<string>("");
+  const [showInverterManager, setShowInverterManager] = useState(false);
   const [accessToken, setAccessToken] = useState<string>("");
   const eventSourceRef = useRef<EventSource>(undefined);
   const sseAbortControllerRef = useRef<AbortController | null>(null);
@@ -345,6 +346,7 @@ function App() {
     setAuthUser(null);
     setUserInverters([]);
     setSelectedInverterId("");
+    setShowInverterManager(false);
   }, []);
 
   const loadAuthSession = useCallback(async () => {
@@ -427,10 +429,11 @@ function App() {
     await fetchState();
   }, [fetchState, loadAuthSession]);
 
-  const onInverterCreated = useCallback(async () => {
+  const onInverterChanged = useCallback(async () => {
     setIsLoading(true);
     await loadAuthSession();
     await fetchState();
+    setIsLoading(false);
   }, [fetchState, loadAuthSession]);
 
   const handleLogout = useCallback(async () => {
@@ -564,7 +567,15 @@ function App() {
     return (
       <>
         <TopAuthBar authUser={authUser} onLogout={handleLogout} />
-        <InverterSetupPanel onCreated={onInverterCreated} />
+        <div className="flex-1">
+          <InverterManageDashboard
+            inverters={userInverters}
+            selectedInverterId={selectedInverterId}
+            onSelectInverter={setSelectedInverterId}
+            onChanged={onInverterChanged}
+            allowClose={false}
+          />
+        </div>
         <Footer />
       </>
     );
@@ -577,9 +588,19 @@ function App() {
           <TopAuthBar
             authUser={authUser}
             onLogout={handleLogout}
+            onManageInverters={() => setShowInverterManager(true)}
             inverters={userInverters}
             selectedInverterId={selectedInverterId}
             onSelectInverter={setSelectedInverterId}
+          />
+        )}
+        {authUser && showInverterManager && (
+          <InverterManageDashboard
+            inverters={userInverters}
+            selectedInverterId={selectedInverterId}
+            onSelectInverter={setSelectedInverterId}
+            onChanged={onInverterChanged}
+            onClose={() => setShowInverterManager(false)}
           />
         )}
         <Summary
@@ -621,9 +642,19 @@ function App() {
         <TopAuthBar
           authUser={authUser}
           onLogout={handleLogout}
+          onManageInverters={() => setShowInverterManager(true)}
           inverters={userInverters}
           selectedInverterId={selectedInverterId}
           onSelectInverter={setSelectedInverterId}
+        />
+      )}
+      {authUser && showInverterManager && (
+        <InverterManageDashboard
+          inverters={userInverters}
+          selectedInverterId={selectedInverterId}
+          onSelectInverter={setSelectedInverterId}
+          onChanged={onInverterChanged}
+          onClose={() => setShowInverterManager(false)}
         />
       )}
       <div className="d-flex card server-offline align-center justify-center flex-1">

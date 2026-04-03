@@ -8,6 +8,7 @@ import "./TopAuthBar.css";
 interface TopAuthBarProps {
   authUser: IAuthUser;
   onLogout: () => void;
+  onManageInverters?: () => void;
   inverters?: IUserInverter[];
   selectedInverterId?: string;
   onSelectInverter?: (inverterId: string) => void;
@@ -16,6 +17,7 @@ interface TopAuthBarProps {
 function TopAuthBar({
   authUser,
   onLogout,
+  onManageInverters,
   inverters = [],
   selectedInverterId = "",
   onSelectInverter,
@@ -78,6 +80,9 @@ function TopAuthBar({
             ))}
           </select>
         )}
+        <button className="top-auth-manage-btn" onClick={onManageInverters}>
+          {t("inverterManager.manage")}
+        </button>
         <button className="top-auth-logout-btn" onClick={onLogout}>
           {t("auth.logout")}
         </button>

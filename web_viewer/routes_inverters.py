@@ -171,13 +171,70 @@ async def delete_inverter(request: web.Request) -> web.Response:
         inverter = repo.get_inverter_by_id_and_user(session, inverter_id, uuid.UUID(payload["sub"]))
         if inverter is None:
             return _err("Inverter not found", 404)
-        repo.deactivate_inverter(session, inverter)
+        repo.delete_inverter_hard(session, inverter)
         session.commit()
         return _ok(message="Inverter removed")
     except Exception as exc:
         session.rollback()
         logger.error("delete_inverter error: %s", exc)
         return _err("Failed to remove inverter", 500)
+    finally:
+        session.close()
+
+
+# ---------------------------------------------------------------------------
+# PATCH /inverters/{id}
+# ---------------------------------------------------------------------------
+
+async def update_inverter(request: web.Request) -> web.Response:
+    payload, err = _require_jwt(request)
+    if err:
+        return err
+
+    inverter_id_str = request.match_info.get("id", "")
+    try:
+        inverter_id = uuid.UUID(inverter_id_str)
+    except ValueError:
+        return _err("Invalid inverter id")
+
+    try:
+        body = await request.json()
+    except Exception:
+        return _err("Invalid JSON body")
+
+    name = str(body.get("name", "")).strip()
+    invert_serial = str(body.get("invert_serial", "")).strip()
+
+    if not name:
+        return _err("name is required")
+    if not invert_serial:
+        return _err("invert_serial is required")
+
+    session = _session()
+    try:
+        user_id = uuid.UUID(payload["sub"])
+        inverter = repo.get_inverter_by_id_and_user(session, inverter_id, user_id)
+        if inverter is None:
+            return _err("Inverter not found", 404)
+
+        existed = repo.get_inverter_by_invert_serial(session, invert_serial)
+        if existed is not None and existed.id != inverter.id:
+            return _err("invert_serial already registered")
+
+        updated = repo.update_inverter(
+            session,
+            inverter,
+            name=name,
+            invert_serial=invert_serial,
+        )
+        session.commit()
+        latest_state = repo.get_inverter_latest_state(session, updated.id)
+        last_communication_at = latest_state.updated_at if latest_state else None
+        return _ok(inverter=_inverter_dict(updated, last_communication_at))
+    except Exception as exc:
+        session.rollback()
+        logger.error("update_inverter error: %s", exc)
+        return _err("Failed to update inverter", 500)
     finally:
         session.close()
 
@@ -190,7 +247,7 @@ async def _cors_options(_: web.Request) -> web.Response:
     return web.Response(
         headers={
             "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+            "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type, Authorization",
         }
     )
@@ -203,6 +260,7 @@ async def _cors_options(_: web.Request) -> web.Response:
 INVERTER_ROUTES = [
     web.get("/inverters", list_inverters),
     web.post("/inverters", create_inverter),
+    web.patch("/inverters/{id}", update_inverter),
     web.delete("/inverters/{id}", delete_inverter),
     web.options("/inverters", _cors_options),
     web.options("/inverters/{id}", _cors_options),

@@ -57,6 +57,7 @@
   font-size: 13px;
 }
 
+.top-auth-manage-btn,
 .top-auth-logout-btn {
   border: 1px solid #bbb;
   background: #fff;
@@ -66,6 +67,7 @@
   cursor: pointer;
 }
 
+.top-auth-manage-btn:hover,
 .top-auth-logout-btn:hover {
   background: #f5f5f5;
 }
@@ -100,6 +102,7 @@
     border-color: #8f6d1f;
   }
 
+  .top-auth-manage-btn,
   .top-auth-logout-btn {
     background: #1f1f1f;
     color: #f0f0f0;
@@ -112,6 +115,7 @@
     border-color: #555;
   }
 
+  .top-auth-manage-btn:hover,
   .top-auth-logout-btn:hover {
     background: #2a2a2a;
   }

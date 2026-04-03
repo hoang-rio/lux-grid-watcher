@@ -1,0 +1,319 @@
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { IUserInverter } from "../Intefaces";
+import { apiFetch } from "../utils/fetchUtil";
+import * as logUtil from "../utils/logUtil";
+import "./InverterManageDashboard.css";
+
+interface InverterManageDashboardProps {
+  inverters: IUserInverter[];
+  selectedInverterId?: string;
+  onSelectInverter?: (inverterId: string) => void;
+  onChanged: () => Promise<void> | void;
+  onClose?: () => void;
+  allowClose?: boolean;
+}
+
+function InverterManageDashboard({
+  inverters,
+  selectedInverterId = "",
+  onSelectInverter,
+  onChanged,
+  onClose,
+  allowClose = true,
+}: InverterManageDashboardProps) {
+  const { t } = useTranslation();
+  const [name, setName] = useState("");
+  const [dongleSerial, setDongleSerial] = useState("");
+  const [invertSerial, setInvertSerial] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState("");
+  const [editingId, setEditingId] = useState("");
+  const [editingName, setEditingName] = useState("");
+  const [editingDongleSerial, setEditingDongleSerial] = useState("");
+  const [editingInvertSerial, setEditingInvertSerial] = useState("");
+  const [savingEditId, setSavingEditId] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  const sortedInverters = useMemo(() => {
+    return [...inverters].sort((a, b) => {
+      if (a.id === selectedInverterId) {
+        return -1;
+      }
+      if (b.id === selectedInverterId) {
+        return 1;
+      }
+      return a.name.localeCompare(b.name);
+    });
+  }, [inverters, selectedInverterId]);
+
+  const resetForm = () => {
+    setName("");
+    setDongleSerial("");
+    setInvertSerial("");
+  };
+
+  const createInverter = async () => {
+    setError("");
+    setMessage("");
+    setIsSubmitting(true);
+
+    try {
+      const res = await apiFetch("/inverters", {
+        method: "POST",
+        withAuth: true,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          dongle_serial: dongleSerial.trim(),
+          invert_serial: invertSerial.trim(),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setError(json.message || t("inverterManager.createFailed"));
+        return;
+      }
+
+      resetForm();
+      setMessage(t("inverterManager.createSuccess"));
+      await onChanged();
+    } catch (err) {
+      logUtil.error("create inverter failed", err);
+      setError(t("inverterManager.createFailed"));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const deleteInverter = async (inverterId: string) => {
+    if (!window.confirm(t("inverterManager.deleteConfirm"))) {
+      return;
+    }
+
+    setError("");
+    setMessage("");
+    setDeletingId(inverterId);
+
+    try {
+      const res = await apiFetch(`/inverters/${inverterId}`, {
+        method: "DELETE",
+        withAuth: true,
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setError(json.message || t("inverterManager.deleteFailed"));
+        return;
+      }
+
+      setMessage(t("inverterManager.deleteSuccess"));
+      await onChanged();
+    } catch (err) {
+      logUtil.error("delete inverter failed", err);
+      setError(t("inverterManager.deleteFailed"));
+    } finally {
+      setDeletingId("");
+    }
+  };
+
+  const beginEdit = (inv: IUserInverter) => {
+    setEditingId(inv.id);
+    setEditingName(inv.name);
+    setEditingDongleSerial(inv.dongle_serial);
+    setEditingInvertSerial(inv.invert_serial);
+    setError("");
+    setMessage("");
+  };
+
+  const cancelEdit = () => {
+    setEditingId("");
+    setEditingName("");
+    setEditingDongleSerial("");
+    setEditingInvertSerial("");
+  };
+
+  const saveEdit = async (inverterId: string) => {
+    setError("");
+    setMessage("");
+    setSavingEditId(inverterId);
+
+    try {
+      const res = await apiFetch(`/inverters/${inverterId}`, {
+        method: "PATCH",
+        withAuth: true,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editingName.trim(),
+          invert_serial: editingInvertSerial.trim(),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setError(json.message || t("inverterManager.updateFailed"));
+        return;
+      }
+
+      setMessage(t("inverterManager.updateSuccess"));
+      cancelEdit();
+      await onChanged();
+    } catch (err) {
+      logUtil.error("update inverter failed", err);
+      setError(t("inverterManager.updateFailed"));
+    } finally {
+      setSavingEditId("");
+    }
+  };
+
+  return (
+    <div
+      className={`inverter-manager-shell ${allowClose ? "as-modal" : "embedded"}`}
+      onClick={(e) => {
+        if (!allowClose || !onClose) {
+          return;
+        }
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div className={`inverter-manager-card card ${allowClose ? "modal" : "embedded"}`}>
+        <div className="inverter-manager-header">
+          <div>
+            <h2>{t("inverterManager.title")}</h2>
+            <p>{t("inverterManager.description")}</p>
+          </div>
+          {allowClose && onClose && (
+            <button className="inverter-manager-close-btn" onClick={onClose}>
+              {t("inverterManager.close")}
+            </button>
+          )}
+        </div>
+
+        {(error || message) && (
+          <div className={`inverter-manager-message ${error ? "error" : "success"}`}>
+            {error || message}
+          </div>
+        )}
+
+        <div className="inverter-manager-grid">
+          <div className="inverter-manager-list-wrap">
+            <h3>{t("inverterManager.listTitle")}</h3>
+            {sortedInverters.length === 0 ? (
+              <div className="inverter-manager-empty">{t("inverterManager.empty")}</div>
+            ) : (
+              <ul className="inverter-manager-list">
+                {sortedInverters.map((inv) => {
+                  const isCurrent = inv.id === selectedInverterId;
+                  const isEditing = inv.id === editingId;
+                  return (
+                    <li key={inv.id} className={`inverter-manager-item ${isCurrent ? "active" : ""}`}>
+                      {isEditing ? (
+                        <div className="inverter-manager-edit-wrap">
+                          <label>{t("inverterManager.name")}</label>
+                          <input
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                          />
+
+                          <label>{t("inverterManager.invertSerial")}</label>
+                          <input value={editingInvertSerial} readOnly className="readonly" />
+
+                          <label>{t("inverterManager.dongleSerial")}</label>
+                          <input value={editingDongleSerial} readOnly className="readonly" />
+
+                          <div className="inverter-manager-edit-actions">
+                            <button
+                              className="inverter-manager-save"
+                              onClick={() => saveEdit(inv.id)}
+                              disabled={
+                                savingEditId === inv.id ||
+                                !editingName.trim() ||
+                                !editingInvertSerial.trim()
+                              }
+                            >
+                              {savingEditId === inv.id ? t("inverterManager.saving") : t("inverterManager.save")}
+                            </button>
+                            <button className="inverter-manager-cancel" onClick={cancelEdit}>
+                              {t("inverterManager.cancel")}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            className="inverter-manager-select"
+                            onClick={() => onSelectInverter?.(inv.id)}
+                            title={t("inverterManager.select")}
+                          >
+                            <div className="inverter-manager-name">{inv.name}</div>
+                            <div className="inverter-manager-serial">{inv.invert_serial}</div>
+                          </button>
+                          <button
+                            className="inverter-manager-edit"
+                            onClick={() => beginEdit(inv)}
+                            disabled={Boolean(deletingId) || Boolean(savingEditId)}
+                            title={t("inverterManager.edit")}
+                          >
+                            {t("inverterManager.edit")}
+                          </button>
+                          <button
+                            className="inverter-manager-delete"
+                            onClick={() => deleteInverter(inv.id)}
+                            disabled={deletingId === inv.id || Boolean(savingEditId)}
+                            title={t("inverterManager.delete")}
+                          >
+                            {deletingId === inv.id ? t("inverterManager.deleting") : t("inverterManager.delete")}
+                          </button>
+                        </>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
+          <div className="inverter-manager-form-wrap">
+            <h3>{t("inverterManager.addTitle")}</h3>
+
+            <label>{t("inverterManager.name")}</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t("inverterManager.namePlaceholder")}
+            />
+
+            <label>{t("inverterManager.invertSerial")}</label>
+            <input
+              value={invertSerial}
+              onChange={(e) => setInvertSerial(e.target.value)}
+              placeholder={t("inverterManager.invertPlaceholder")}
+            />
+
+            <label>{t("inverterManager.dongleSerial")}</label>
+            <input
+              value={dongleSerial}
+              onChange={(e) => setDongleSerial(e.target.value)}
+              placeholder={t("inverterManager.donglePlaceholder")}
+            />
+
+            <button
+              className="inverter-manager-create"
+              onClick={createInverter}
+              disabled={
+                isSubmitting ||
+                !dongleSerial.trim() ||
+                !invertSerial.trim()
+              }
+            >
+              {isSubmitting ? t("inverterManager.creating") : t("inverterManager.create")}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default InverterManageDashboard;

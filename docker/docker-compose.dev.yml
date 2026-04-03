@@ -43,5 +43,18 @@ services:
       - "8443:8443"
       - "4346:4346"
 
+  adminer:
+    image: adminer:4
+    container_name: lux_adminer_dev
+    restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DEFAULT_DB_DRIVER: pgsql
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8089:8080"
+
 volumes:
   pg_data_dev:

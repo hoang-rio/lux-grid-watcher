@@ -1,0 +1,308 @@
+.inverter-manager-shell {
+  margin-bottom: 12px;
+}
+
+.inverter-manager-shell.as-modal {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 20;
+  padding: 18px;
+}
+
+.inverter-manager-card.modal {
+  width: min(980px, 96vw);
+  max-height: 92vh;
+  overflow: auto;
+}
+
+.inverter-manager-card.embedded {
+  margin-bottom: 12px;
+}
+
+.inverter-manager-card {
+  padding: 14px;
+}
+
+.inverter-manager-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.inverter-manager-header h2 {
+  margin: 0;
+}
+
+.inverter-manager-header p {
+  margin: 6px 0 0 0;
+  color: #666;
+}
+
+.inverter-manager-close-btn {
+  border: 1px solid #bbb;
+  background: #fff;
+  color: #333;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.inverter-manager-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.inverter-manager-list-wrap,
+.inverter-manager-form-wrap {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.inverter-manager-list-wrap h3,
+.inverter-manager-form-wrap h3 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+.inverter-manager-empty {
+  color: #666;
+  font-size: 14px;
+}
+
+.inverter-manager-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inverter-manager-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 6px;
+}
+
+.inverter-manager-item.active {
+  border-color: #5aa85a;
+  background: #f3fff3;
+}
+
+.inverter-manager-select {
+  flex: 1;
+  text-align: left;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.inverter-manager-name {
+  font-weight: 600;
+}
+
+.inverter-manager-serial {
+  font-size: 12px;
+  color: #666;
+}
+
+.inverter-manager-delete {
+  border: 1px solid #d4a1a1;
+  color: #8e2222;
+  background: #fff7f7;
+  border-radius: 6px;
+  padding: 5px 8px;
+  cursor: pointer;
+}
+
+.inverter-manager-edit {
+  border: 1px solid #a0b8d8;
+  color: #1e4f8f;
+  background: #f4f9ff;
+  border-radius: 6px;
+  padding: 5px 8px;
+  cursor: pointer;
+}
+
+.inverter-manager-edit-wrap {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.inverter-manager-edit-wrap label {
+  font-size: 12px;
+  color: #666;
+}
+
+.inverter-manager-edit-wrap input {
+  height: 32px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  padding: 0 10px;
+}
+
+.inverter-manager-edit-wrap input.readonly {
+  background: #f6f6f6;
+  color: #666;
+}
+
+.inverter-manager-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.inverter-manager-save,
+.inverter-manager-cancel {
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  border: 1px solid #bbb;
+  background: #fff;
+}
+
+.inverter-manager-save {
+  border-color: #5a9f5a;
+  color: #155d15;
+  background: #f1fff1;
+}
+
+.inverter-manager-form-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inverter-manager-form-wrap label {
+  font-size: 14px;
+}
+
+.inverter-manager-form-wrap input {
+  height: 34px;
+  border: 1px solid #bbb;
+  border-radius: 7px;
+  padding: 0 10px;
+}
+
+.inverter-manager-create {
+  height: 36px;
+  border: 1px solid #5a9f5a;
+  background: #f1fff1;
+  color: #155d15;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.inverter-manager-message {
+  margin-bottom: 10px;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+.inverter-manager-message.success {
+  background: #ebf9eb;
+  color: #155d15;
+}
+
+.inverter-manager-message.error {
+  background: #ffefef;
+  color: #8e2222;
+}
+
+@media (max-width: 900px) {
+  .inverter-manager-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .inverter-manager-header p,
+  .inverter-manager-empty,
+  .inverter-manager-serial {
+    color: #bbb;
+  }
+
+  .inverter-manager-close-btn,
+  .inverter-manager-form-wrap input {
+    background: #1f1f1f;
+    color: #f0f0f0;
+    border-color: #555;
+  }
+
+  .inverter-manager-list-wrap,
+  .inverter-manager-form-wrap,
+  .inverter-manager-item {
+    border-color: #4a4a4a;
+  }
+
+  .inverter-manager-item.active {
+    background: #1f2d1f;
+    border-color: #4b8f4b;
+  }
+
+  .inverter-manager-delete {
+    background: #332424;
+    border-color: #6d4343;
+    color: #f5b8b8;
+  }
+
+  .inverter-manager-edit {
+    background: #212a38;
+    border-color: #4a6489;
+    color: #c5daff;
+  }
+
+  .inverter-manager-edit-wrap label {
+    color: #bbb;
+  }
+
+  .inverter-manager-edit-wrap input {
+    background: #1f1f1f;
+    color: #f0f0f0;
+    border-color: #555;
+  }
+
+  .inverter-manager-edit-wrap input.readonly {
+    background: #2a2a2a;
+    color: #aaa;
+  }
+
+  .inverter-manager-save,
+  .inverter-manager-cancel {
+    background: #1f1f1f;
+    color: #f0f0f0;
+    border-color: #555;
+  }
+
+  .inverter-manager-create {
+    background: #1f2f1f;
+    border-color: #4b8f4b;
+    color: #9de39d;
+  }
+
+  .inverter-manager-message.success {
+    background: #1f2f1f;
+    color: #a7f0a7;
+  }
+
+  .inverter-manager-message.error {
+    background: #392222;
+    color: #ffc1c1;
+  }
+}
