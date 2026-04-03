@@ -23,6 +23,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 88
 EXPOSE 8443
 
-VOLUME [ "/app/.env", "/app/db/web.db" ]
+VOLUME [ "/app/.env", "/app/db/web.db", "/app/fcm_admin_key.json" ]
 
 CMD [ "python", "app.py" ]
