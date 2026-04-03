@@ -3,13 +3,13 @@ name: Build and Push Docker image to GHCR
 on:
   push:
     tags:
-      - '*'
+      - 'SaaS-v*'
   workflow_dispatch:
     inputs:
       tag:
         description: 'Tag to release'
         required: true
-        default: 'v1.0.0'
+        default: 'SaaS-v1.0.0'
 
 env:
   REGISTRY: ghcr.io
