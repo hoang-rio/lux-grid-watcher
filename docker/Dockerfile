@@ -10,8 +10,6 @@ RUN yarn build
 FROM python:3.13-alpine
 
 COPY . /app
-# Copy the requirements file
-COPY .env.example /app/.env
 
 WORKDIR /app
 # Copy the frontend build from the builder stage
