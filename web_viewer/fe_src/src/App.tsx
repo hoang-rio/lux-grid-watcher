@@ -69,7 +69,10 @@ function App() {
   const [isSSEConnected, setIsSSEConnected] = useState<boolean>(false);
   const hourlyChartfRef = useRef<IUpdateChart>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasStartedRealtimeRequests, setHasStartedRealtimeRequests] = useState(false);
+  const [isInitialRealtimeLoading, setIsInitialRealtimeLoading] = useState(false);
   const isFetchingRef = useRef(false);
+  const hasInverterDataRef = useRef(false);
   const deviceTimeRef = useRef<string>("");
 
   // Changed to hold notification object or null
@@ -107,6 +110,8 @@ function App() {
     if (jsonData.event === "new_notification") {
       setNewNotification(jsonData.data);
     } else {
+      setIsInitialRealtimeLoading(false);
+      hasInverterDataRef.current = true;
       setInverterData(jsonData.inverter_data);
       if (selectedInverterId) {
         const nowIso = new Date().toISOString();
@@ -122,6 +127,10 @@ function App() {
       setIsLoading(false);
     }
   }, [selectedInverterId]);
+
+  useEffect(() => {
+    hasInverterDataRef.current = Boolean(inverterData);
+  }, [inverterData]);
 
   const scheduleSSEReconnect = useCallback((reconnect: () => void) => {
     if (document.hidden) {
@@ -175,6 +184,10 @@ function App() {
     const ssePath = sseParams.toString() ? `/events?${sseParams.toString()}` : "/events";
 
     if (useBearerAuth) {
+      setHasStartedRealtimeRequests(true);
+      if (!hasInverterDataRef.current) {
+        setIsInitialRealtimeLoading(true);
+      }
       const abortController = new AbortController();
       sseAbortControllerRef.current = abortController;
 
@@ -238,6 +251,7 @@ function App() {
           if (abortController.signal.aborted) {
             return;
           }
+          setIsInitialRealtimeLoading(false);
           setOfflineTitle();
           setIsSSEConnected(false);
           logUtil.error(i18n.t("sse.error"), error);
@@ -247,6 +261,10 @@ function App() {
       return;
     }
 
+    setHasStartedRealtimeRequests(true);
+    if (!hasInverterDataRef.current) {
+      setIsInitialRealtimeLoading(true);
+    }
     const eventSource = new EventSource(`${import.meta.env.VITE_API_BASE_URL}${ssePath}`);
     eventSourceRef.current = eventSource;
 
@@ -262,6 +280,7 @@ function App() {
     };
 
     eventSource.onerror = (event) => {
+      setIsInitialRealtimeLoading(false);
       setOfflineTitle();
       setIsSSEConnected(false);
       logUtil.error(i18n.t("sse.error"), event);
@@ -307,6 +326,10 @@ function App() {
       if (isFetchingRef.current) {
         return;
       }
+      setHasStartedRealtimeRequests(true);
+      if (!hasInverterDataRef.current) {
+        setIsInitialRealtimeLoading(true);
+      }
       isFetchingRef.current = true;
       const params = new URLSearchParams();
       if (selectedInverterId) {
@@ -318,12 +341,16 @@ function App() {
       });
       const json = await res.json();
       if (Object.keys(json).length !== 0) {
+        hasInverterDataRef.current = true;
         setInverterData(json);
         setIsLoading(false);
+        setIsInitialRealtimeLoading(false);
       }
     } catch (err) {
       logUtil.error(i18n.t("getStateError"), err);
+      setIsInitialRealtimeLoading(false);
     }
+    setIsInitialRealtimeLoading(false);
     isFetchingRef.current = false;
   }, [accessToken, authRequired, authSessionReady, i18n, selectedInverterId, useBearerAuth]);
 
@@ -347,6 +374,9 @@ function App() {
     setUserInverters([]);
     setSelectedInverterId("");
     setShowInverterManager(false);
+    setHasStartedRealtimeRequests(false);
+    setIsInitialRealtimeLoading(false);
+    hasInverterDataRef.current = false;
   }, []);
 
   const loadAuthSession = useCallback(async () => {
@@ -630,6 +660,36 @@ function App() {
             selectedInverterId={selectedInverterId}
             authToken={accessToken}
           />
+        </div>
+        <Footer />
+      </>
+    );
+  }
+
+  if (authSessionReady && hasSSEPrerequisites && !inverterData && (!hasStartedRealtimeRequests || isInitialRealtimeLoading)) {
+    return (
+      <>
+        {authUser && (
+          <TopAuthBar
+            authUser={authUser}
+            onLogout={handleLogout}
+            onManageInverters={() => setShowInverterManager(true)}
+            inverters={userInverters}
+            selectedInverterId={selectedInverterId}
+            onSelectInverter={setSelectedInverterId}
+          />
+        )}
+        {authUser && showInverterManager && (
+          <InverterManageDashboard
+            inverters={userInverters}
+            selectedInverterId={selectedInverterId}
+            onSelectInverter={setSelectedInverterId}
+            onChanged={onInverterChanged}
+            onClose={() => setShowInverterManager(false)}
+          />
+        )}
+        <div className="d-flex card loading align-center justify-center flex-1">
+          <Loading />
         </div>
         <Footer />
       </>
