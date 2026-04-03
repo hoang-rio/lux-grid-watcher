@@ -353,7 +353,7 @@ class FCM():
             self.__post_send_notify(devices, user_id)
         self.__log_notification(notify_title, notify_body, inverter_ctx)
 
-    def abnormal_notify(self, body: str = "Tiêu thụ điện bất thường, vui lòng kiểm tra xem vòi nước đã khoá chưa.", inverter_ctx: dict | None = None):
+    def abnormal_notify(self, body: str = "Tiêu thụ điện bất thường, vui lòng kiểm tra xem vòi nước đã khóa chưa.", inverter_ctx: dict | None = None):
         self.__fcm_threads = []
         user_id = (inverter_ctx or {}).get("user_id")
         inverter_id = (inverter_ctx or {}).get("id")

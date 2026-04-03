@@ -63,7 +63,7 @@ def get_battery_full_notify_body():
     return get_setting("BATTERY_FULL_NOTIFY_BODY", config.get("BATTERY_FULL_NOTIFY_BODY", "Pin đã sạc đầy 100%. Có thể bật bình nóng lạnh để tối ưu sử dụng."))
 
 def get_abnormal_notify_body():
-    return get_setting("ABNORMAL_NOTIFY_BODY", config.get("ABNORMAL_NOTIFY_BODY", "Tiêu thụ điện bất thường, vui lòng kiểm tra xem vòi nước đã khoá chưa."))
+    return get_setting("ABNORMAL_NOTIFY_BODY", config.get("ABNORMAL_NOTIFY_BODY", "Tiêu thụ điện bất thường, vui lòng kiểm tra xem vòi nước đã khóa chưa."))
 
 def get_auth_bypass_cidr():
     return get_setting(
