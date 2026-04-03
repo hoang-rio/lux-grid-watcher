@@ -30,11 +30,10 @@ function InverterManageDashboard({
   const [deletingId, setDeletingId] = useState("");
   const [editingId, setEditingId] = useState("");
   const [editingName, setEditingName] = useState("");
-  const [editingDongleSerial, setEditingDongleSerial] = useState("");
-  const [editingInvertSerial, setEditingInvertSerial] = useState("");
   const [savingEditId, setSavingEditId] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [showSetupGuide, setShowSetupGuide] = useState(false);
 
   const sortedInverters = useMemo(() => {
     return [...inverters].sort((a, b) => {
@@ -120,8 +119,6 @@ function InverterManageDashboard({
   const beginEdit = (inv: IUserInverter) => {
     setEditingId(inv.id);
     setEditingName(inv.name);
-    setEditingDongleSerial(inv.dongle_serial);
-    setEditingInvertSerial(inv.invert_serial);
     setError("");
     setMessage("");
   };
@@ -129,23 +126,21 @@ function InverterManageDashboard({
   const cancelEdit = () => {
     setEditingId("");
     setEditingName("");
-    setEditingDongleSerial("");
-    setEditingInvertSerial("");
   };
 
-  const saveEdit = async (inverterId: string) => {
+  const saveEdit = async (inv: IUserInverter) => {
     setError("");
     setMessage("");
-    setSavingEditId(inverterId);
+    setSavingEditId(inv.id);
 
     try {
-      const res = await apiFetch(`/inverters/${inverterId}`, {
+      const res = await apiFetch(`/inverters/${inv.id}`, {
         method: "PATCH",
         withAuth: true,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: editingName.trim(),
-          invert_serial: editingInvertSerial.trim(),
+          invert_serial: inv.invert_serial,
         }),
       });
       const json = await res.json();
@@ -183,16 +178,65 @@ function InverterManageDashboard({
             <h2>{t("inverterManager.title")}</h2>
             <p>{t("inverterManager.description")}</p>
           </div>
-          {allowClose && onClose && (
-            <button className="inverter-manager-close-btn" onClick={onClose}>
-              {t("inverterManager.close")}
+          <div className="inverter-manager-header-actions">
+            <button
+              className="inverter-manager-guide-btn"
+              onClick={() => setShowSetupGuide((prev) => !prev)}
+              type="button"
+            >
+              {showSetupGuide ? t("inverterGuide.hide") : t("inverterGuide.show")}
             </button>
-          )}
+            {allowClose && onClose && (
+              <button className="inverter-manager-close-btn" onClick={onClose} type="button">
+                {t("inverterManager.close")}
+              </button>
+            )}
+          </div>
         </div>
 
         {(error || message) && (
           <div className={`inverter-manager-message ${error ? "error" : "success"}`}>
             {error || message}
+          </div>
+        )}
+
+        {showSetupGuide && (
+          <div className="inverter-manager-guide card" role="region" aria-label={t("inverterGuide.title")}>
+            <h3>{t("inverterGuide.title")}</h3>
+            <p className="inverter-manager-guide-description">{t("inverterGuide.description")}</p>
+
+            <div className="inverter-manager-guide-steps">
+              <section>
+                <h4>{t("inverterGuide.openDongleSettings.title")}</h4>
+                <p>{t("inverterGuide.openDongleSettings.body")}</p>
+                <img
+                  src="/assets/lux_run_state.png"
+                  alt={t("inverterGuide.openDongleSettings.imageAlt")}
+                  loading="lazy"
+                />
+              </section>
+
+              <section>
+                <h4>{t("inverterGuide.networkSettings.title")}</h4>
+                <p>{t("inverterGuide.networkSettings.body")}</p>
+                <ul>
+                  <li>{t("inverterGuide.networkSettings.items.connectionSetting1")}</li>
+                  <li>{t("inverterGuide.networkSettings.items.connectionSetting2")}</li>
+                  <li>{t("inverterGuide.networkSettings.items.connectionSetting2Protocol")}</li>
+                  <li>{t("inverterGuide.networkSettings.items.connectionSetting2Port")}</li>
+                  <li>
+                    {t("inverterGuide.networkSettings.items.connectionSetting2Hostname")}{" "}
+                    <span className="inverter-manager-copy-value">lux.hoangnguyendong.dev</span>
+                  </li>
+                </ul>
+                <img
+                  src="/assets/dongle_network_setting.png"
+                  alt={t("inverterGuide.networkSettings.imageAlt")}
+                  loading="lazy"
+                />
+              </section>
+            </div>
+            <p className="inverter-manager-guide-security">{t("inverterGuide.securityNote")}</p>
           </div>
         )}
 
@@ -216,20 +260,13 @@ function InverterManageDashboard({
                             onChange={(e) => setEditingName(e.target.value)}
                           />
 
-                          <label>{t("inverterManager.invertSerial")}</label>
-                          <input value={editingInvertSerial} readOnly className="readonly" />
-
-                          <label>{t("inverterManager.dongleSerial")}</label>
-                          <input value={editingDongleSerial} readOnly className="readonly" />
-
                           <div className="inverter-manager-edit-actions">
                             <button
                               className="inverter-manager-save"
-                              onClick={() => saveEdit(inv.id)}
+                              onClick={() => saveEdit(inv)}
                               disabled={
                                 savingEditId === inv.id ||
-                                !editingName.trim() ||
-                                !editingInvertSerial.trim()
+                                !editingName.trim()
                               }
                             >
                               {savingEditId === inv.id ? t("inverterManager.saving") : t("inverterManager.save")}
@@ -253,9 +290,9 @@ function InverterManageDashboard({
                             className="inverter-manager-edit"
                             onClick={() => beginEdit(inv)}
                             disabled={Boolean(deletingId) || Boolean(savingEditId)}
-                            title={t("inverterManager.edit")}
+                            title={t("inverterManager.rename", "Rename")}
                           >
-                            {t("inverterManager.edit")}
+                            {t("inverterManager.rename", "Rename")}
                           </button>
                           <button
                             className="inverter-manager-delete"
@@ -276,6 +313,19 @@ function InverterManageDashboard({
 
           <div className="inverter-manager-form-wrap">
             <h3>{t("inverterManager.addTitle")}</h3>
+            <p className="inverter-manager-form-help">
+              {t("inverterManager.serialSourcePrefix")}{" "}
+              <a
+                href="https://server.luxpowertek.com/WManage/web/login"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {t("inverterManager.serialSourceWeb")}
+              </a>{" "}
+              {t("inverterManager.serialSourceOr")}{" "}
+              <span>{t("inverterManager.serialSourceMobile")}</span>
+              .
+            </p>
 
             <label>{t("inverterManager.name")}</label>
             <input

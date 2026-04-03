@@ -58,6 +58,118 @@
   cursor: pointer;
 }
 
+.inverter-manager-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inverter-manager-guide-btn {
+  border: 1px solid color-mix(in srgb, var(--ui-primary) 45%, var(--ui-border) 55%);
+  background: color-mix(in srgb, var(--ui-primary-soft) 80%, #ffffff 20%);
+  color: color-mix(in srgb, var(--ui-primary-strong) 70%, #214f7a 30%);
+  border-radius: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.inverter-manager-guide {
+  margin-bottom: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--ui-border);
+  background: color-mix(in srgb, var(--ui-surface-soft) 72%, transparent 28%);
+  padding: 12px;
+}
+
+.inverter-manager-guide h3 {
+  margin: 0;
+}
+
+.inverter-manager-guide-description {
+  margin: 6px 0 10px 0;
+  color: var(--ui-text);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.inverter-manager-form-help {
+  margin: 0 0 6px 0;
+  color: var(--ui-text);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.inverter-manager-form-help a {
+  color: var(--ui-primary-strong);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.inverter-manager-guide-steps {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.inverter-manager-guide-steps section {
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--ui-surface);
+}
+
+.inverter-manager-guide-steps h4 {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+}
+
+.inverter-manager-guide-steps p {
+  margin: 0;
+  color: var(--ui-text);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.inverter-manager-guide-steps ul {
+  margin: 8px 0 0 18px;
+  padding: 0;
+  color: var(--ui-text);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.inverter-manager-copy-value {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  background: color-mix(in srgb, var(--ui-primary-soft) 84%, #fff 16%);
+  border: 1px solid color-mix(in srgb, var(--ui-primary) 52%, var(--ui-border) 48%);
+  color: color-mix(in srgb, var(--ui-primary-strong) 75%, #244f75 25%);
+}
+
+.inverter-manager-guide-steps img {
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--ui-border);
+  background: color-mix(in srgb, var(--ui-surface-soft) 65%, #f6f6f6 35%);
+  object-fit: contain;
+  max-height: none;
+}
+
+.inverter-manager-guide-security {
+  margin: 10px 0 0 0;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, #b76f1d 50%, var(--ui-border) 50%);
+  border-radius: 8px;
+  background: #fff8ec;
+  color: #8f5e1d;
+  font-size: 13px;
+}
+
 .inverter-manager-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -172,23 +284,45 @@
 .inverter-manager-edit-actions {
   display: flex;
   gap: 8px;
-  margin-top: 2px;
+  margin-top: 6px;
 }
 
 .inverter-manager-save,
 .inverter-manager-cancel {
-  border-radius: 8px;
-  padding: 5px 10px;
+  min-height: 34px;
+  border-radius: 10px;
+  padding: 6px 12px;
   cursor: pointer;
   border: 1px solid var(--ui-border);
-  background: var(--ui-surface);
-  color: var(--ui-text);
+  font-weight: 600;
+  transition: transform 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .inverter-manager-save {
-  border-color: color-mix(in srgb, var(--ui-primary) 55%, var(--ui-border) 45%);
-  color: #115f67;
+  border: none;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--ui-primary), var(--ui-primary-strong));
+  box-shadow: 0 8px 16px color-mix(in srgb, var(--ui-primary-strong) 45%, transparent 55%);
+}
+
+.inverter-manager-save:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.inverter-manager-cancel {
+  background: var(--ui-surface-soft);
+  color: var(--ui-text);
+}
+
+.inverter-manager-cancel:hover:not(:disabled) {
   background: var(--ui-primary-soft);
+}
+
+.inverter-manager-save:disabled,
+.inverter-manager-cancel:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .inverter-manager-form-wrap {
@@ -241,6 +375,10 @@
   .inverter-manager-grid {
     grid-template-columns: 1fr;
   }
+
+  .inverter-manager-guide-steps {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -257,10 +395,42 @@
     border-color: var(--ui-border);
   }
 
+  .inverter-manager-guide-btn {
+    color: #c8e9ff;
+    background: #1f3140;
+    border-color: #496882;
+  }
+
   .inverter-manager-list-wrap,
   .inverter-manager-form-wrap,
   .inverter-manager-item {
     border-color: var(--ui-border);
+  }
+
+  .inverter-manager-guide,
+  .inverter-manager-guide-steps section,
+  .inverter-manager-guide-steps img {
+    border-color: var(--ui-border);
+  }
+
+  .inverter-manager-form-help a {
+    color: #9dd0ff;
+  }
+
+  .inverter-manager-copy-value {
+    background: #213748;
+    border-color: #4a6f8f;
+    color: #d3ebff;
+  }
+
+  .inverter-manager-guide-security {
+    background: #3c2f1f;
+    color: #ffd9a3;
+    border-color: #7f6544;
+  }
+
+  .inverter-manager-guide-steps section {
+    background: var(--ui-surface-soft);
   }
 
   .inverter-manager-item.active {
@@ -300,6 +470,12 @@
     background: var(--ui-surface-soft);
     color: var(--ui-text);
     border-color: var(--ui-border);
+  }
+
+  .inverter-manager-save {
+    color: #f3ffff;
+    border: none;
+    background: linear-gradient(135deg, var(--ui-primary), var(--ui-primary-strong));
   }
 
   .inverter-manager-create {

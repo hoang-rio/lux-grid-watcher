@@ -156,7 +156,7 @@
     "select": "Chọn inverter",
     "delete": "Xóa",
     "deleteConfirm": "Bạn có chắc muốn xóa inverter này không?",
-    "edit": "Sửa",
+    "rename": "Đổi tên",
     "save": "Lưu",
     "saving": "Đang lưu...",
     "cancel": "Hủy",
@@ -171,10 +171,38 @@
     "donglePlaceholder": "ví dụ: A1234567890",
     "invertSerial": "Serial inverter",
     "invertPlaceholder": "ví dụ: I1234567890",
+    "serialSourcePrefix": "Bạn có thể tìm inverter serial và dongle serial trong",
+    "serialSourceWeb": "web app LuxPower",
+    "serialSourceOr": "hoặc",
+    "serialSourceMobile": "ứng dụng LuxCloud (Android và iOS)",
     "create": "Tạo inverter",
     "creating": "Đang tạo...",
     "createSuccess": "Tạo inverter thành công",
     "createFailed": "Tạo inverter thất bại"
+  },
+  "inverterGuide": {
+    "show": "Hiện hướng dẫn cài đặt",
+    "hide": "Ẩn hướng dẫn cài đặt",
+    "title": "Hướng dẫn cấu hình inverter",
+    "description": "Cấu hình giao diện web của dongle theo các thông số bên dưới.",
+    "openDongleSettings": {
+      "title": "Bước 1: Truy cập IP của dongle",
+      "body": "Mở trình duyệt tới IP của datalogger (dongle), đăng nhập admin/admin, rồi chuyển ngôn ngữ sang English nếu cần.",
+      "imageAlt": "Truy cập giao diện web của dongle"
+    },
+    "networkSettings": {
+      "title": "Bước 2: Network setting",
+      "body": "Vào Network Setting. Giữ nguyên form đầu (LuxPower), cấu hình form thứ hai để gửi dữ liệu về server này rồi lưu lại.",
+      "imageAlt": "Cài đặt mạng",
+      "items": {
+        "connectionSetting1": "Connection Setting 1: giữ giá trị mặc định/hiện tại.",
+        "connectionSetting2": "Connection Setting 2: chọn chế độ TCP client.",
+        "connectionSetting2Protocol": "Protocol: TCP client.",
+        "connectionSetting2Hostname": "Server Address (IP or domain):",
+        "connectionSetting2Port": "Remote Port: 4346."
+      }
+    },
+    "securityNote": "Sau khi reboot, dongle sẽ kết nối tới server lux.hoangnguyendong.dev qua port 4346."
   },
   "settings": {
     "title": "Cài đặt",

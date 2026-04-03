@@ -156,7 +156,7 @@
     "select": "Select inverter",
     "delete": "Delete",
     "deleteConfirm": "Are you sure you want to delete this inverter?",
-    "edit": "Edit",
+    "rename": "Rename",
     "save": "Save",
     "saving": "Saving...",
     "cancel": "Cancel",
@@ -171,10 +171,38 @@
     "donglePlaceholder": "e.g. A1234567890",
     "invertSerial": "Inverter serial",
     "invertPlaceholder": "e.g. I1234567890",
+    "serialSourcePrefix": "You can find inverter serial and dongle serial in",
+    "serialSourceWeb": "LuxPower web app",
+    "serialSourceOr": "or",
+    "serialSourceMobile": "mobile app LuxCloud (Android and iOS)",
     "create": "Create inverter",
     "creating": "Creating...",
     "createSuccess": "Inverter created successfully",
     "createFailed": "Failed to create inverter"
+  },
+  "inverterGuide": {
+    "show": "Show setup guide",
+    "hide": "Hide setup guide",
+    "title": "Inverter setup guide",
+    "description": "Configure the dongle web panel using the settings below.",
+    "openDongleSettings": {
+      "title": "Step 1: Access dongle IP",
+      "body": "Open a browser to the datalogger (dongle) IP, login with admin/admin, then switch language to English if needed.",
+      "imageAlt": "Access dongle web panel"
+    },
+    "networkSettings": {
+      "title": "Step 2: Network setting",
+      "body": "Open Network Setting. Keep the first form (LuxPower) and configure the second form to send data to this server, then save.",
+      "imageAlt": "Network settings",
+      "items": {
+        "connectionSetting1": "Connection Setting 1: keep your current/default value.",
+        "connectionSetting2": "Connection Setting 2: select TCP client mode.",
+        "connectionSetting2Protocol": "Protocol: TCP client.",
+        "connectionSetting2Hostname": "Server Address (IP or domain):",
+        "connectionSetting2Port": "Remote Port: 4346."
+      }
+    },
+    "securityNote": "After reboot, the dongle will connect to server lux.hoangnguyendong.dev via port 4346."
   },
   "settings": {
     "title": "Settings",
