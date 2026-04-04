@@ -317,11 +317,10 @@ def _pg_upsert_inverter_data(inverter_data: dict, sleep_time: int) -> None:
                 + int(inverter_data.get("p_eps", 0))
             )
             soc = int(inverter_data.get("soc", 0))
-            minute_dt = device_time.replace(second=0, microsecond=0)
             repo.upsert_hourly_chart(
                 session,
                 inverter_id,
-                minute_dt,
+                device_time,
                 sleep_time,
                 pv,
                 battery,

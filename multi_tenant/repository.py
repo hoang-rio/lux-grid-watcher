@@ -321,12 +321,17 @@ def upsert_hourly_chart(
 ) -> None:
     from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+    minute_bucket = dt.replace(second=0, microsecond=0)
+
     existing = session.execute(
-        select(HourlyChart).where(
+        select(HourlyChart)
+        .where(
             HourlyChart.inverter_id == inverter_id,
-            HourlyChart.datetime == dt,
+            func.date_trunc("minute", HourlyChart.datetime) == minute_bucket,
         )
-    ).scalar_one_or_none()
+        .order_by(HourlyChart.datetime.desc())
+        .limit(1)
+    ).scalars().first()
 
     if existing is None:
         stmt = pg_insert(HourlyChart).values(
@@ -346,9 +351,10 @@ def upsert_hourly_chart(
             update(HourlyChart)
             .where(
                 HourlyChart.inverter_id == inverter_id,
-                HourlyChart.datetime == dt,
+                HourlyChart.datetime == existing.datetime,
             )
             .values(
+                datetime=dt,
                 pv=round((pv * sleep_count + existing.pv) / total),
                 battery=round((battery * sleep_count + existing.battery) / total),
                 grid=round((grid * sleep_count + existing.grid) / total),
