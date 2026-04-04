@@ -25,7 +25,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
-        contents: write
+        contents: read
         packages: write
     steps:
       - name: Checkout repository
@@ -57,46 +57,3 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_TO_RELEASE }},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BRANCH_TAG }}
 
-      - name: Get previous tag
-        id: previoustag
-        run: |
-          PREV_TAG=$(git tag --sort=-creatordate | grep -v "${{ env.TAG_TO_RELEASE }}" | head -n 1)
-          echo "Previous tag: $PREV_TAG"
-          echo "previous_tag=$PREV_TAG" >> $GITHUB_OUTPUT
-
-      - name: Generate commit changelog
-        id: changelog
-        run: |
-            PREV_TAG="${{ steps.previoustag.outputs.previous_tag }}"
-            echo "Previous tag: $PREV_TAG"
-            CURR_TAG="${{ env.TAG_TO_RELEASE }}"
-            if [ -z "$PREV_TAG" ]; then
-                git log --pretty=format:'* %h: %s' $CURR_TAG | head -n 10 > commits.txt
-            else
-                git log --pretty=format:'* %h: %s' $PREV_TAG..$CURR_TAG | head -n 10 > commits.txt
-            fi
-            {
-                echo 'changelog<<EOF'
-                echo "$(cat commits.txt)"
-                echo EOF
-            } >> $GITHUB_OUTPUT
-
-      - name: Create GitHub Release
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ env.TAG_TO_RELEASE }}
-          name: Release ${{ env.TAG_TO_RELEASE }}
-          makeLatest: false
-          body: |
-            ## Docker Image
-            [View on GitHub Container Registry](https://github.com/${{github.repository}}/pkgs/container/lux-web-viewer)
-            
-            Pull with:
-            ```sh
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_TO_RELEASE }}
-            ```
-
-            ### What's Changed
-            ${{ steps.changelog.outputs.changelog }}
-
-            **Full changelog**: https://github.com/${{github.repository}}/compare/${{ steps.previoustag.outputs.previous_tag }}...${{ env.TAG_TO_RELEASE }}
