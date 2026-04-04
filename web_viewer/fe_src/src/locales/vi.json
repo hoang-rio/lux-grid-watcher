@@ -100,7 +100,7 @@
   "fetchingTotal": "Đang lấy tổng số...",
   "fetchTotalError": "Lỗi khi lấy tổng số",
   "openSourceAt": "Mã nguồn mở tại:",
-  "webTitle": "Trình xem thời gian thực Lux Web Viewer",
+  "webTitle": "Trình xem thời gian thực Lux Viewer",
   "notification": {
     "title": "Thông báo",
     "noRecords": "Không có thông báo nào",

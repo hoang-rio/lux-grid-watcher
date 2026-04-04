@@ -317,6 +317,7 @@ def upsert_hourly_chart(
     grid: int,
     consumption: int,
     soc: int,
+    sample_second: int = 0,
 ) -> None:
     from sqlalchemy.dialects.postgresql import insert as pg_insert
 
@@ -339,7 +340,7 @@ def upsert_hourly_chart(
         )
         session.execute(stmt)
     else:
-        sleep_count = max(int(dt.second / sleep_time), 1)
+        sleep_count = max(int(sample_second / sleep_time), 1)
         total = sleep_count + 1
         session.execute(
             update(HourlyChart)

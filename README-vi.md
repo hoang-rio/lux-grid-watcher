@@ -1,4 +1,4 @@
-# Lux Web Viewer
+# Lux Viewer
 
 Tiếng Việt | [English](README.md)
 

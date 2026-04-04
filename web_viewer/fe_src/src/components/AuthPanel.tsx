@@ -171,7 +171,7 @@ function AuthPanel({ onAuthSuccess }: AuthPanelProps) {
     <div className="auth-shell">
       <div className="auth-card">
         <div className="auth-head">
-          <p className="auth-eyebrow">Lux Web Viewer</p>
+          <p className="auth-eyebrow">Lux Viewer</p>
           <h2>{t("authPanel.title")}</h2>
         </div>
 

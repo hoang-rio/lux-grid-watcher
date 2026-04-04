@@ -317,17 +317,18 @@ def _pg_upsert_inverter_data(inverter_data: dict, sleep_time: int) -> None:
                 + int(inverter_data.get("p_eps", 0))
             )
             soc = int(inverter_data.get("soc", 0))
-            hour_dt = device_time.replace(minute=0, second=0, microsecond=0)
+            minute_dt = device_time.replace(second=0, microsecond=0)
             repo.upsert_hourly_chart(
                 session,
                 inverter_id,
-                hour_dt,
+                minute_dt,
                 sleep_time,
                 pv,
                 battery,
                 grid,
                 consumption,
                 soc,
+                device_time.second,
             )
 
             # Handle daily chart - skip at midnight (00:00-00:59) to match SQLite behavior
