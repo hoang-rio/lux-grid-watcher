@@ -132,7 +132,9 @@ function App() {
           )
         );
       }
-      hourlyChartfRef.current?.updateItem(jsonData.hourly_chart_item);
+      if (jsonData.hourly_chart_item) {
+        hourlyChartfRef.current?.updateItem(jsonData.hourly_chart_item);
+      }
       setIsLoading(false);
     }
   }, [selectedInverterId]);
