@@ -187,6 +187,12 @@ def get_inverters_by_user(session: Session, user_id: uuid.UUID) -> list[Inverter
     )
 
 
+def get_active_inverters_count(session: Session) -> int:
+    return session.execute(
+        select(func.count()).where(Inverter.is_active.is_(True))
+    ).scalar_one()
+
+
 def get_inverter_by_id_and_user(
     session: Session, inverter_id: uuid.UUID, user_id: uuid.UUID
 ) -> Optional[Inverter]:

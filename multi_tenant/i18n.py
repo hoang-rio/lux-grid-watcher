@@ -48,6 +48,7 @@ _TRANSLATIONS_VI: dict[str, str] = {
     "invert_serial already registered": "invert_serial đã được đăng ký",
     "name is required": "Cần nhập tên",
     "Failed to update inverter": "Cập nhật inverter thất bại",
+    "Maximum inverters reached": "Đã đạt giới hạn số lượng inverter của hệ thống",
     "Forbidden": "Không có quyền truy cập",
     "inverter_id is required": "Cần inverter_id",
     "Failed to resolve inverter scope": "Không thể xác định phạm vi inverter",

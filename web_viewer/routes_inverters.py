@@ -12,6 +12,7 @@ from multi_tenant.auth import decode_access_token
 from multi_tenant.db import get_db_session
 from multi_tenant import repository as repo
 from multi_tenant.i18n import get_locale_from_accept_language, translate
+import settings
 
 logger = getLogger(__name__)
 
@@ -139,6 +140,12 @@ async def create_inverter(request: web.Request) -> web.Response:
 
     session = _session()
     try:
+        max_inverters = settings.get_max_inverters_system()
+        if max_inverters > 0:
+            current_count = repo.get_active_inverters_count(session)
+            if current_count >= max_inverters:
+                return _err(request, "Maximum inverters reached")
+
         # Check uniqueness
         if repo.get_inverter_by_dongle_serial(session, dongle_serial):
             return _err(request, "dongle_serial already registered")

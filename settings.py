@@ -80,3 +80,7 @@ def get_sleep_time() -> int:
     except Exception:
         parsed = 30
     return parsed if parsed in allowed_values else 30
+
+
+def get_max_inverters_system() -> int:
+    return int(get_setting("MAX_INVERTERS_SYSTEM", config.get("MAX_INVERTERS_SYSTEM", 10)))
