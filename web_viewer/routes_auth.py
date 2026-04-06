@@ -439,6 +439,54 @@ async def reset_password(request: web.Request) -> web.Response:
 
 
 # ---------------------------------------------------------------------------
+# POST /auth/change-password
+# ---------------------------------------------------------------------------
+
+async def change_password(request: web.Request) -> web.Response:
+    payload, err = _require_jwt(request)
+    if err:
+        return err
+
+    try:
+        body = await request.json()
+    except Exception:
+        return _err(request, "Invalid JSON body")
+
+    current_password = str(body.get("current_password", ""))
+    new_password = str(body.get("new_password", ""))
+
+    if not current_password:
+        return _err(request, "Current password is required")
+    if len(new_password) < 8:
+        return _err(request, "Password must be at least 8 characters")
+    if current_password == new_password:
+        return _err(request, "New password must be different from current password")
+
+    session = _session()
+    try:
+        user = repo.get_user_by_id(session, uuid.UUID(payload["sub"]))
+        if user is None:
+            return _err(request, "User not found", 404)
+
+        if not verify_password(current_password, user.password_hash):
+            return _err(request, "Current password is incorrect", 401)
+
+        pw_hash = hash_password(new_password)
+        repo.update_user_password(session, user, pw_hash)
+        # Invalidate all existing sessions after password change
+        repo.revoke_all_user_refresh_tokens(session, user.id)
+        session.commit()
+
+        return _ok(message=_msg(request, "Password changed successfully. Please log in with your new password."))
+    except Exception as exc:
+        session.rollback()
+        logger.error("change_password error: %s", exc)
+        return _err(request, "Password change failed", 500)
+    finally:
+        session.close()
+
+
+# ---------------------------------------------------------------------------
 # CORS preflight
 # ---------------------------------------------------------------------------
 
@@ -467,5 +515,6 @@ AUTH_ROUTES = [
     web.get("/auth/verify-email", verify_email),
     web.post("/auth/forgot-password", forgot_password),
     web.post("/auth/reset-password", reset_password),
+    web.post("/auth/change-password", change_password),
     web.options("/auth/{path_info:.*}", _cors_options),
 ]

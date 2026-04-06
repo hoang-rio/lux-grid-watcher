@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { IAuthUser, IUserInverter } from "../Intefaces";
 import { apiFetch } from "../utils/fetchUtil";
 import * as logUtil from "../utils/logUtil";
+import ChangePasswordModal from "./ChangePasswordModal";
 import "./TopAuthBar.css";
 
 interface TopAuthBarProps {
@@ -25,6 +26,7 @@ function TopAuthBar({
   const { t } = useTranslation();
   const [verifyMessage, setVerifyMessage] = useState("");
   const [verifySubmitting, setVerifySubmitting] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   const handleSendVerifyEmail = useCallback(async () => {
     setVerifyMessage("");
@@ -48,46 +50,55 @@ function TopAuthBar({
   }, [t]);
 
   return (
-    <div className="card top-auth-bar">
-      <div className="top-auth-bar-left">
-        <strong>{authUser.email}</strong>
-        {!authUser.email_confirmed && (
-          <div className="top-auth-verify-wrap">
-            <span>{t("auth.verifyEmailWarning")}</span>
-            <button
-              className="top-auth-verify-btn"
-              onClick={handleSendVerifyEmail}
-              disabled={verifySubmitting}
+    <>
+      <div className="card top-auth-bar">
+        <div className="top-auth-bar-left">
+          <strong>{authUser.email}</strong>
+          {!authUser.email_confirmed && (
+            <div className="top-auth-verify-wrap">
+              <span>{t("auth.verifyEmailWarning")}</span>
+              <button
+                className="top-auth-verify-btn"
+                onClick={handleSendVerifyEmail}
+                disabled={verifySubmitting}
+              >
+                {t("auth.sendVerifyEmail")}
+              </button>
+              {verifyMessage && <span className="top-auth-message">{verifyMessage}</span>}
+            </div>
+          )}
+        </div>
+        <div className="top-auth-bar-right">
+          {inverters.length > 0 && (
+            <select
+              className="top-auth-inverter-select"
+              value={selectedInverterId}
+              onChange={(e) => onSelectInverter?.(e.target.value)}
+              aria-label={t("systemInformation")}
             >
-              {t("auth.sendVerifyEmail")}
-            </button>
-            {verifyMessage && <span className="top-auth-message">{verifyMessage}</span>}
-          </div>
-        )}
+              {inverters.map((inv) => (
+                <option key={inv.id} value={inv.id}>
+                  {`${inv.name} (${inv.invert_serial || inv.dongle_serial})`}
+                </option>
+              ))}
+            </select>
+          )}
+          <button className="top-auth-manage-btn" onClick={onManageInverters}>
+            {t("inverterManager.manage")}
+          </button>
+          <button className="top-auth-manage-btn" onClick={() => setShowChangePassword(true)}>
+            {t("changePassword.title")}
+          </button>
+          <button className="top-auth-logout-btn" onClick={onLogout}>
+            {t("auth.logout")}
+          </button>
+        </div>
       </div>
-      <div className="top-auth-bar-right">
-        {inverters.length > 0 && (
-          <select
-            className="top-auth-inverter-select"
-            value={selectedInverterId}
-            onChange={(e) => onSelectInverter?.(e.target.value)}
-            aria-label={t("systemInformation")}
-          >
-            {inverters.map((inv) => (
-              <option key={inv.id} value={inv.id}>
-                {`${inv.name} (${inv.invert_serial || inv.dongle_serial})`}
-              </option>
-            ))}
-          </select>
-        )}
-        <button className="top-auth-manage-btn" onClick={onManageInverters}>
-          {t("inverterManager.manage")}
-        </button>
-        <button className="top-auth-logout-btn" onClick={onLogout}>
-          {t("auth.logout")}
-        </button>
-      </div>
-    </div>
+
+      {showChangePassword && (
+        <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
+      )}
+    </>
   );
 }
 

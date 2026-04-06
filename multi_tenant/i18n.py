@@ -46,7 +46,7 @@ _TRANSLATIONS_VI: dict[str, str] = {
     "invert_serial is required": "Cần invert_serial",
     "dongle_serial already registered": "dongle_serial đã được đăng ký",
     "invert_serial already registered": "invert_serial đã được đăng ký",
-    "name is required": "Cần tên",
+    "name is required": "Cần nhập tên",
     "Failed to update inverter": "Cập nhật inverter thất bại",
     "Forbidden": "Không có quyền truy cập",
     "inverter_id is required": "Cần inverter_id",
@@ -54,6 +54,11 @@ _TRANSLATIONS_VI: dict[str, str] = {
     "Forbidden inverter scope": "Không có quyền truy cập inverter này",
     "Missing required parameter 'token'": "Thiếu tham số bắt buộc 'token'",
     "Device register success": "Đăng ký thiết bị thành công",
+    "Current password is required": "Cần nhập mật khẩu hiện tại",
+    "New password must be different from current password": "Mật khẩu mới phải khác mật khẩu hiện tại",
+    "Password changed successfully. Please log in with your new password.": "Đổi mật khẩu thành công. Vui lòng đăng nhập với mật khẩu mới.",
+    "Password change failed": "Đổi mật khẩu thất bại",
+    "Current password is incorrect": "Mật khẩu hiện tại không đúng",
 }
 
 

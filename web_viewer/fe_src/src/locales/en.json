@@ -249,5 +249,23 @@
     "watts": "W",
     "percent": "%"
   },
-  "getStateError": "API get state error"
+  "getStateError": "API get state error",
+  "changePassword": {
+    "title": "Change Password",
+    "subtitle": "Update your account password",
+    "currentPassword": "Current Password",
+    "currentPasswordPlaceholder": "Enter your current password",
+    "newPassword": "New Password",
+    "newPasswordPlaceholder": "Enter new password (min 8 characters)",
+    "confirmNewPassword": "Confirm New Password",
+    "confirmNewPasswordPlaceholder": "Confirm new password",
+    "submit": "Change Password",
+    "submitting": "Changing...",
+    "errorAllFieldsRequired": "All password fields are required",
+    "errorPasswordsDoNotMatch": "New passwords do not match",
+    "errorPasswordTooShort": "New password must be at least 8 characters",
+    "errorPasswordSameAsCurrent": "New password must be different from current password",
+    "success": "Password changed successfully. Logging out...",
+    "errorFailed": "Failed to change password"
+  }
 }
