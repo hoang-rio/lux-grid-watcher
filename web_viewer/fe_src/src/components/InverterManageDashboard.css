@@ -74,6 +74,19 @@
   font-weight: 600;
 }
 
+.inverter-manager-guide-btn-mobile {
+  display: none;
+  border: 1px solid color-mix(in srgb, var(--ui-primary) 45%, var(--ui-border) 55%);
+  background: color-mix(in srgb, var(--ui-primary-soft) 80%, #ffffff 20%);
+  color: color-mix(in srgb, var(--ui-primary-strong) 70%, #214f7a 30%);
+  border-radius: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 8px;
+  width: 100%;
+}
+
 .inverter-manager-guide {
   margin-bottom: 12px;
   border-radius: 14px;
@@ -396,6 +409,14 @@
   .inverter-manager-guide-steps {
     grid-template-columns: 1fr;
   }
+
+  .inverter-manager-guide-btn {
+    display: none;
+  }
+
+  .inverter-manager-guide-btn-mobile {
+    display: block;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -413,6 +434,12 @@
   }
 
   .inverter-manager-guide-btn {
+    color: #c8e9ff;
+    background: #1f3140;
+    border-color: #496882;
+  }
+
+  .inverter-manager-guide-btn-mobile {
     color: #c8e9ff;
     background: #1f3140;
     border-color: #496882;

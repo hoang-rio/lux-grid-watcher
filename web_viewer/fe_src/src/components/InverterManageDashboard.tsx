@@ -177,6 +177,13 @@ function InverterManageDashboard({
           <div>
             <h2>{t("inverterManager.title")}</h2>
             <p>{t("inverterManager.description")}</p>
+            <button
+              className="inverter-manager-guide-btn-mobile"
+              onClick={() => setShowSetupGuide((prev) => !prev)}
+              type="button"
+            >
+              {showSetupGuide ? t("inverterGuide.hide") : t("inverterGuide.show")}
+            </button>
           </div>
           <div className="inverter-manager-header-actions">
             <button
@@ -340,6 +347,7 @@ function InverterManageDashboard({
               onChange={(e) => setDongleSerial(e.target.value)}
               placeholder={t("inverterManager.donglePlaceholder")}
             />
+            <p className="inverter-manager-field-note">{t("inverterManager.dongleSerialHint", "You can find dongle serial in stamp on your dongle beside QR code")}</p>
 
             <label>{t("inverterManager.invertSerial")}</label>
             <input
