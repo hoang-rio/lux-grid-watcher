@@ -134,7 +134,9 @@
     "requestFailed": "Request failed",
     "forgotSent": "If your email is registered, a reset link has been sent.",
     "resetFailed": "Reset failed",
-    "resetSuccess": "Password reset success. Please login."
+    "resetSuccess": "Password reset success. Please login.",
+    "verifySuccess": "Email verified successfully. Please login.",
+    "verifyFailed": "Email verification failed or the link is invalid."
   },
   "inverterSetup": {
     "title": "Create Your First Inverter",

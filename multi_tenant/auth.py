@@ -28,7 +28,13 @@ def _required_env(key: str) -> str:
 
 
 def get_jwt_secret() -> str:
-    return _required_env("JWT_SECRET")
+    secret = _required_env("JWT_SECRET")
+    if len(secret.encode("utf-8")) < 32:
+        raise RuntimeError(
+            "JWT_SECRET is too short (must be at least 32 bytes). "
+            "Please set a longer secret in your .env file."
+        )
+    return secret
 
 
 def get_access_token_exp_minutes() -> int:

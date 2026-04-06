@@ -11,11 +11,17 @@ from .i18n import Locale, email_body_html, email_subject
 logger = getLogger(__name__)
 
 
-def _send_email(to: str, subject: str, html_body: str) -> None:
+def _send_email(to: str, subject: str, html_body: str, action_url: str | None = None) -> None:
     cfg = smtp_settings()
 
     if not cfg["host"]:
-        logger.warning("SMTP_HOST not configured — skipping email to %s (subject: %s)", to, subject)
+        if action_url:
+            logger.warning(
+                "SMTP_HOST not configured — skipping email to %s (subject: %s). [DEV] Action URL: %s",
+                to, subject, action_url,
+            )
+        else:
+            logger.warning("SMTP_HOST not configured — skipping email to %s (subject: %s)", to, subject)
         return
 
     msg = MIMEMultipart("alternative")
@@ -45,10 +51,10 @@ def _send_email(to: str, subject: str, html_body: str) -> None:
 def send_verification_email(to: str, token: str, base_url: str, locale: Locale = "en") -> None:
     verify_url = f"{base_url.rstrip('/')}/auth/verify-email?token={token}"
     html = email_body_html("verification", locale, url=verify_url)
-    _send_email(to, email_subject("verification", locale), html)
+    _send_email(to, email_subject("verification", locale), html, action_url=verify_url)
 
 
 def send_password_reset_email(to: str, token: str, base_url: str, locale: Locale = "en") -> None:
-    reset_url = f"{base_url.rstrip('/')}/auth/reset-password?token={token}"
+    reset_url = f"{base_url.rstrip('/')}/?token={token}"
     html = email_body_html("reset_password", locale, url=reset_url)
-    _send_email(to, email_subject("reset_password", locale), html)
+    _send_email(to, email_subject("reset_password", locale), html, action_url=reset_url)

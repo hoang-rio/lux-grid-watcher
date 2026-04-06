@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import re
 import secrets
 import uuid
@@ -122,7 +123,7 @@ async def register(request: web.Request) -> web.Response:
 
         # Create email verification token
         token_plain = secrets.token_urlsafe(32)
-        token_hash = __import__("hashlib").sha256(token_plain.encode()).hexdigest()
+        token_hash = hashlib.sha256(token_plain.encode("utf-8")).hexdigest()
         repo.create_email_verification_token(session, user.id, token_hash)
         session.commit()
 
@@ -296,7 +297,7 @@ async def send_verify_email(request: web.Request) -> web.Response:
             return _ok(message=_msg(request, "Email already verified"))
 
         token_plain = secrets.token_urlsafe(32)
-        token_hash = __import__("hashlib").sha256(token_plain.encode()).hexdigest()
+        token_hash = hashlib.sha256(token_plain.encode("utf-8")).hexdigest()
         repo.create_email_verification_token(session, user.id, token_hash)
         session.commit()
 
@@ -319,29 +320,30 @@ async def send_verify_email(request: web.Request) -> web.Response:
 # ---------------------------------------------------------------------------
 
 async def verify_email(request: web.Request) -> web.Response:
+    base_url = _get_base_url(request)
     token_plain = request.rel_url.query.get("token", "")
     if not token_plain:
-        return _err(request, "token is required")
+        return web.HTTPFound(f"{base_url}/?verified=0")
 
     session = _session()
     try:
         evt = repo.get_valid_email_verification_token(session, token_plain)
         if evt is None:
-            return _err(request, "Invalid or expired verification token")
+            return web.HTTPFound(f"{base_url}/?verified=0")
 
         user = repo.get_user_by_id(session, evt.user_id)
         if user is None:
-            return _err(request, "User not found", 404)
+            return web.HTTPFound(f"{base_url}/?verified=0")
 
         repo.use_email_verification_token(session, evt)
         repo.mark_user_email_confirmed(session, user)
         session.commit()
 
-        return _ok(message=_msg(request, "Email verified successfully"))
+        return web.HTTPFound(f"{base_url}/?verified=1")
     except Exception as exc:
         session.rollback()
         logger.error("verify_email error: %s", exc)
-        return _err(request, "Email verification failed", 500)
+        return web.HTTPFound(f"{base_url}/?verified=0")
     finally:
         session.close()
 
@@ -366,7 +368,7 @@ async def forgot_password(request: web.Request) -> web.Response:
         user = repo.get_user_by_email(session, email)
         if user and user.email_confirmed:
             token_plain = secrets.token_urlsafe(32)
-            token_hash = __import__("hashlib").sha256(token_plain.encode()).hexdigest()
+            token_hash = hashlib.sha256(token_plain.encode("utf-8")).hexdigest()
             repo.create_password_reset_token(session, user.id, token_hash)
             session.commit()
 

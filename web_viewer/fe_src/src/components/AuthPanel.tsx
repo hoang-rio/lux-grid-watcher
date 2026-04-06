@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IAuthUser } from "../Intefaces";
 import "./AuthPanel.css";
@@ -13,17 +13,27 @@ function AuthPanel({ onAuthSuccess }: AuthPanelProps) {
   const { t } = useTranslation();
   const search = new URLSearchParams(window.location.search);
   const resetToken = search.get("token") || "";
+  const verifiedParam = search.get("verified");
   const initialMode: Mode = useMemo(() => (resetToken ? "reset" : "login"), [resetToken]);
+  const initialMessage = useMemo(() => (verifiedParam === "1" ? t("authPanel.verifySuccess") : ""), [verifiedParam, t]);
+  const initialError = useMemo(() => (verifiedParam === "0" ? t("authPanel.verifyFailed") : ""), [verifiedParam, t]);
 
   const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [message, setMessage] = useState(initialMessage);
+  const [error, setError] = useState(initialError);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
+  // Clean up token/verified query params from the URL on mount so they don't persist on refresh
+  useEffect(() => {
+    if (resetToken || verifiedParam !== null) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const resetStatus = () => {
     setMessage("");

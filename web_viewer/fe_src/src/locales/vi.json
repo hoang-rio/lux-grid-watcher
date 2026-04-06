@@ -134,7 +134,9 @@
     "requestFailed": "Yêu cầu thất bại",
     "forgotSent": "Nếu email đã đăng ký, hệ thống sẽ gửi link đặt lại mật khẩu.",
     "resetFailed": "Đặt lại mật khẩu thất bại",
-    "resetSuccess": "Đặt lại mật khẩu thành công. Vui lòng đăng nhập."
+    "resetSuccess": "Đặt lại mật khẩu thành công. Vui lòng đăng nhập.",
+    "verifySuccess": "Email đã được xác thực thành công. Vui lòng đăng nhập.",
+    "verifyFailed": "Xác thực email thất bại hoặc liên kết không hợp lệ."
   },
   "inverterSetup": {
     "title": "Tạo Inverter Đầu Tiên",
