@@ -31,7 +31,6 @@ function SystemInformation({
   isSSEConnected,
   onReconnect,
   newNotification,
-  authUser,
   inverters = [],
   selectedInverterId = "",
   selectedInverterIsOnline,
@@ -47,7 +46,6 @@ function SystemInformation({
   const settingsButtonRef = useRef<HTMLDivElement>(null);
   const settingsPopoverRef = useRef<HTMLDivElement>(null);
   const notificationOpened = useRef(false); // Track if notification popover was opened
-  const useBearerAuth = Boolean(authUser);
 
   // Added helper function to format datetime
   const formatDateTime = useCallback((dateInput: string | number) => {
@@ -293,7 +291,7 @@ function SystemInformation({
                 className="system-status-reconnect"
                 onClick={onReconnect}
                 title={t("reconnect")}
-                disabled={effectiveSSEConnected || useBearerAuth}
+                disabled={effectiveSSEConnected}
               >
                 {t("reconnect")}
               </button>

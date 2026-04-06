@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, lazy } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, lazy } from "react";
 import { useTranslation } from "react-i18next";
 import "./App.css";
 import {
@@ -23,6 +23,7 @@ const TopAuthBar = lazy(() => import("./components/TopAuthBar"));
 
 const MAX_RECONNECT_COUNT = 5;
 const INVERTER_OFFLINE_TIMEOUT_MS = 10 * 60 * 1000;
+const REALTIME_ONLINE_TIMEOUT_MS = 20 * 1000;
 const ACCESS_TOKEN_KEY = "lux_access_token";
 const REFRESH_TOKEN_KEY = "lux_refresh_token";
 const INVERTER_ID_KEY = "lux_selected_inverter_id";
@@ -67,6 +68,8 @@ function App() {
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectCountRef = useRef<number>(0);
   const [isSSEConnected, setIsSSEConnected] = useState<boolean>(false);
+  const [lastRealtimeByInverterId, setLastRealtimeByInverterId] = useState<Record<string, number>>({});
+  const [onlineClock, setOnlineClock] = useState<number>(Date.now());
   const hourlyChartfRef = useRef<IUpdateChart>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasStartedRealtimeRequests, setHasStartedRealtimeRequests] = useState(false);
@@ -110,11 +113,16 @@ function App() {
     if (jsonData.event === "new_notification") {
       setNewNotification(jsonData.data);
     } else {
+      const nowTs = Date.now();
       setIsInitialRealtimeLoading(false);
       hasInverterDataRef.current = true;
       setInverterData(jsonData.inverter_data);
       if (selectedInverterId) {
         const nowIso = new Date().toISOString();
+        setLastRealtimeByInverterId((prev) => ({
+          ...prev,
+          [selectedInverterId]: nowTs,
+        }));
         setUserInverters((prev) =>
           prev.map((inv) =>
             inv.id === selectedInverterId
@@ -449,7 +457,25 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  const selectedInverter = userInverters.find((inv) => inv.id === selectedInverterId);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setOnlineClock(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const selectedInverterIsOnline = useMemo(() => {
+    if (!selectedInverterId) {
+      return isSSEConnected;
+    }
+
+    const lastRealtimeTs = lastRealtimeByInverterId[selectedInverterId] || 0;
+    const hasFreshRealtime =
+      Boolean(lastRealtimeTs) && onlineClock - lastRealtimeTs <= REALTIME_ONLINE_TIMEOUT_MS;
+
+    // For the active inverter, prioritize real transport signal and fresh payload heartbeat.
+    return isSSEConnected || hasFreshRealtime;
+  }, [isSSEConnected, lastRealtimeByInverterId, onlineClock, selectedInverterId]);
 
   const onAuthSuccess = useCallback(async (token: string, refreshToken: string) => {
     localStorage.setItem(ACCESS_TOKEN_KEY, token);
@@ -646,7 +672,7 @@ function App() {
           authUser={authUser}
           inverters={userInverters}
           selectedInverterId={selectedInverterId}
-          selectedInverterIsOnline={selectedInverter?.is_online}
+          selectedInverterIsOnline={selectedInverterIsOnline}
         />
         <div className="row chart">
           <HourlyChart
