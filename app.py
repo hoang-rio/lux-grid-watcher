@@ -271,12 +271,8 @@ async def initialize_web_socket_client(fcm_service: FCM, old_ws_client: WebSocke
 
 async def main():
     try:
-        if config["WORKING_MODE"] == DONGLE_MODE:
-            logger.info("Grid connect watch working on mode: %s",
-                        config["WORKING_MODE"])
-        else:
-            logger.debug("Grid connect watch working on mode: %s",
-                         config["WORKING_MODE"])
+        logger.info("Grid connect watch working on mode: %s",
+                    config["WORKING_MODE"])
         fcm_service = FCM(logger, config)
         run_web_view = config["RUN_WEB_VIEWER"] == "True"
         if config["WORKING_MODE"] == DONGLE_MODE:
@@ -344,8 +340,8 @@ async def main():
             dongle_server = DongleServer(logger, config)
             # Start the server in a background task
             server_task = asyncio.create_task(dongle_server.start_server())
-            logger.debug("Waiting for dongle connections on port %s",
-                         config.get("SERVER_MODE_PORT", 4346))
+            logger.info("Waiting for dongle connections on port %s",
+                        config.get("SERVER_MODE_PORT", 4346))
             while True:
                 try:
                     timeout_duration = int(config["SLEEP_TIME"]) * 3
@@ -374,8 +370,8 @@ async def main():
                             dectect_abnormal_usage(db_connection, fcm_service)
                 except Exception as e:
                     logger.exception("Got error in SERVER_MODE %s", e)
-                logger.debug("Waiting for next dongle data (timeout: %s seconds)",
-                             config["SLEEP_TIME"])
+                logger.info("Waiting for next dongle data (timeout: %s seconds)",
+                            config["SLEEP_TIME"])
         else:
             http = http_handler.Http(logger, config)
             while True:
