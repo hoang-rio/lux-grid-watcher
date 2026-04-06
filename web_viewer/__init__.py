@@ -235,7 +235,11 @@ async def sse_handler(request):
                     try:
                         latest = mt_repo.get_inverter_latest_state(session, uuid.UUID(requested_inverter_id))
                         if latest and isinstance(latest.payload, dict) and latest.payload:
-                            initial_event_data = json.dumps(latest.payload)
+                            # Ensure consistent structure with cached data - always wrap in inverter_data root key
+                            if "inverter_data" in latest.payload:
+                                initial_event_data = json.dumps(latest.payload)
+                            else:
+                                initial_event_data = json.dumps({"inverter_data": latest.payload})
                     except Exception:
                         # Snapshot is optional for SSE bootstrap; ignore parse/query errors.
                         pass

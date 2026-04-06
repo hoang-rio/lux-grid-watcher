@@ -270,6 +270,7 @@ function App() {
 
         sseAbortControllerRef.current = null;
         setIsSSEConnected(false);
+        setIsInitialRealtimeLoading(false);
         scheduleSSEReconnect(connectSSE);
       } catch (error) {
         sseAbortControllerRef.current = null;
@@ -349,7 +350,12 @@ function App() {
     } catch (err) {
       logUtil.error(i18n.t("getStateError"), err);
     } finally {
-      setIsInitialRealtimeLoading(false);
+      // Only clear initial loading if we already have data or no SSE is actively connecting.
+      // If SSE is in progress and we have no data yet, let SSE clear the loading state
+      // when the first event arrives (or when SSE errors out).
+      if (hasInverterDataRef.current || !sseAbortControllerRef.current) {
+        setIsInitialRealtimeLoading(false);
+      }
       isFetchingRef.current = false;
     }
   }, [accessToken, authRequired, authSessionReady, i18n, selectedInverterId, useBearerAuth]);
