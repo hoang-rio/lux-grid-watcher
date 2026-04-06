@@ -28,8 +28,6 @@ services:
       - ./env/dev.env
     environment:
       AUTH_ENABLED: "false"
-    command: >
-      sh -c "export POSTGRES_DB_URL=postgresql+psycopg://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@postgres:5432/$${POSTGRES_DB} && alembic upgrade head && python app.py"
     volumes:
       - ..:/app
     working_dir: /app

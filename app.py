@@ -4,6 +4,7 @@ import logging.handlers
 import logging
 import time
 from os import path, environ
+from urllib.parse import quote_plus
 import dongle_handler
 import http_handler
 from datetime import datetime, timedelta
@@ -31,6 +32,28 @@ config: dict = {
     **dotenv_values(".env"),
     **environ
 }
+
+
+def _build_postgres_url_from_env(cfg: dict) -> str | None:
+    if cfg.get("POSTGRES_DB_URL") or cfg.get("DATABASE_URL"):
+        return cfg.get("POSTGRES_DB_URL") or cfg.get("DATABASE_URL")
+    user = cfg.get("POSTGRES_USER")
+    password = cfg.get("POSTGRES_PASSWORD")
+    db_name = cfg.get("POSTGRES_DB")
+    if not (user and password and db_name):
+        return None
+    host = cfg.get("POSTGRES_HOST", "postgres")
+    port = cfg.get("POSTGRES_PORT", "5432")
+    return (
+        f"postgresql+psycopg://{quote_plus(str(user))}:{quote_plus(str(password))}"
+        f"@{host}:{port}/{db_name}"
+    )
+
+
+_postgres_db_url = _build_postgres_url_from_env(config)
+if _postgres_db_url:
+    config["POSTGRES_DB_URL"] = _postgres_db_url
+    environ.setdefault("POSTGRES_DB_URL", _postgres_db_url)
 
 # Initialize settings module with config for fallback
 settings.init_config(config)
@@ -789,6 +812,22 @@ async def main():
     try:
         logger.info("Grid connect watch working on mode: %s",
                     config["WORKING_MODE"])
+
+        if USE_PG:
+            # Keep Alembic migration in app startup so python app.py is the only entrypoint.
+            try:
+                from pathlib import Path
+                from alembic import command as alembic_command
+                from alembic.config import Config as AlembicConfig
+
+                alembic_cfg = AlembicConfig(str(Path(__file__).with_name("alembic.ini")))
+                logger.info("Running Alembic migrations (upgrade head)")
+                alembic_command.upgrade(alembic_cfg, "head")
+                logger.info("Alembic migration completed")
+            except Exception as exc:
+                logger.exception("Alembic migration failed: %s", exc)
+                raise
+
         fcm_service = FCM(logger, config)
         run_web_view = config["RUN_WEB_VIEWER"] == "True"
         if USE_PG:
