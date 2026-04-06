@@ -830,8 +830,12 @@ async def process_inverter_data(
 
 async def main():
     try:
-        logger.info("Grid connect watch working on mode: %s",
-                    config["WORKING_MODE"])
+        if config["WORKING_MODE"] == DONGLE_MODE:
+            logger.info("Grid connect watch working on mode: %s",
+                        config["WORKING_MODE"])
+        else:
+            logger.debug("Grid connect watch working on mode: %s",
+                         config["WORKING_MODE"])
 
         if USE_PG:
             # Keep Alembic migration in app startup so python app.py is the only entrypoint.
@@ -917,8 +921,8 @@ async def main():
             dongle_server = DongleServer(logger, config)
             # Start the server in a background task
             server_task = asyncio.create_task(dongle_server.start_server())
-            logger.info("Waiting for dongle connections on port %s",
-                        config.get("SERVER_MODE_PORT", 4346))
+            logger.debug("Waiting for dongle connections on port %s",
+                         config.get("SERVER_MODE_PORT", 4346))
             while True:
                 try:
                     timeout_duration = int(config["SLEEP_TIME"]) * 3
@@ -936,8 +940,8 @@ async def main():
                         inverter_data = dongle_server.get_pending_data()
                 except Exception as e:
                     logger.exception("Got error in SERVER_MODE %s", e)
-                logger.info("Waiting for next dongle data (timeout: %s seconds)",
-                            config["SLEEP_TIME"])
+                logger.debug("Waiting for next dongle data (timeout: %s seconds)",
+                             config["SLEEP_TIME"])
         else:
             http = http_handler.Http(logger, config)
             while True:
