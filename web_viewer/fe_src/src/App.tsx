@@ -22,6 +22,8 @@ const InverterManageDashboard = lazy(() => import("./components/InverterManageDa
 const TopAuthBar = lazy(() => import("./components/TopAuthBar"));
 
 const MAX_RECONNECT_COUNT = 5;
+const RECONNECT_BASE_DELAY_MS = 250;
+const RECONNECT_MAX_DELAY_MS = 1000;
 const INVERTER_OFFLINE_TIMEOUT_MS = 10 * 60 * 1000;
 const REALTIME_ONLINE_TIMEOUT_MS = 20 * 1000;
 const ACCESS_TOKEN_KEY = "lux_access_token";
@@ -140,10 +142,21 @@ function App() {
     hasInverterDataRef.current = Boolean(inverterData);
   }, [inverterData]);
 
-  const scheduleSSEReconnect = useCallback((reconnect: () => void) => {
+  const scheduleSSEReconnect = useCallback((reconnect: () => void, immediate = false) => {
     if (document.hidden) {
       return;
     }
+
+    if (immediate) {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+      reconnectCountRef.current = 0;
+      reconnect();
+      return;
+    }
+
     if (reconnectCountRef.current >= MAX_RECONNECT_COUNT) {
       logUtil.warn(i18n.t("sse.stopReconnect"), MAX_RECONNECT_COUNT);
       return;
@@ -154,12 +167,16 @@ function App() {
     }
     reconnectCountRef.current++;
     logUtil.log(i18n.t("sse.reconnecting"), reconnectCountRef.current);
+    const delayMs = Math.min(
+      RECONNECT_BASE_DELAY_MS * reconnectCountRef.current,
+      RECONNECT_MAX_DELAY_MS
+    );
     reconnectTimeoutRef.current = setTimeout(() => {
       reconnectTimeoutRef.current = null;
       if (!document.hidden) {
         reconnect();
       }
-    }, 1000 * reconnectCountRef.current);
+    }, delayMs);
   }, [i18n]);
 
   const connectSSE = useCallback(() => {
@@ -174,6 +191,10 @@ function App() {
     }
     if (document.hidden) {
       return;
+    }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
     }
     // Ensure refs are clean before attempting connection
     if (eventSourceRef.current) {
@@ -362,14 +383,13 @@ function App() {
           );
         }
         setIsLoading(false);
-        setIsInitialRealtimeLoading(false);
       }
     } catch (err) {
       logUtil.error(i18n.t("getStateError"), err);
+    } finally {
       setIsInitialRealtimeLoading(false);
+      isFetchingRef.current = false;
     }
-    setIsInitialRealtimeLoading(false);
-    isFetchingRef.current = false;
   }, [accessToken, authRequired, authSessionReady, i18n, selectedInverterId, useBearerAuth]);
 
   const loadAuthConfig = useCallback(async () => {
@@ -592,16 +612,16 @@ function App() {
         // When the page is hidden, close the SSE connection to reduce activity
         closeSSE();
       } else {
-        // When back to foreground, fetch state and reconnect
+        // When back to foreground, reconnect immediately and fetch snapshot in parallel.
+        scheduleSSEReconnect(connectSSE, true);
         fetchState();
-        connectSSE();
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [connectSSE, closeSSE, fetchState]);
+  }, [connectSSE, closeSSE, fetchState, scheduleSSEReconnect]);
 
   useEffect(() => {
     if (selectedInverterId) {
