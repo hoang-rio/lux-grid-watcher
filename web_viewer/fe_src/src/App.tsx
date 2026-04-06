@@ -65,7 +65,6 @@ function App() {
   const [selectedInverterId, setSelectedInverterId] = useState<string>("");
   const [showInverterManager, setShowInverterManager] = useState(false);
   const [accessToken, setAccessToken] = useState<string>("");
-  const eventSourceRef = useRef<EventSource>(undefined);
   const sseAbortControllerRef = useRef<AbortController | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectCountRef = useRef<number>(0);
@@ -197,10 +196,6 @@ function App() {
       reconnectTimeoutRef.current = null;
     }
     // Ensure refs are clean before attempting connection
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = undefined;
-    }
     if (sseAbortControllerRef.current) {
       sseAbortControllerRef.current.abort();
       sseAbortControllerRef.current = null;
@@ -212,121 +207,88 @@ function App() {
     }
     const ssePath = sseParams.toString() ? `/events?${sseParams.toString()}` : "/events";
 
-    if (useBearerAuth) {
-      setHasStartedRealtimeRequests(true);
-      if (!hasInverterDataRef.current) {
-        setIsInitialRealtimeLoading(true);
-      }
-      const abortController = new AbortController();
-      sseAbortControllerRef.current = abortController;
-
-      void (async () => {
-        try {
-          const response = await apiFetch(ssePath, {
-            withAuth: true,
-            headers: {
-              Accept: "text/event-stream",
-            },
-            signal: abortController.signal,
-          });
-
-          if (!response.ok || !response.body) {
-            throw new Error(`SSE request failed with status ${response.status}`);
-          }
-
-          reconnectCountRef.current = 0;
-          logUtil.log(i18n.t("sse.connected"));
-          setConnectedTitle();
-          setIsSSEConnected(true);
-
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          let buffer = "";
-
-          while (true) {
-            // Check if abort signal was triggered
-            if (abortController.signal.aborted) {
-              break;
-            }
-            const { value, done } = await reader.read();
-            if (done) {
-              break;
-            }
-            buffer += decoder.decode(value, { stream: true });
-
-            let separatorIndex = buffer.indexOf("\n\n");
-            while (separatorIndex !== -1) {
-              const rawEvent = buffer.slice(0, separatorIndex);
-              buffer = buffer.slice(separatorIndex + 2);
-
-              const dataLines = rawEvent
-                .split("\n")
-                .filter((line) => line.startsWith("data:"))
-                .map((line) => line.slice(5).trim());
-
-              if (dataLines.length > 0) {
-                handleSSEPayload(dataLines.join("\n"));
-              }
-
-              separatorIndex = buffer.indexOf("\n\n");
-            }
-          }
-
-          sseAbortControllerRef.current = null;
-          setIsSSEConnected(false);
-          scheduleSSEReconnect(connectSSE);
-        } catch (error) {
-          sseAbortControllerRef.current = null;
-          if (abortController.signal.aborted) {
-            return;
-          }
-          setIsInitialRealtimeLoading(false);
-          setOfflineTitle();
-          setIsSSEConnected(false);
-          logUtil.error(i18n.t("sse.error"), error);
-          scheduleSSEReconnect(connectSSE);
-        }
-      })();
-      return;
-    }
-
     setHasStartedRealtimeRequests(true);
     if (!hasInverterDataRef.current) {
       setIsInitialRealtimeLoading(true);
     }
-    const eventSource = new EventSource(`${import.meta.env.VITE_API_BASE_URL}${ssePath}`);
-    eventSourceRef.current = eventSource;
+    const abortController = new AbortController();
+    sseAbortControllerRef.current = abortController;
 
-    eventSource.onopen = () => {
-      reconnectCountRef.current = 0;
-      logUtil.log(i18n.t("sse.connected"));
-      setConnectedTitle();
-      setIsSSEConnected(true);
-    };
+    void (async () => {
+      try {
+        const response = await apiFetch(ssePath, {
+          withAuth: useBearerAuth,
+          headers: {
+            Accept: "text/event-stream",
+          },
+          signal: abortController.signal,
+        });
 
-    eventSource.onmessage = (event) => {
-      handleSSEPayload(event.data);
-    };
+        if (!response.ok || !response.body) {
+          throw new Error(`SSE request failed with status ${response.status}`);
+        }
 
-    eventSource.onerror = (event) => {
-      setIsInitialRealtimeLoading(false);
-      setOfflineTitle();
-      setIsSSEConnected(false);
-      logUtil.error(i18n.t("sse.error"), event);
-      eventSource.close();
-      eventSourceRef.current = undefined;
-      scheduleSSEReconnect(connectSSE);
-    };
+        reconnectCountRef.current = 0;
+        logUtil.log(i18n.t("sse.connected"));
+        setConnectedTitle();
+        setIsSSEConnected(true);
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          // Check if abort signal was triggered
+          if (abortController.signal.aborted) {
+            break;
+          }
+          const { value, done } = await reader.read();
+          if (done) {
+            break;
+          }
+          buffer += decoder.decode(value, { stream: true });
+          // Normalize CRLF to LF to parse SSE frames consistently.
+          buffer = buffer.replace(/\r\n/g, "\n");
+
+          let separatorIndex = buffer.indexOf("\n\n");
+          while (separatorIndex !== -1) {
+            const rawEvent = buffer.slice(0, separatorIndex);
+            buffer = buffer.slice(separatorIndex + 2);
+
+            const dataLines = rawEvent
+              .split("\n")
+              .filter((line) => line.startsWith("data:"))
+              .map((line) => line.slice(5).trim());
+
+            if (dataLines.length > 0) {
+              handleSSEPayload(dataLines.join("\n"));
+            }
+
+            separatorIndex = buffer.indexOf("\n\n");
+          }
+        }
+
+        sseAbortControllerRef.current = null;
+        setIsSSEConnected(false);
+        scheduleSSEReconnect(connectSSE);
+      } catch (error) {
+        sseAbortControllerRef.current = null;
+        if (abortController.signal.aborted) {
+          return;
+        }
+        setIsInitialRealtimeLoading(false);
+        setOfflineTitle();
+        setIsSSEConnected(false);
+        logUtil.error(i18n.t("sse.error"), error);
+        scheduleSSEReconnect(connectSSE);
+      }
+    })();
   }, [authRequired, authSessionReady, authUser, handleSSEPayload, i18n, scheduleSSEReconnect, selectedInverterId, setConnectedTitle, setOfflineTitle, useBearerAuth]);
 
   const closeSSE = useCallback(() => {
     logUtil.log(i18n.t("sse.closing"));
     setOfflineTitle();
     setIsSSEConnected(false);
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = undefined;
-    }
     if (sseAbortControllerRef.current) {
       sseAbortControllerRef.current.abort();
       sseAbortControllerRef.current = null;
