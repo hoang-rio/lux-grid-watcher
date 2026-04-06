@@ -27,7 +27,7 @@ class DongleServer:
                 self.__host,
                 self.__port
             )
-            self.__logger.info(
+            self.__logger.debug(
                 "Dongle server started on %s:%s",
                 self.__host,
                 self.__port
@@ -85,7 +85,7 @@ class DongleServer:
                 next_register_idx = (next_register_idx + 1) % len(registers)
             
             if dongle_serial and inverter_serial:
-                self.__logger.info(
+                self.__logger.debug(
                     "DONGLE_SERIAL and INVERTEL_SERIAL configured, "
                     "will send %s requests to dongle",
                     request_name,
@@ -95,7 +95,7 @@ class DongleServer:
                 request = build_poll_request(current_register)
                 writer.write(request)
                 await writer.drain()
-                self.__logger.info(
+                self.__logger.debug(
                     "Sent %s request (register=%s, protocol 1) to %s immediately",
                     request_name,
                     current_register,
@@ -137,7 +137,7 @@ class DongleServer:
                         if read_mode == dongle_handler.READ_INPUT_MODE_INPUT1_ONLY:
                             self.__inverter_data = parsed_data
                             self.__data_received_event.set()
-                            self.__logger.info(
+                            self.__logger.debug(
                                 "Successfully parsed data from %s",
                                 client_addr
                             )
@@ -146,7 +146,7 @@ class DongleServer:
                             if register is not None:
                                 all_mode_buffer.update(parsed_data)
                                 all_mode_received_registers.add(register)
-                                self.__logger.info(
+                                self.__logger.debug(
                                     "Parsed register=%s from %s (%s/4)",
                                     register,
                                     client_addr,
@@ -155,7 +155,7 @@ class DongleServer:
                                 if all_mode_received_registers.issuperset({0, 40, 80, 120}):
                                     self.__inverter_data = dict(all_mode_buffer)
                                     self.__data_received_event.set()
-                                    self.__logger.info(
+                                    self.__logger.debug(
                                         "Merged ReadInput1-4 data ready from %s",
                                         client_addr,
                                     )
@@ -168,7 +168,7 @@ class DongleServer:
                         request = build_poll_request(current_register)
                         writer.write(request)
                         await writer.drain()
-                        self.__logger.info(
+                        self.__logger.debug(
                             "Sent %s request (register=%s) to %s",
                             request_name,
                             current_register,
@@ -177,7 +177,7 @@ class DongleServer:
                         advance_next_register()
                     
                     # Wait for next polling interval
-                    self.__logger.info(
+                    self.__logger.debug(
                         "Waiting %s seconds before next request to %s",
                         sleep_time,
                         client_addr
@@ -195,7 +195,7 @@ class DongleServer:
                         request = build_poll_request(current_register)
                         writer.write(request)
                         await writer.drain()
-                        self.__logger.info(
+                        self.__logger.debug(
                             "Resent %s request (register=%s) to %s after timeout",
                             request_name,
                             current_register,
@@ -251,7 +251,7 @@ class DongleServer:
 
                 # Log input type if available
                 input_type = parsed_data.get("input_type", "input1")
-                self.__logger.info(
+                self.__logger.debug(
                     "Successfully parsed %s data from dongle",
                     input_type
                 )
@@ -285,7 +285,7 @@ class DongleServer:
                         parsed_data['deviceTime'] = datetime.now().strftime(
                             "%Y-%m-%d %H:%M:%S"
                         )
-                        self.__logger.info(
+                        self.__logger.debug(
                             "Parsed data using ReadInput1 fallback"
                         )
                         return parsed_data
@@ -324,4 +324,4 @@ class DongleServer:
         if self.__server is not None:
             self.__server.close()
             await self.__server.wait_closed()
-            self.__logger.info("Dongle server stopped")
+            self.__logger.debug("Dongle server stopped")
