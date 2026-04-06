@@ -94,7 +94,7 @@ class DongleServer:
                 self.__host,
                 self.__port
             )
-            self.__logger.debug(
+            self.__logger.info(
                 "Dongle server started on %s:%s",
                 self.__host,
                 self.__port
@@ -361,7 +361,7 @@ class DongleServer:
                         parsed_data['deviceTime'] = datetime.now().strftime(
                             "%Y-%m-%d %H:%M:%S"
                         )
-                        self.__logger.debug(
+                        self.__logger.info(
                             "Parsed data using ReadInput1 fallback"
                         )
                         return parsed_data
@@ -421,4 +421,4 @@ class DongleServer:
         if self.__server is not None:
             self.__server.close()
             await self.__server.wait_closed()
-            self.__logger.debug("Dongle server stopped")
+            self.__logger.info("Dongle server stopped")
