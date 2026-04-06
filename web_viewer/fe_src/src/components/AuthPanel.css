@@ -94,6 +94,13 @@
   color: var(--auth-title);
 }
 
+.auth-subtitle {
+  margin: 6px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--auth-input-focus);
+}
+
 .auth-tabs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

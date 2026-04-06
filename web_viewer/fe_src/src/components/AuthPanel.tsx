@@ -11,9 +11,10 @@ type Mode = "login" | "register" | "forgot" | "reset";
 
 function AuthPanel({ onAuthSuccess }: AuthPanelProps) {
   const { t } = useTranslation();
-  const search = new URLSearchParams(window.location.search);
-  const resetToken = search.get("token") || "";
-  const verifiedParam = search.get("verified");
+  // Captured once at mount via lazy useState — reading window.location.search here ensures the
+  // values are preserved even after the useEffect below cleans them from the URL.
+  const [resetToken] = useState(() => new URLSearchParams(window.location.search).get("token") || "");
+  const [verifiedParam] = useState(() => new URLSearchParams(window.location.search).get("verified"));
   const initialMode: Mode = useMemo(() => (resetToken ? "reset" : "login"), [resetToken]);
   const initialMessage = useMemo(() => (verifiedParam === "1" ? t("authPanel.verifySuccess") : ""), [verifiedParam, t]);
   const initialError = useMemo(() => (verifiedParam === "0" ? t("authPanel.verifyFailed") : ""), [verifiedParam, t]);
@@ -183,6 +184,7 @@ function AuthPanel({ onAuthSuccess }: AuthPanelProps) {
         <div className="auth-head">
           <p className="auth-eyebrow">Lux Viewer</p>
           <h2>{t("authPanel.title")}</h2>
+          {mode === "reset" && <p className="auth-subtitle">{t("authPanel.resetPassword")}</p>}
         </div>
 
         {mode !== "reset" && (
