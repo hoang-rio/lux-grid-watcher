@@ -214,9 +214,12 @@ def get_inverter_by_dongle_serial(
 def get_inverter_by_invert_serial(
     session: Session, invert_serial: str
 ) -> Optional[Inverter]:
+    normalized = str(invert_serial or "").strip()
+    if not normalized:
+        return None
     return session.execute(
         select(Inverter).where(
-            Inverter.invert_serial == invert_serial, Inverter.is_active.is_(True)
+            Inverter.invert_serial == normalized, Inverter.is_active.is_(True)
         )
     ).scalar_one_or_none()
 
@@ -226,13 +229,13 @@ def create_inverter(
     user_id: uuid.UUID,
     name: str,
     dongle_serial: str,
-    invert_serial: str,
+    invert_serial: str | None,
 ) -> Inverter:
     inv = Inverter(
         user_id=user_id,
         name=name,
         dongle_serial=dongle_serial,
-        invert_serial=invert_serial,
+        invert_serial=(str(invert_serial).strip() if invert_serial else None),
     )
     session.add(inv)
     session.flush()
@@ -255,10 +258,21 @@ def update_inverter(
     inverter: Inverter,
     *,
     name: str,
-    invert_serial: str,
+    invert_serial: str | None,
 ) -> Inverter:
     inverter.name = name
-    inverter.invert_serial = invert_serial
+    inverter.invert_serial = str(invert_serial).strip() if invert_serial else None
+    inverter.updated_at = datetime.utcnow()
+    session.flush()
+    return inverter
+
+
+def update_inverter_invert_serial(
+    session: Session,
+    inverter: Inverter,
+    invert_serial: str,
+) -> Inverter:
+    inverter.invert_serial = str(invert_serial).strip() or None
     inverter.updated_at = datetime.utcnow()
     session.flush()
     return inverter

@@ -435,6 +435,7 @@ def _resolve_inverter_context(inverter_data: dict) -> dict | None:
         session = next(get_db_session())
         try:
             inverter = None
+            should_commit = False
             if inverter_id_str:
                 try:
                     inverter = repo.get_inverter_by_id(session, uuid.UUID(str(inverter_id_str)))
@@ -452,6 +453,25 @@ def _resolve_inverter_context(inverter_data: dict) -> dict | None:
                     inverter = repo.get_inverter_by_invert_serial(session, str(invert_serial))
             if inverter is None:
                 return None
+
+            parsed_invert_serial = str(inverter_data.get("serial") or "").strip()
+            current_invert_serial = str(inverter.invert_serial or "").strip()
+            if parsed_invert_serial and parsed_invert_serial != current_invert_serial:
+                existed = repo.get_inverter_by_invert_serial(session, parsed_invert_serial)
+                if existed is None or existed.id == inverter.id:
+                    repo.update_inverter_invert_serial(session, inverter, parsed_invert_serial)
+                    should_commit = True
+                else:
+                    logger.warning(
+                        "Skip inverter serial auto-update for inverter_id=%s because serial %s belongs to inverter_id=%s",
+                        inverter.id,
+                        parsed_invert_serial,
+                        existed.id,
+                    )
+
+            if should_commit:
+                session.commit()
+
             inverter_data["_inverter_id"] = str(inverter.id)
             return {
                 "id": str(inverter.id),
@@ -821,6 +841,7 @@ async def main():
                 from alembic.config import Config as AlembicConfig
 
                 alembic_cfg = AlembicConfig(str(Path(__file__).with_name("alembic.ini")))
+                alembic_cfg.attributes["skip_logging_config"] = True
                 logger.info("Running Alembic migrations (upgrade head)")
                 alembic_command.upgrade(alembic_cfg, "head")
                 logger.info("Alembic migration completed")

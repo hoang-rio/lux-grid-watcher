@@ -284,7 +284,7 @@ function InverterManageDashboard({
                             title={t("inverterManager.select")}
                           >
                             <div className="inverter-manager-name">{inv.name}</div>
-                            <div className="inverter-manager-serial">{inv.invert_serial}</div>
+                            <div className="inverter-manager-serial">{inv.invert_serial || inv.dongle_serial}</div>
                           </button>
                           <button
                             className="inverter-manager-edit"
@@ -334,13 +334,6 @@ function InverterManageDashboard({
               placeholder={t("inverterManager.namePlaceholder")}
             />
 
-            <label>{t("inverterManager.invertSerial")}</label>
-            <input
-              value={invertSerial}
-              onChange={(e) => setInvertSerial(e.target.value)}
-              placeholder={t("inverterManager.invertPlaceholder")}
-            />
-
             <label>{t("inverterManager.dongleSerial")}</label>
             <input
               value={dongleSerial}
@@ -348,13 +341,20 @@ function InverterManageDashboard({
               placeholder={t("inverterManager.donglePlaceholder")}
             />
 
+            <label>{t("inverterManager.invertSerial")}</label>
+            <input
+              value={invertSerial}
+              onChange={(e) => setInvertSerial(e.target.value)}
+              placeholder={t("inverterManager.invertPlaceholder")}
+            />
+            <p className="inverter-manager-field-note">{t("inverterManager.invertSerialOptionalHint")}</p>
+
             <button
               className="inverter-manager-create"
               onClick={createInverter}
               disabled={
                 isSubmitting ||
-                !dongleSerial.trim() ||
-                !invertSerial.trim()
+                !dongleSerial.trim()
               }
             >
               {isSubmitting ? t("inverterManager.creating") : t("inverterManager.create")}

@@ -81,7 +81,7 @@ def _inverter_dict(inv, last_communication_at: datetime | None = None) -> dict:
         "id": str(inv.id),
         "name": inv.name,
         "dongle_serial": inv.dongle_serial,
-        "invert_serial": inv.invert_serial,
+        "invert_serial": inv.invert_serial or "",
         "is_active": inv.is_active,
         "created_at": _to_utc_iso(inv.created_at),
         "last_communication_at": _to_utc_iso(last_communication_at),
@@ -130,12 +130,10 @@ async def create_inverter(request: web.Request) -> web.Response:
 
     name = str(body.get("name", "")).strip()
     dongle_serial = str(body.get("dongle_serial", "")).strip()
-    invert_serial = str(body.get("invert_serial", "")).strip()
+    invert_serial = str(body.get("invert_serial", "")).strip() or None
 
     if not dongle_serial:
         return _err(request, "dongle_serial is required")
-    if not invert_serial:
-        return _err(request, "invert_serial is required")
     if not name:
         name = dongle_serial
 
@@ -144,7 +142,7 @@ async def create_inverter(request: web.Request) -> web.Response:
         # Check uniqueness
         if repo.get_inverter_by_dongle_serial(session, dongle_serial):
             return _err(request, "dongle_serial already registered")
-        if repo.get_inverter_by_invert_serial(session, invert_serial):
+        if invert_serial and repo.get_inverter_by_invert_serial(session, invert_serial):
             return _err(request, "invert_serial already registered")
 
         inverter = repo.create_inverter(
@@ -216,12 +214,10 @@ async def update_inverter(request: web.Request) -> web.Response:
         return _err(request, "Invalid JSON body")
 
     name = str(body.get("name", "")).strip()
-    invert_serial = str(body.get("invert_serial", "")).strip()
+    invert_serial = str(body.get("invert_serial", "")).strip() or None
 
     if not name:
         return _err(request, "name is required")
-    if not invert_serial:
-        return _err(request, "invert_serial is required")
 
     session = _session()
     try:
@@ -230,9 +226,10 @@ async def update_inverter(request: web.Request) -> web.Response:
         if inverter is None:
             return _err(request, "Inverter not found", 404)
 
-        existed = repo.get_inverter_by_invert_serial(session, invert_serial)
-        if existed is not None and existed.id != inverter.id:
-            return _err(request, "invert_serial already registered")
+        if invert_serial:
+            existed = repo.get_inverter_by_invert_serial(session, invert_serial)
+            if existed is not None and existed.id != inverter.id:
+                return _err(request, "invert_serial already registered")
 
         updated = repo.update_inverter(
             session,

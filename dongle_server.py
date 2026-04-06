@@ -151,9 +151,9 @@ class DongleServer:
                 nonlocal next_register_idx
                 next_register_idx = (next_register_idx + 1) % len(registers)
             
-            if dongle_serial and inverter_serial:
+            if dongle_serial:
                 self.__logger.info(
-                    "DONGLE_SERIAL and INVERTEL_SERIAL configured, "
+                    "DONGLE_SERIAL configured (INVERT_SERIAL optional), "
                     "will send %s requests to dongle",
                     request_name,
                 )
@@ -171,7 +171,7 @@ class DongleServer:
                 advance_next_register()
             else:
                 self.__logger.warning(
-                    "DONGLE_SERIAL or INVERT_SERIAL not configured, "
+                    "DONGLE_SERIAL not configured, "
                     "waiting for dongle to send data"
                 )
             
@@ -201,6 +201,15 @@ class DongleServer:
                     raw_data = list(data)
                     parsed_data = self.__parse_inverter_data(raw_data)
                     if parsed_data is not None:
+                        if not inverter_serial:
+                            parsed_inverter_serial = str(parsed_data.get("serial") or "").strip()
+                            if parsed_inverter_serial:
+                                inverter_serial = parsed_inverter_serial
+                                self.__logger.info(
+                                    "INVERT_SERIAL auto-updated from parsed dongle data: %s",
+                                    inverter_serial,
+                                )
+
                         resolved_dongle_serial = str(parsed_data.get("dongle_serial") or dongle_serial)
                         sleep_time = _resolve_sleep_time(resolved_dongle_serial, sleep_time, self.__logger)
                         if read_mode == dongle_handler.READ_INPUT_MODE_INPUT1_ONLY:
@@ -230,7 +239,7 @@ class DongleServer:
                                     all_mode_received_registers.clear()
 
                     # Send next ReadInput request after processing
-                    if dongle_serial and inverter_serial:
+                    if dongle_serial:
                         current_register = get_next_register()
                         request = build_poll_request(current_register)
                         writer.write(request)
@@ -257,7 +266,7 @@ class DongleServer:
                         client_addr
                     )
                     # Keep polling on timeout in case the previous response was dropped.
-                    if dongle_serial and inverter_serial:
+                    if dongle_serial:
                         current_register = get_next_register()
                         request = build_poll_request(current_register)
                         writer.write(request)

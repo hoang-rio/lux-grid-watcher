@@ -75,7 +75,7 @@ function TopAuthBar({
           >
             {inverters.map((inv) => (
               <option key={inv.id} value={inv.id}>
-                {`${inv.name} (${inv.invert_serial})`}
+                {`${inv.name} (${inv.invert_serial || inv.dongle_serial})`}
               </option>
             ))}
           </select>

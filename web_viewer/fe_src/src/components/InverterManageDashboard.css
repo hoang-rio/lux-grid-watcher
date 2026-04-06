@@ -344,6 +344,13 @@
   color: var(--ui-text);
 }
 
+.inverter-manager-field-note {
+  margin: -2px 0 4px 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ui-muted);
+}
+
 .inverter-manager-create {
   height: 36px;
   border: none;

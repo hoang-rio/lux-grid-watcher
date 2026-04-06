@@ -174,8 +174,8 @@ function SystemInformation({
   }, [inverters]);
 
   const selectedInverterName = useMemo(() => {
-    return inverterNameById.get(selectedInverterId) || inverterData.serial || "";
-  }, [inverterData.serial, inverterNameById, selectedInverterId]);
+    return inverterNameById.get(selectedInverterId) || inverterData.serial || inverterData.dongle_serial || "";
+  }, [inverterData.dongle_serial, inverterData.serial, inverterNameById, selectedInverterId]);
 
   const effectiveSSEConnected = useMemo(() => {
     if (selectedInverterId && selectedInverterIsOnline !== undefined) {
@@ -218,8 +218,8 @@ function SystemInformation({
                 ? `${t("systemInformation")} (${selectedInverterName})`
                 : t("systemInformation")}
             </span>
-            {inverters.length === 0 && inverterData.serial && (
-              <span className="system-title-serial">({inverterData.serial})</span>
+            {inverters.length === 0 && (inverterData.serial || inverterData.dongle_serial) && (
+              <span className="system-title-serial">({inverterData.serial || inverterData.dongle_serial})</span>
             )}
             <span>{inverterData.deviceTime}</span>
             <div className="settings-button" ref={settingsButtonRef}>

@@ -11,7 +11,8 @@ from multi_tenant.models import Base
 
 
 config = context.config
-if config.config_file_name is not None:
+# When migrations are executed from app.py, keep existing app logging config.
+if config.config_file_name is not None and not config.attributes.get("skip_logging_config", False):
     fileConfig(config.config_file_name)
 
 

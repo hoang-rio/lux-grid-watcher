@@ -173,6 +173,7 @@
     "donglePlaceholder": "e.g. A1234567890",
     "invertSerial": "Inverter serial",
     "invertPlaceholder": "e.g. I1234567890",
+    "invertSerialOptionalHint": "You can leave this empty. It will be auto-updated after the first successful data received from the dongle.",
     "serialSourcePrefix": "You can find inverter serial and dongle serial in",
     "serialSourceWeb": "LuxPower web app",
     "serialSourceOr": "or",
