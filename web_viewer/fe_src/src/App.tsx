@@ -351,6 +351,16 @@ function App() {
       if (Object.keys(json).length !== 0) {
         hasInverterDataRef.current = true;
         setInverterData(json);
+        if (selectedInverterId) {
+          const nowIso = new Date().toISOString();
+          setUserInverters((prev) =>
+            prev.map((inv) =>
+              inv.id === selectedInverterId
+                ? { ...inv, is_online: true, last_communication_at: nowIso }
+                : inv
+            )
+          );
+        }
         setIsLoading(false);
         setIsInitialRealtimeLoading(false);
       }
@@ -464,18 +474,36 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
+  const selectedInverter = useMemo(
+    () => userInverters.find((inv) => inv.id === selectedInverterId),
+    [selectedInverterId, userInverters]
+  );
+
   const selectedInverterIsOnline = useMemo(() => {
     if (!selectedInverterId) {
       return isSSEConnected;
     }
 
     const lastRealtimeTs = lastRealtimeByInverterId[selectedInverterId] || 0;
+    const hasSeenRealtime = Boolean(lastRealtimeTs);
     const hasFreshRealtime =
       Boolean(lastRealtimeTs) && onlineClock - lastRealtimeTs <= REALTIME_ONLINE_TIMEOUT_MS;
+    const hasOnlineSnapshot = Boolean(selectedInverter?.is_online);
 
-    // For the active inverter, prioritize real transport signal and fresh payload heartbeat.
+    // Before the first realtime payload arrives, trust /state-derived online snapshot.
+    if (!hasSeenRealtime) {
+      return isSSEConnected || hasOnlineSnapshot;
+    }
+
+    // After realtime started, status should follow transport + realtime heartbeat.
     return isSSEConnected || hasFreshRealtime;
-  }, [isSSEConnected, lastRealtimeByInverterId, onlineClock, selectedInverterId]);
+  }, [
+    isSSEConnected,
+    lastRealtimeByInverterId,
+    onlineClock,
+    selectedInverter?.is_online,
+    selectedInverterId,
+  ]);
 
   const onAuthSuccess = useCallback(async (token: string, refreshToken: string) => {
     localStorage.setItem(ACCESS_TOKEN_KEY, token);
