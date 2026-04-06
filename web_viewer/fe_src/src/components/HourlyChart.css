@@ -1,11 +1,11 @@
 .hourly-chart {
     margin-top: 10px;
-    height: 560px;
+    height: 610px;
 }
 
 @media screen and (max-width: 768px) {
     .hourly-chart {
-        height: 560px;
+        height: 620px;
     }
 }
 

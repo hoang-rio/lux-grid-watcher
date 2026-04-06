@@ -102,7 +102,7 @@ function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
         )}
 
         <div className="change-password-form">
-          <div className="setting-item">
+          <div className="change-password-field">
             <label>{t('changePassword.currentPassword')}</label>
             <input
               type="password"
@@ -113,7 +113,7 @@ function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
             />
           </div>
 
-          <div className="setting-item">
+          <div className="change-password-field">
             <label>{t('changePassword.newPassword')}</label>
             <input
               type="password"
@@ -124,7 +124,7 @@ function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
             />
           </div>
 
-          <div className="setting-item">
+          <div className="change-password-field">
             <label>{t('changePassword.confirmNewPassword')}</label>
             <input
               type="password"

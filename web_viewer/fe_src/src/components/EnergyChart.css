@@ -1,18 +1,10 @@
 .energy-chart {
     margin-top: 10px;
-    height: 560px;
-}
-
-.energy-chart.has-period-selector {
     height: 610px;
 }
 
 @media screen and (max-width: 768px) {
     .energy-chart {
-        height: 560px;
-    }
-
-    .energy-chart.has-period-selector {
         height: 620px;
     }
 }

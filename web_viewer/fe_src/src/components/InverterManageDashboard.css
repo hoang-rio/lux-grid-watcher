@@ -246,6 +246,11 @@
   cursor: pointer;
 }
 
+.inverter-manager-delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .inverter-manager-edit {
   border: 1px solid color-mix(in srgb, var(--ui-primary) 45%, var(--ui-border) 55%);
   color: #1c5b9a;
@@ -253,6 +258,11 @@
   border-radius: 8px;
   padding: 5px 8px;
   cursor: pointer;
+}
+
+.inverter-manager-edit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .inverter-manager-edit-wrap {

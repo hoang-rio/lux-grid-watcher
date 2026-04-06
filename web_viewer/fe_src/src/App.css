@@ -63,6 +63,7 @@
 .chart {
   display: flex;
   flex-wrap: wrap;
+  gap: 0 10px;
 }
 
 .chart-item {
