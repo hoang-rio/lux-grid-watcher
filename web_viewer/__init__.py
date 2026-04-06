@@ -584,11 +584,11 @@ async def daily_chart(_: web.Request):
                         r.year,
                         r.month,
                         r.date.strftime("%Y-%m-%d"),
-                        r.pv,
-                        r.battery_charged,
-                        r.battery_discharged,
-                        r.grid_import,
-                        r.grid_export,
+                        float(r.pv) if r.pv is not None else 0,
+                        float(r.battery_charged) if r.battery_charged is not None else 0,
+                        float(r.battery_discharged) if r.battery_discharged is not None else 0,
+                        float(r.grid_import) if r.grid_import is not None else 0,
+                        float(r.grid_export) if r.grid_export is not None else 0,
                         float(r.consumption) if r.consumption is not None else 0,
                         ""
                     )

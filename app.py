@@ -354,11 +354,11 @@ def _pg_upsert_inverter_data(inverter_data: dict, sleep_time: int) -> None:
                 session.commit()
                 return
             
-            e_pv = int(inverter_data.get("e_pv_day", 0))
-            e_bat_charge = int(inverter_data.get("e_chg_day", 0))
-            e_bat_discharge = int(inverter_data.get("e_dischg_day", 0))
-            e_grid_import = int(inverter_data.get("e_to_user_day", 0))
-            e_grid_export = int(inverter_data.get("e_to_grid_day", 0))
+            e_pv = round(float(inverter_data.get("e_pv_day", 0)), 1)
+            e_bat_charge = round(float(inverter_data.get("e_chg_day", 0)), 1)
+            e_bat_discharge = round(float(inverter_data.get("e_dischg_day", 0)), 1)
+            e_grid_import = round(float(inverter_data.get("e_to_user_day", 0)), 1)
+            e_grid_export = round(float(inverter_data.get("e_to_grid_day", 0)), 1)
             e_consumption = (
                 float(inverter_data.get("e_inv_day", 0))
                 + float(inverter_data.get("e_to_user_day", 0))
@@ -367,8 +367,8 @@ def _pg_upsert_inverter_data(inverter_data: dict, sleep_time: int) -> None:
             )
             
             logger.debug(
-                "Upserting daily_chart for inverter_id=%s, date=%s: pv=%d, battery_charged=%d, battery_discharged=%d, "
-                "grid_import=%d, grid_export=%d, consumption=%.1f",
+                "Upserting daily_chart for inverter_id=%s, date=%s: pv=%.1f, battery_charged=%.1f, battery_discharged=%.1f, "
+                "grid_import=%.1f, grid_export=%.1f, consumption=%.1f",
                 inverter_id_str, today, e_pv, e_bat_charge, e_bat_discharge,
                 e_grid_import, e_grid_export, e_consumption
             )

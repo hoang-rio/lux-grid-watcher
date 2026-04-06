@@ -477,11 +477,20 @@ def get_monthly_chart(
         .order_by(DailyChart.month)
     ).all()
     # Convert Decimal values to float for JSON serialization
+    numeric_fields = [
+        "pv",
+        "battery_charged",
+        "battery_discharged",
+        "grid_import",
+        "grid_export",
+        "consumption",
+    ]
     result = []
     for r in rows:
         row_dict = r._asdict()
-        if row_dict.get("consumption") is not None:
-            row_dict["consumption"] = float(row_dict["consumption"])
+        for field in numeric_fields:
+            if row_dict.get(field) is not None:
+                row_dict[field] = float(row_dict[field])
         result.append(row_dict)
     return result
 
@@ -513,11 +522,20 @@ def get_yearly_chart(session: Session, inverter_id: uuid.UUID) -> list[dict]:
         .order_by(DailyChart.year)
     ).all()
     # Convert Decimal values to float for JSON serialization
+    numeric_fields = [
+        "pv",
+        "battery_charged",
+        "battery_discharged",
+        "grid_import",
+        "grid_export",
+        "consumption",
+    ]
     result = []
     for r in rows:
         row_dict = r._asdict()
-        if row_dict.get("consumption") is not None:
-            row_dict["consumption"] = float(row_dict["consumption"])
+        for field in numeric_fields:
+            if row_dict.get(field) is not None:
+                row_dict[field] = float(row_dict[field])
         result.append(row_dict)
     return result
 
@@ -534,9 +552,18 @@ def get_total(session: Session, inverter_id: uuid.UUID) -> dict:
         ).where(DailyChart.inverter_id == inverter_id)
     ).one()
     result = row._asdict()
-    # Convert Decimal to float for JSON serialization
-    if result.get("consumption") is not None:
-        result["consumption"] = float(result["consumption"])
+    # Convert Decimal values to float for JSON serialization
+    numeric_fields = [
+        "pv",
+        "battery_charged",
+        "battery_discharged",
+        "grid_import",
+        "grid_export",
+        "consumption",
+    ]
+    for field in numeric_fields:
+        if result.get(field) is not None:
+            result[field] = float(result[field])
     return result
 
 
