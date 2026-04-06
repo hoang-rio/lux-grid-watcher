@@ -86,7 +86,14 @@ def _user_dict(user) -> dict:
 
 
 def _get_base_url(request: web.Request) -> str:
-    scheme = "https" if request.secure else "http"
+    xf_proto = request.headers.get("X-Forwarded-Proto", "")
+    if xf_proto:
+        scheme = xf_proto.split(",", 1)[0].strip().lower()
+        if scheme not in {"http", "https"}:
+            scheme = "https" if request.secure else "http"
+    else:
+        scheme = "https" if request.secure else "http"
+
     return f"{scheme}://{request.host}"
 
 
