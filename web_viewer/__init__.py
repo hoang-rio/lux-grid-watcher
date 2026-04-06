@@ -14,6 +14,7 @@ from dotenv import dotenv_values
 from typing import List, Optional
 from base64 import b64decode
 from html import escape
+from time import perf_counter
 import jwt as pyjwt
 
 from api_storage import read_grid_state, register_device_token
@@ -196,7 +197,15 @@ async def http_handler(_: web.Request):
 
 async def sse_handler(request):
     global sse_clients
+    sse_started_at = perf_counter()
     requested_inverter_id = request.rel_url.query.get("inverter_id", "").strip() or None
+    initial_event_data: Optional[str] = None
+    logger.debug(
+        "SSE start path=%s inverter_id=%s use_pg=%s",
+        request.path_qs,
+        requested_inverter_id,
+        USE_PG,
+    )
 
     user_id = _extract_jwt_user_id(request)
 
@@ -216,13 +225,29 @@ async def sse_handler(request):
 
     allowed_inverter_ids: set[str] | None = None
     if USE_PG and user_id is not None:
+        db_started_at = perf_counter()
         try:
             session = next(get_db_session())
             try:
                 user_inverters = mt_repo.get_inverters_by_user(session, user_id)
                 allowed_inverter_ids = {str(inv.id) for inv in user_inverters}
+                if requested_inverter_id:
+                    try:
+                        latest = mt_repo.get_inverter_latest_state(session, uuid.UUID(requested_inverter_id))
+                        if latest and isinstance(latest.payload, dict) and latest.payload:
+                            initial_event_data = json.dumps(latest.payload)
+                    except Exception:
+                        # Snapshot is optional for SSE bootstrap; ignore parse/query errors.
+                        pass
             finally:
                 session.close()
+            logger.debug(
+                "SSE scope resolved inverter_count=%s has_initial_snapshot=%s db_ms=%.1f total_ms=%.1f",
+                len(allowed_inverter_ids),
+                bool(initial_event_data),
+                (perf_counter() - db_started_at) * 1000,
+                (perf_counter() - sse_started_at) * 1000,
+            )
         except Exception as exc:
             logger.error("Failed to resolve SSE user inverter scope: %s", exc)
             return web.json_response(
@@ -241,9 +266,20 @@ async def sse_handler(request):
     response = web.StreamResponse()
     response.headers['Content-Type'] = 'text/event-stream'
     response.headers['Cache-Control'] = 'no-cache'
+    # Disable reverse-proxy buffering so first SSE bytes are flushed immediately.
+    response.headers['X-Accel-Buffering'] = 'no'
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Headers'] = 'Cache-Control'
     await response.prepare(request)
+    logger.debug("SSE prepared total_ms=%.1f", (perf_counter() - sse_started_at) * 1000)
+
+    if not initial_event_data:
+        if requested_inverter_id:
+            cached_payload = last_inverter_data_by_id.get(requested_inverter_id)
+            if isinstance(cached_payload, dict) and cached_payload:
+                initial_event_data = json.dumps({"inverter_data": cached_payload})
+        elif last_inverter_data and last_inverter_data != '{"inverter_data": {}}':
+            initial_event_data = last_inverter_data
 
     sse_client = {
         "response": response,
@@ -253,8 +289,16 @@ async def sse_handler(request):
     sse_clients.append(sse_client)
     logger.debug(f"SSE_CLIENTS count: {len(sse_clients)}")
     try:
+        if initial_event_data:
+            await response.write(f"data: {initial_event_data}\n\n".encode('utf-8'))
+            logger.debug(
+                "SSE sent initial snapshot bytes=%s total_ms=%.1f",
+                len(initial_event_data),
+                (perf_counter() - sse_started_at) * 1000,
+            )
         # Keep the connection open with keep-alive
         await response.write(b': keep-alive\n\n')
+        logger.debug("SSE first keep-alive sent total_ms=%.1f", (perf_counter() - sse_started_at) * 1000)
         # Keep the connection alive indefinitely
         # The connection will be closed when client disconnects or server shuts down
         while True:
@@ -270,6 +314,12 @@ async def sse_handler(request):
         for client in sse_clients[:]:
             if client.get("response") is response:
                 sse_clients.remove(client)
+        logger.debug(
+            "SSE closed inverter_id=%s lifetime_ms=%.1f remaining_clients=%s",
+            requested_inverter_id,
+            (perf_counter() - sse_started_at) * 1000,
+            len(sse_clients),
+        )
     return response
 
 async def broadcast_sse(data: str):
