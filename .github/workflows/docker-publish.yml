@@ -57,3 +57,50 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_TO_RELEASE }},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BRANCH_TAG }}
 
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.TAG_TO_RELEASE }}
+
+      - name: Ensure remote deploy directory exists
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.LUX_DEPLOY_HOST }}
+          username: ${{ secrets.LUX_DEPLOY_USER }}
+          key: ${{ secrets.SSH_DEPLOY_KEY }}
+          port: ${{ secrets.LUX_DEPLOY_PORT || '22' }}
+          script: mkdir -p "${{ secrets.LUX_DEPLOY_PATH }}"
+
+      - name: Copy production compose file to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.LUX_DEPLOY_HOST }}
+          username: ${{ secrets.LUX_DEPLOY_USER }}
+          key: ${{ secrets.SSH_DEPLOY_KEY }}
+          port: ${{ secrets.LUX_DEPLOY_PORT || '22' }}
+          source: docker/docker-compose.prod.yml
+          target: ${{ secrets.LUX_DEPLOY_PATH }}
+          strip_components: 1
+
+      - name: Deploy on server
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.LUX_DEPLOY_HOST }}
+          username: ${{ secrets.LUX_DEPLOY_USER }}
+          key: ${{ secrets.SSH_DEPLOY_KEY }}
+          port: ${{ secrets.LUX_DEPLOY_PORT || '22' }}
+          script: |
+            set -e
+            cd "${{ secrets.LUX_DEPLOY_PATH }}"
+            mv -f docker-compose.prod.yml docker-compose.yml
+            docker compose pull
+            docker compose up -d
+
+
