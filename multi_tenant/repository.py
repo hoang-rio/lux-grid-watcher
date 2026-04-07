@@ -754,8 +754,9 @@ def upsert_scoped_setting(
         row = ScopedSetting(scope=scope, scope_id=scope_id, key=key, value=value)
         session.add(row)
     else:
-        row.value = value
-        row.updated_at = datetime.utcnow()
+        if row.value != value:
+            row.value = value
+            row.updated_at = datetime.utcnow()
     session.flush()
     return row
 

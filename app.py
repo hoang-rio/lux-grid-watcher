@@ -726,6 +726,30 @@ ________Status: \"%s\" (%s) at deviceTime: %s with fac: %s Hz and vacr: %s V____
             int(json_data['fac']) / 100,
             int(json_data['vacr']) / 10,
         )
+
+    # Persist current connectivity every cycle so mobile_state reflects real-time status
+    # even when the inverter never transitions between ON_GRID/OFF_GRID.
+    if USE_PG:
+        if inverter_ctx and inverter_ctx.get("id"):
+            from multi_tenant.db import get_db_session
+            from multi_tenant import repository as repo
+
+            session = next(get_db_session())
+            try:
+                inverter_id = inverter_ctx["id"]
+                repo.upsert_scoped_setting(
+                    session,
+                    "inverter",
+                    inverter_id,
+                    "mobile_is_connected",
+                    str(is_grid_connected),
+                )
+                session.commit()
+            except Exception as e:
+                session.rollback()
+                logger.error(f"Error updating mobile connection state in PG: {e}")
+            finally:
+                session.close()
     if last_grid_connected != is_grid_connected:
         current_history = []
         if USE_PG:
@@ -763,7 +787,6 @@ ________Status: \"%s\" (%s) at deviceTime: %s with fac: %s Hz and vacr: %s V____
             try:
                 if inverter_ctx and inverter_ctx.get("id"):
                     inverter_id = inverter_ctx["id"]
-                    repo.upsert_scoped_setting(session, "inverter", inverter_id, "mobile_is_connected", str(is_grid_connected))
                     repo.upsert_scoped_setting(session, "inverter", inverter_id, "mobile_history", json.dumps(current_history))
                     session.commit()
             except Exception as e:
