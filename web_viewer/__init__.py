@@ -916,6 +916,7 @@ async def notification_unread_count(_: web.Request):
         cursor = conn.cursor()
         unread_count = cursor.execute("SELECT COUNT(*) FROM notification_history WHERE read = 0").fetchone()[0]
         return web.json_response({"unread_count": unread_count})
+        return web.json_response({"unread_count": unread_count})
     except Exception as e:
         logger.error(f"Error in notification_unread_count: {e}")
         return web.json_response({"unread_count": 0})
