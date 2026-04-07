@@ -29,7 +29,6 @@ from multi_tenant.i18n import get_locale_from_accept_language, translate
 logger = getLogger(__name__)
 _config: dict = {**dotenv_values(".env"), **environ}
 
-CORS = {"Access-Control-Allow-Origin": "*"}
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -38,7 +37,7 @@ _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 # ---------------------------------------------------------------------------
 
 def _ok(**kwargs) -> web.Response:
-    return web.json_response({"success": True, **kwargs}, headers=CORS)
+    return web.json_response({"success": True, **kwargs})
 
 
 def _locale(request: web.Request) -> str:
@@ -53,7 +52,6 @@ def _err(request: web.Request, message: str, status: int = 400) -> web.Response:
     return web.json_response(
         {"success": False, "message": _msg(request, message)},
         status=status,
-        headers=CORS,
     )
 
 
@@ -487,20 +485,6 @@ async def change_password(request: web.Request) -> web.Response:
 
 
 # ---------------------------------------------------------------------------
-# CORS preflight
-# ---------------------------------------------------------------------------
-
-async def _cors_options(_: web.Request) -> web.Response:
-    return web.Response(
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        }
-    )
-
-
-# ---------------------------------------------------------------------------
 # Route list
 # ---------------------------------------------------------------------------
 
@@ -516,5 +500,4 @@ AUTH_ROUTES = [
     web.post("/auth/forgot-password", forgot_password),
     web.post("/auth/reset-password", reset_password),
     web.post("/auth/change-password", change_password),
-    web.options("/auth/{path_info:.*}", _cors_options),
 ]

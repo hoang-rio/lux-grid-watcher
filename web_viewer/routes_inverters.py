@@ -16,7 +16,6 @@ import settings
 
 logger = getLogger(__name__)
 
-CORS = {"Access-Control-Allow-Origin": "*"}
 INVERTER_OFFLINE_TIMEOUT = timedelta(minutes=10)
 
 
@@ -25,7 +24,7 @@ INVERTER_OFFLINE_TIMEOUT = timedelta(minutes=10)
 # ---------------------------------------------------------------------------
 
 def _ok(**kwargs) -> web.Response:
-    return web.json_response({"success": True, **kwargs}, headers=CORS)
+    return web.json_response({"success": True, **kwargs})
 
 
 def _locale(request: web.Request) -> str:
@@ -40,7 +39,6 @@ def _err(request: web.Request, message: str, status: int = 400) -> web.Response:
     return web.json_response(
         {"success": False, "message": _msg(request, message)},
         status=status,
-        headers=CORS,
     )
 
 
@@ -257,20 +255,6 @@ async def update_inverter(request: web.Request) -> web.Response:
 
 
 # ---------------------------------------------------------------------------
-# CORS preflight
-# ---------------------------------------------------------------------------
-
-async def _cors_options(_: web.Request) -> web.Response:
-    return web.Response(
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        }
-    )
-
-
-# ---------------------------------------------------------------------------
 # Route list
 # ---------------------------------------------------------------------------
 
@@ -279,6 +263,4 @@ INVERTER_ROUTES = [
     web.post("/inverters", create_inverter),
     web.patch("/inverters/{id}", update_inverter),
     web.delete("/inverters/{id}", delete_inverter),
-    web.options("/inverters", _cors_options),
-    web.options("/inverters/{id}", _cors_options),
 ]

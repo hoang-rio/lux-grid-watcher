@@ -145,7 +145,7 @@ def _deny_if_not_allowed_cidr(request: web.Request, path_prefix: str, allowed_me
     body = response_body
     if body is None:
         body = {"success": False, "message": _lmsg(request, "Forbidden")}
-    return web.json_response(body, status=403, headers=VITE_CORS_HEADER)
+    return web.json_response(body, status=403)
 
 
 def _extract_jwt_user_id(request: web.Request) -> Optional[uuid.UUID]:
@@ -213,14 +213,12 @@ async def sse_handler(request):
         return web.json_response(
             {"success": False, "message": _lmsg(request, "Unauthorized")},
             status=401,
-            headers=VITE_CORS_HEADER,
         )
 
     if USE_PG and user_id is not None and not requested_inverter_id:
         return web.json_response(
             {"success": False, "message": _lmsg(request, "inverter_id is required")},
             status=400,
-            headers=VITE_CORS_HEADER,
         )
 
     allowed_inverter_ids: set[str] | None = None
@@ -257,14 +255,12 @@ async def sse_handler(request):
             return web.json_response(
                 {"success": False, "message": _lmsg(request, "Failed to resolve inverter scope")},
                 status=500,
-                headers=VITE_CORS_HEADER,
             )
 
     if requested_inverter_id and allowed_inverter_ids is not None and requested_inverter_id not in allowed_inverter_ids:
         return web.json_response(
             {"success": False, "message": _lmsg(request, "Forbidden inverter scope")},
             status=403,
-            headers=VITE_CORS_HEADER,
         )
 
     response = web.StreamResponse()
@@ -272,8 +268,6 @@ async def sse_handler(request):
     response.headers['Cache-Control'] = 'no-cache'
     # Disable reverse-proxy buffering so first SSE bytes are flushed immediately.
     response.headers['X-Accel-Buffering'] = 'no'
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Headers'] = 'Cache-Control'
     await response.prepare(request)
     logger.debug("SSE prepared total_ms=%.1f", (perf_counter() - sse_started_at) * 1000)
 
@@ -382,14 +376,12 @@ async def websocket_handler(request):
         pass
     return ws
 
-VITE_CORS_HEADER = {'Access-Control-Allow-Origin': '*'}
-
 async def state(_: web.Request):
     global last_inverter_data
     global last_inverter_data_by_id
     user_id = _extract_jwt_user_id(_)
     if USE_PG and user_id is None:
-        return web.json_response({}, status=401, headers=VITE_CORS_HEADER)
+        return web.json_response({}, status=401)
 
     requested_inverter_id = _.rel_url.query.get("inverter_id", "").strip()
 
@@ -397,7 +389,6 @@ async def state(_: web.Request):
         return web.json_response(
             {"success": False, "message": _lmsg(_, "inverter_id is required")},
             status=400,
-            headers=VITE_CORS_HEADER,
         )
 
     if user_id is not None:
@@ -406,10 +397,10 @@ async def state(_: web.Request):
             try:
                 inverter = _resolve_request_inverter(session, user_id, _)
                 if inverter is None:
-                    return web.json_response({}, headers=VITE_CORS_HEADER)
+                    return web.json_response({})
                 latest = mt_repo.get_inverter_latest_state(session, inverter.id)
                 payload = latest.payload if latest and latest.payload else {}
-                return web.json_response(payload, headers=VITE_CORS_HEADER)
+                return web.json_response(payload)
             finally:
                 session.close()
         except Exception as error:
@@ -422,7 +413,7 @@ async def state(_: web.Request):
             data = json.loads(last_inverter_data)["inverter_data"]
     except Exception:
         data = {}
-    return web.json_response(data, headers=VITE_CORS_HEADER)
+    return web.json_response(data)
 
 
 async def mobile_state(_: web.Request):
@@ -433,7 +424,6 @@ async def mobile_state(_: web.Request):
                 return web.json_response(
                     {"success": False, "message": _lmsg(_, "Unauthorized")},
                     status=401,
-                    headers=VITE_CORS_HEADER,
                 )
             session = next(get_db_session())
             try:
@@ -442,7 +432,6 @@ async def mobile_state(_: web.Request):
                     session.close()
                     return web.json_response(
                         {"is_connected": False, "history": []},
-                        headers=VITE_CORS_HEADER,
                     )
                 inverter_id = str(inverter.id)
                 is_connected_str = mt_repo.get_scoped_setting(session, "inverter", inverter_id, "mobile_is_connected")
@@ -452,7 +441,6 @@ async def mobile_state(_: web.Request):
                 session.close()
                 return web.json_response(
                     {"is_connected": is_connected, "history": history},
-                    headers=VITE_CORS_HEADER,
                 )
             except Exception:
                 session.close()
@@ -462,13 +450,11 @@ async def mobile_state(_: web.Request):
             history_file = config.get("HISTORY_FILE", "history.json")
             return web.json_response(
                 read_grid_state(state_file, history_file),
-                headers=VITE_CORS_HEADER,
             )
     except Exception as error:
         logger.error(f"Error in mobile_state: {error}")
         return web.json_response(
             {"is_connected": False, "history": []},
-            headers=VITE_CORS_HEADER,
         )
 
 
@@ -491,13 +477,11 @@ async def register_fcm(request: web.Request):
                 return web.json_response(
                     {"is_success": False, "message": _lmsg(request, "Unauthorized"), "device_count": 0},
                     status=401,
-                    headers=VITE_CORS_HEADER,
                 )
             if not token.strip():
                 return web.json_response(
                     {"is_success": False, "message": _lmsg(request, "Missing required parameter 'token'"), "device_count": 0},
                     status=400,
-                    headers=VITE_CORS_HEADER,
                 )
             session = next(get_db_session())
             try:
@@ -506,7 +490,6 @@ async def register_fcm(request: web.Request):
                 session.commit()
                 return web.json_response(
                     {"is_success": True, "message": _lmsg(request, "Device register success"), "device_count": count},
-                    headers=VITE_CORS_HEADER,
                 )
             except Exception:
                 session.rollback()
@@ -519,7 +502,7 @@ async def register_fcm(request: web.Request):
             token,
         )
         status = 200 if result["is_success"] else 400
-        return web.json_response(result, status=status, headers=VITE_CORS_HEADER)
+        return web.json_response(result, status=status)
     except Exception as error:
         logger.error(f"Error in register_fcm: {error}")
         return web.json_response(
@@ -529,20 +512,9 @@ async def register_fcm(request: web.Request):
                 "device_count": 0,
             },
             status=500,
-            headers=VITE_CORS_HEADER,
         )
 
 
-
-# Reusable CORS handler for OPTIONS endpoints
-def cors_options_handler(allowed_methods: str = "GET, POST, OPTIONS"):
-    async def handler(_: web.Request):
-        return web.Response(headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": allowed_methods,
-            "Access-Control-Allow-Headers": "Content-Type",
-        })
-    return handler
 
 async def hourly_chart(request: web.Request):
     user_id = _extract_jwt_user_id(request)
@@ -561,7 +533,7 @@ async def hourly_chart(request: web.Request):
             try:
                 inverter = _resolve_request_inverter(session, user_id, request)
                 if inverter is None:
-                    return web.json_response([], headers=VITE_CORS_HEADER)
+                    return web.json_response([])
                 rows = mt_repo.get_hourly_chart(session, inverter.id, query_date.date())
                 chart = [
                     [
@@ -575,14 +547,14 @@ async def hourly_chart(request: web.Request):
                     ]
                     for r in rows
                 ]
-                return web.json_response(chart, headers=VITE_CORS_HEADER)
+                return web.json_response(chart)
             finally:
                 session.close()
         except Exception as e:
             logger.error(f"Error in hourly_chart (multi-tenant): {e}")
 
     if USE_PG:
-        return web.json_response([], headers=VITE_CORS_HEADER)
+        return web.json_response([])
 
     try:
         conn = get_db_connection()
@@ -601,10 +573,10 @@ async def hourly_chart(request: web.Request):
             "SELECT * FROM hourly_chart WHERE datetime >= ? AND datetime < ?",
             (start_of_day.strftime("%Y-%m-%d %H:%M:%S"), end_of_day.strftime("%Y-%m-%d %H:%M:%S"))
         ).fetchall()
-        return web.json_response(hourly_chart, headers=VITE_CORS_HEADER)
+        return web.json_response(hourly_chart)
     except Exception as e:
         logger.error(f"Error in hourly_chart: {e}")
-        return web.json_response([], headers=VITE_CORS_HEADER)
+        return web.json_response([])
 
 async def total(_: web.Request):
     user_id = _extract_jwt_user_id(_)
@@ -614,16 +586,16 @@ async def total(_: web.Request):
             try:
                 inverter = _resolve_request_inverter(session, user_id, _)
                 if inverter is None:
-                    return web.json_response({}, headers=VITE_CORS_HEADER)
+                    return web.json_response({})
                 totals = mt_repo.get_total(session, inverter.id)
-                return web.json_response(totals, headers=VITE_CORS_HEADER)
+                return web.json_response(totals)
             finally:
                 session.close()
         except Exception as e:
             logger.error(f"Error in total (multi-tenant): {e}")
 
     if USE_PG:
-        return web.json_response({}, headers=VITE_CORS_HEADER)
+        return web.json_response({})
 
     try:
         conn = get_db_connection()
@@ -632,10 +604,10 @@ async def total(_: web.Request):
         total = cursor.execute(
             "SELECT SUM(pv) as pv, SUM(battery_charged) as battery_charged, SUM(battery_discharged) as battery_discharged, SUM(grid_import) as grid_import, SUM(grid_export) as grid_export, SUM(consumption) as consumption FROM daily_chart"
         ).fetchone()
-        return web.json_response(total, headers=VITE_CORS_HEADER)
+        return web.json_response(total)
     except Exception as e:
         logger.error(f"Error in total: {e}")
-        return web.json_response({}, headers=VITE_CORS_HEADER)
+        return web.json_response({})
 
 async def daily_chart(_: web.Request):
     user_id = _extract_jwt_user_id(_)
@@ -660,7 +632,7 @@ async def daily_chart(_: web.Request):
             try:
                 inverter = _resolve_request_inverter(session, user_id, request)
                 if inverter is None:
-                    return web.json_response([], headers=VITE_CORS_HEADER)
+                    return web.json_response([])
 
                 rows = mt_repo.get_daily_chart(session, inverter.id, year, month)
                 daily_chart = [
@@ -692,14 +664,14 @@ async def daily_chart(_: web.Request):
                             last_item_date.strftime("%Y-%m-%d"),
                             0, 0, 0, 0, 0, 0, ""
                         ))
-                return web.json_response(daily_chart, headers=VITE_CORS_HEADER)
+                return web.json_response(daily_chart)
             finally:
                 session.close()
         except Exception as e:
             logger.error(f"Error in daily_chart (multi-tenant): {e}")
 
     if USE_PG:
-        return web.json_response([], headers=VITE_CORS_HEADER)
+        return web.json_response([])
 
     try:
         conn = get_db_connection()
@@ -736,10 +708,10 @@ async def daily_chart(_: web.Request):
                     last_item_date.strftime("%Y-%m-%d"),
                     0, 0, 0, 0, 0, 0, ""
                 ))
-        return web.json_response(daily_chart, headers=VITE_CORS_HEADER)
+        return web.json_response(daily_chart)
     except Exception as e:
         logger.error(f"Error in daily_chart: {e}")
-        return web.json_response([], headers=VITE_CORS_HEADER)
+        return web.json_response([])
 
 async def monthly_chart(request: web.Request):
     user_id = _extract_jwt_user_id(request)
@@ -756,7 +728,7 @@ async def monthly_chart(request: web.Request):
             try:
                 inverter = _resolve_request_inverter(session, user_id, request)
                 if inverter is None:
-                    return web.json_response({"chart": [], "years": []}, headers=VITE_CORS_HEADER)
+                    return web.json_response({"chart": [], "years": []})
 
                 rows = mt_repo.get_monthly_chart(session, inverter.id, year)
                 chart = [
@@ -775,14 +747,14 @@ async def monthly_chart(request: web.Request):
                     for r in rows
                 ]
                 years = mt_repo.get_available_years(session, inverter.id)
-                return web.json_response({"chart": chart, "years": years}, headers=VITE_CORS_HEADER)
+                return web.json_response({"chart": chart, "years": years})
             finally:
                 session.close()
         except Exception as e:
             logger.error(f"Error in monthly_chart (multi-tenant): {e}")
 
     if USE_PG:
-        return web.json_response({"chart": [], "years": []}, headers=VITE_CORS_HEADER)
+        return web.json_response({"chart": [], "years": []})
 
     try:
         conn = get_db_connection()
@@ -803,10 +775,10 @@ async def monthly_chart(request: web.Request):
         years_rows = cursor.execute("SELECT DISTINCT year FROM daily_chart ORDER BY year DESC").fetchall()
         years = [int(r[0]) for r in years_rows]
 
-        return web.json_response({"chart": monthly_chart, "years": years}, headers=VITE_CORS_HEADER)
+        return web.json_response({"chart": monthly_chart, "years": years})
     except Exception as e:
         logger.error(f"Error in monthly_chart: {e}")
-        return web.json_response({"chart": [], "years": []}, headers=VITE_CORS_HEADER)
+        return web.json_response({"chart": [], "years": []})
 
 async def yearly_chart(_: web.Request):
     user_id = _extract_jwt_user_id(_)
@@ -816,7 +788,7 @@ async def yearly_chart(_: web.Request):
             try:
                 inverter = _resolve_request_inverter(session, user_id, _)
                 if inverter is None:
-                    return web.json_response([], headers=VITE_CORS_HEADER)
+                    return web.json_response([])
 
                 rows = mt_repo.get_yearly_chart(session, inverter.id)
                 chart = [
@@ -834,14 +806,14 @@ async def yearly_chart(_: web.Request):
                     )
                     for r in rows
                 ]
-                return web.json_response(chart, headers=VITE_CORS_HEADER)
+                return web.json_response(chart)
             finally:
                 session.close()
         except Exception as e:
             logger.error(f"Error in yearly_chart (multi-tenant): {e}")
 
     if USE_PG:
-        return web.json_response([], headers=VITE_CORS_HEADER)
+        return web.json_response([])
 
     try:
         conn = get_db_connection()
@@ -849,16 +821,16 @@ async def yearly_chart(_: web.Request):
         yearly_chart = cursor.execute(
             "SELECT id, id, id, year || '' as year, SUM(pv), SUM(battery_charged), SUM(battery_discharged), SUM(grid_import), SUM(grid_export), SUM(consumption) FROM daily_chart GROUP BY year"
         ).fetchall()
-        return web.json_response(yearly_chart, headers=VITE_CORS_HEADER)
+        return web.json_response(yearly_chart)
     except Exception as e:
         logger.error(f"Error in yearly_chart: {e}")
-        return web.json_response([], headers=VITE_CORS_HEADER)
+        return web.json_response([])
 
 async def notification_history(_: web.Request):
     if USE_PG:
         user_id = _extract_jwt_user_id(_)
         if user_id is None:
-            return web.json_response({"notifications": []}, status=401, headers=VITE_CORS_HEADER)
+            return web.json_response({"notifications": []}, status=401)
         try:
             session = next(get_db_session())
             try:
@@ -874,12 +846,12 @@ async def notification_history(_: web.Request):
                     }
                     for row in notifications
                 ]
-                return web.json_response({"notifications": data}, headers=VITE_CORS_HEADER)
+                return web.json_response({"notifications": data})
             finally:
                 session.close()
         except Exception as e:
             logger.error(f"Error in notification_history (multi-tenant): {e}")
-            return web.json_response({"notifications": []}, headers=VITE_CORS_HEADER)
+            return web.json_response({"notifications": []})
 
     try:
         conn = get_db_connection()
@@ -891,62 +863,62 @@ async def notification_history(_: web.Request):
             {"id": row[0], "title": row[1], "body": row[2], "notified_at": row[3], "read": row[4]}
             for row in notifications
         ]
-        return web.json_response({"notifications": data}, headers=VITE_CORS_HEADER)
+        return web.json_response({"notifications": data})
     except Exception as e:
         logger.error(f"Error in notification_history: {e}")
-        return web.json_response({"notifications": []}, headers=VITE_CORS_HEADER)
+        return web.json_response({"notifications": []})
 
 async def mark_notifications_read(_: web.Request):
     if USE_PG:
         user_id = _extract_jwt_user_id(_)
         if user_id is None:
-            return web.json_response({"success": False}, status=401, headers=VITE_CORS_HEADER)
+            return web.json_response({"success": False}, status=401)
         try:
             session = next(get_db_session())
             try:
                 mt_repo.mark_notifications_read(session, user_id)
                 session.commit()
-                return web.json_response({"success": True}, headers=VITE_CORS_HEADER)
+                return web.json_response({"success": True})
             finally:
                 session.close()
         except Exception as e:
             logger.error(f"Error in mark_notifications_read (multi-tenant): {e}")
-            return web.json_response({"success": False}, headers=VITE_CORS_HEADER)
+            return web.json_response({"success": False})
 
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("UPDATE notification_history SET read = 1 WHERE read = 0")
         conn.commit()
-        return web.json_response({"success": True}, headers=VITE_CORS_HEADER)
+        return web.json_response({"success": True})
     except Exception as e:
         logger.error(f"Error in mark_notifications_read: {e}")
-        return web.json_response({"success": False}, headers=VITE_CORS_HEADER)
+        return web.json_response({"success": False})
 
 async def notification_unread_count(_: web.Request):
     if USE_PG:
         user_id = _extract_jwt_user_id(_)
         if user_id is None:
-            return web.json_response({"unread_count": 0}, status=401, headers=VITE_CORS_HEADER)
+            return web.json_response({"unread_count": 0}, status=401)
         try:
             session = next(get_db_session())
             try:
                 unread_count = mt_repo.get_unread_notification_count(session, user_id)
-                return web.json_response({"unread_count": unread_count}, headers=VITE_CORS_HEADER)
+                return web.json_response({"unread_count": unread_count})
             finally:
                 session.close()
         except Exception as e:
             logger.error(f"Error in notification_unread_count (multi-tenant): {e}")
-            return web.json_response({"unread_count": 0}, headers=VITE_CORS_HEADER)
+            return web.json_response({"unread_count": 0})
 
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         unread_count = cursor.execute("SELECT COUNT(*) FROM notification_history WHERE read = 0").fetchone()[0]
-        return web.json_response({"unread_count": unread_count}, headers=VITE_CORS_HEADER)
+        return web.json_response({"unread_count": unread_count})
     except Exception as e:
         logger.error(f"Error in notification_unread_count: {e}")
-        return web.json_response({"unread_count": 0}, headers=VITE_CORS_HEADER)
+        return web.json_response({"unread_count": 0})
 
 ALLOWED_SLEEP_TIME_VALUES = {"3", "5", "10", "15", "30"}
 
@@ -958,7 +930,7 @@ async def get_settings(_: web.Request):
     if USE_PG:
         user_id = _extract_jwt_user_id(_)
         if user_id is None:
-            return web.json_response({}, status=401, headers=VITE_CORS_HEADER)
+            return web.json_response({}, status=401)
         try:
             import settings
             session = next(get_db_session())
@@ -974,25 +946,25 @@ async def get_settings(_: web.Request):
             merged.pop("AUTH_USERNAME", None)
             merged.pop("AUTH_PASSWORD", None)
             merged.pop("AUTH_BYPASS_CIDR", None)
-            return web.json_response(merged, headers=VITE_CORS_HEADER)
+            return web.json_response(merged)
         except Exception as e:
             logger.error(f"Error in get_settings (multi-tenant): {e}")
-            return web.json_response({}, headers=VITE_CORS_HEADER)
+            return web.json_response({})
 
     try:
         import settings
         merged = dict(settings.settings)
         merged["SLEEP_TIME"] = str(settings.get_sleep_time())
-        return web.json_response(merged, headers=VITE_CORS_HEADER)
+        return web.json_response(merged)
     except Exception as e:
         logger.error(f"Error in get_settings: {e}")
-        return web.json_response({}, headers=VITE_CORS_HEADER)
+        return web.json_response({})
 
 async def update_settings(request: web.Request):
     if USE_PG:
         user_id = _extract_jwt_user_id(request)
         if user_id is None:
-            return web.json_response({"success": False}, status=401, headers=VITE_CORS_HEADER)
+            return web.json_response({"success": False}, status=401)
         try:
             data = await request.json()
             session = next(get_db_session())
@@ -1003,7 +975,7 @@ async def update_settings(request: web.Request):
                     if key in {"AUTH_ENABLED", "AUTH_USERNAME", "AUTH_PASSWORD", "AUTH_BYPASS_CIDR"}:
                         continue
                     if key == "SLEEP_TIME" and str(value) not in ALLOWED_SLEEP_TIME_VALUES:
-                        return web.json_response({"success": False}, status=400, headers=VITE_CORS_HEADER)
+                        return web.json_response({"success": False}, status=400)
                     if key == "SLEEP_TIME":
                         sleep_time_changed = True
                     mt_repo.upsert_user_setting(session, user_id, key, str(value))
@@ -1011,7 +983,7 @@ async def update_settings(request: web.Request):
                 # Invalidate sleep_time cache only if SLEEP_TIME was changed
                 if sleep_time_changed:
                     _sleep_time_cache.pop(str(user_id), None)
-                return web.json_response({"success": True}, headers=VITE_CORS_HEADER)
+                return web.json_response({"success": True})
             except Exception:
                 session.rollback()
                 raise
@@ -1019,7 +991,7 @@ async def update_settings(request: web.Request):
                 session.close()
         except Exception as e:
             logger.error(f"Error in update_settings (multi-tenant): {e}")
-            return web.json_response({"success": False}, headers=VITE_CORS_HEADER)
+            return web.json_response({"success": False})
 
     try:
         data = await request.json()
@@ -1027,20 +999,12 @@ async def update_settings(request: web.Request):
         import settings
         for key, value in data.items():
             if key == "SLEEP_TIME" and str(value) not in ALLOWED_SLEEP_TIME_VALUES:
-                return web.json_response({"success": False}, status=400, headers=VITE_CORS_HEADER)
+                return web.json_response({"success": False}, status=400)
             settings.save_setting(key, value, conn)
-        return web.json_response({"success": True}, headers=VITE_CORS_HEADER)
+        return web.json_response({"success": True})
     except Exception as e:
         logger.error(f"Error in update_settings: {e}")
-        return web.json_response({"success": False}, headers=VITE_CORS_HEADER)
-
-async def options_settings(_: web.Request):
-    return web.Response(headers={
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-    })
-
+        return web.json_response({"success": False})
 
 def _auth_html_response(status: int, title: str, message: str, include_www_authenticate: bool = False) -> web.Response:
         """Return a small friendly HTML response for auth errors."""
@@ -1134,7 +1098,6 @@ def create_runner():
         web.get("/state", state),
         web.get("/mobile/state", mobile_state),
         web.post("/fcm/register", register_fcm),
-        web.options("/fcm/register", cors_options_handler("POST, OPTIONS")),
         web.get("/hourly-chart", hourly_chart),
         web.get("/daily-chart", daily_chart),
         web.get("/monthly-chart", monthly_chart),
@@ -1145,7 +1108,6 @@ def create_runner():
         web.get("/notification-unread-count", notification_unread_count),
         web.get("/settings", get_settings),
         web.post("/settings", update_settings),
-        web.options("/settings", cors_options_handler("GET, POST, OPTIONS")),
         *AUTH_ROUTES,
         *INVERTER_ROUTES,
         web.static("/", path.join(path.dirname(__file__), "build"))
