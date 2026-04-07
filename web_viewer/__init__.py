@@ -135,7 +135,7 @@ def _deny_if_not_allowed_cidr(request: web.Request, path_prefix: str, allowed_me
     body = response_body
     if body is None:
         body = {"success": False, "message": "Forbidden"}
-    return web.json_response(body, status=403, headers=VITE_CORS_HEADER)
+    return web.json_response(body, status=403)
 
 # SSE state
 sse_clients: List[web.StreamResponse] = []
@@ -150,8 +150,6 @@ async def sse_handler(request):
     response = web.StreamResponse()
     response.headers['Content-Type'] = 'text/event-stream'
     response.headers['Cache-Control'] = 'no-cache'
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Headers'] = 'Cache-Control'
     await response.prepare(request)
     sse_clients.append(response)
     logger.debug(f"SSE_CLIENTS count: {len(sse_clients)}")
@@ -202,15 +200,13 @@ async def websocket_handler(request):
         pass
     return ws
 
-VITE_CORS_HEADER = {'Access-Control-Allow-Origin': '*'}
-
 async def state(_: web.Request):
     global last_inverter_data
     try:
         data = json.loads(last_inverter_data)["inverter_data"]
     except Exception:
         data = {}
-    return web.json_response(data, headers=VITE_CORS_HEADER)
+    return web.json_response(data)
 
 
 async def mobile_state(_: web.Request):
@@ -219,13 +215,11 @@ async def mobile_state(_: web.Request):
         history_file = config.get("HISTORY_FILE", "history.json")
         return web.json_response(
             read_grid_state(state_file, history_file),
-            headers=VITE_CORS_HEADER,
         )
     except Exception as error:
         logger.error(f"Error in mobile_state: {error}")
         return web.json_response(
             {"is_connected": False, "history": []},
-            headers=VITE_CORS_HEADER,
         )
 
 
@@ -247,7 +241,7 @@ async def register_fcm(request: web.Request):
             token,
         )
         status = 200 if result["is_success"] else 400
-        return web.json_response(result, status=status, headers=VITE_CORS_HEADER)
+        return web.json_response(result, status=status)
     except Exception as error:
         logger.error(f"Error in register_fcm: {error}")
         return web.json_response(
@@ -257,20 +251,7 @@ async def register_fcm(request: web.Request):
                 "device_count": 0,
             },
             status=500,
-            headers=VITE_CORS_HEADER,
         )
-
-
-
-# Reusable CORS handler for OPTIONS endpoints
-def cors_options_handler(allowed_methods: str = "GET, POST, OPTIONS"):
-    async def handler(_: web.Request):
-        return web.Response(headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": allowed_methods,
-            "Access-Control-Allow-Headers": "Content-Type",
-        })
-    return handler
 
 async def hourly_chart(request: web.Request):
     try:
@@ -290,10 +271,10 @@ async def hourly_chart(request: web.Request):
             "SELECT * FROM hourly_chart WHERE datetime >= ? AND datetime < ?",
             (start_of_day.strftime("%Y-%m-%d %H:%M:%S"), end_of_day.strftime("%Y-%m-%d %H:%M:%S"))
         ).fetchall()
-        return web.json_response(hourly_chart, headers=VITE_CORS_HEADER)
+        return web.json_response(hourly_chart)
     except Exception as e:
         logger.error(f"Error in hourly_chart: {e}")
-        return web.json_response([], headers=VITE_CORS_HEADER)
+        return web.json_response([])
 
 async def total(_: web.Request):
     try:
@@ -303,10 +284,10 @@ async def total(_: web.Request):
         total = cursor.execute(
             "SELECT SUM(pv) as pv, SUM(battery_charged) as battery_charged, SUM(battery_discharged) as battery_discharged, SUM(grid_import) as grid_import, SUM(grid_export) as grid_export, SUM(consumption) as consumption FROM daily_chart"
         ).fetchone()
-        return web.json_response(total, headers=VITE_CORS_HEADER)
+        return web.json_response(total)
     except Exception as e:
         logger.error(f"Error in total: {e}")
-        return web.json_response({}, headers=VITE_CORS_HEADER)
+        return web.json_response({})
 
 async def daily_chart(_: web.Request):
     try:
@@ -344,10 +325,10 @@ async def daily_chart(_: web.Request):
                     last_item_date.strftime("%Y-%m-%d"),
                     0, 0, 0, 0, 0, 0, ""
                 ))
-        return web.json_response(daily_chart, headers=VITE_CORS_HEADER)
+        return web.json_response(daily_chart)
     except Exception as e:
         logger.error(f"Error in daily_chart: {e}")
-        return web.json_response([], headers=VITE_CORS_HEADER)
+        return web.json_response([])
 
 async def monthly_chart(request: web.Request):
     try:
@@ -369,10 +350,10 @@ async def monthly_chart(request: web.Request):
         years_rows = cursor.execute("SELECT DISTINCT year FROM daily_chart ORDER BY year DESC").fetchall()
         years = [int(r[0]) for r in years_rows]
 
-        return web.json_response({"chart": monthly_chart, "years": years}, headers=VITE_CORS_HEADER)
+        return web.json_response({"chart": monthly_chart, "years": years})
     except Exception as e:
         logger.error(f"Error in monthly_chart: {e}")
-        return web.json_response({"chart": [], "years": []}, headers=VITE_CORS_HEADER)
+        return web.json_response({"chart": [], "years": []})
 
 async def yearly_chart(_: web.Request):
     try:
@@ -381,10 +362,10 @@ async def yearly_chart(_: web.Request):
         yearly_chart = cursor.execute(
             "SELECT id, id, id, year || '' as year, SUM(pv), SUM(battery_charged), SUM(battery_discharged), SUM(grid_import), SUM(grid_export), SUM(consumption) FROM daily_chart GROUP BY year"
         ).fetchall()
-        return web.json_response(yearly_chart, headers=VITE_CORS_HEADER)
+        return web.json_response(yearly_chart)
     except Exception as e:
         logger.error(f"Error in yearly_chart: {e}")
-        return web.json_response([], headers=VITE_CORS_HEADER)
+        return web.json_response([])
 
 async def notification_history(_: web.Request):
     try:
@@ -397,10 +378,10 @@ async def notification_history(_: web.Request):
             {"id": row[0], "title": row[1], "body": row[2], "notified_at": row[3], "read": row[4]}
             for row in notifications
         ]
-        return web.json_response({"notifications": data}, headers=VITE_CORS_HEADER)
+        return web.json_response({"notifications": data})
     except Exception as e:
         logger.error(f"Error in notification_history: {e}")
-        return web.json_response({"notifications": []}, headers=VITE_CORS_HEADER)
+        return web.json_response({"notifications": []})
 
 async def mark_notifications_read(_: web.Request):
     try:
@@ -408,28 +389,28 @@ async def mark_notifications_read(_: web.Request):
         cursor = conn.cursor()
         cursor.execute("UPDATE notification_history SET read = 1 WHERE read = 0")
         conn.commit()
-        return web.json_response({"success": True}, headers=VITE_CORS_HEADER)
+        return web.json_response({"success": True})
     except Exception as e:
         logger.error(f"Error in mark_notifications_read: {e}")
-        return web.json_response({"success": False}, headers=VITE_CORS_HEADER)
+        return web.json_response({"success": False})
 
 async def notification_unread_count(_: web.Request):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         unread_count = cursor.execute("SELECT COUNT(*) FROM notification_history WHERE read = 0").fetchone()[0]
-        return web.json_response({"unread_count": unread_count}, headers=VITE_CORS_HEADER)
+        return web.json_response({"unread_count": unread_count})
     except Exception as e:
         logger.error(f"Error in notification_unread_count: {e}")
-        return web.json_response({"unread_count": 0}, headers=VITE_CORS_HEADER)
+        return web.json_response({"unread_count": 0})
 
 async def get_settings(_: web.Request):
     try:
         import settings
-        return web.json_response(settings.settings, headers=VITE_CORS_HEADER)
+        return web.json_response(settings.settings)
     except Exception as e:
         logger.error(f"Error in get_settings: {e}")
-        return web.json_response({}, headers=VITE_CORS_HEADER)
+        return web.json_response({})
 
 async def update_settings(request: web.Request):
     try:
@@ -438,17 +419,13 @@ async def update_settings(request: web.Request):
         import settings
         for key, value in data.items():
             settings.save_setting(key, value, conn)
-        return web.json_response({"success": True}, headers=VITE_CORS_HEADER)
+        return web.json_response({"success": True})
     except Exception as e:
         logger.error(f"Error in update_settings: {e}")
-        return web.json_response({"success": False}, headers=VITE_CORS_HEADER)
+        return web.json_response({"success": False})
 
 async def options_settings(_: web.Request):
-    return web.Response(headers={
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-    })
+    return web.Response()
 
 
 async def has_admin_access(request: web.Request):
@@ -460,7 +437,7 @@ async def has_admin_access(request: web.Request):
     peer = request.transport
     remote_ip = _peer_ip_from_transport(peer)
     allowed = _ip_in_cidrs(remote_ip, ADMIN_ALLOWED_CIDR)
-    return web.json_response({"has_admin_access": allowed}, headers=VITE_CORS_HEADER)
+    return web.json_response({"has_admin_access": allowed})
 
 
 def _auth_html_response(status: int, title: str, message: str, include_www_authenticate: bool = False) -> web.Response:
@@ -548,7 +525,6 @@ def create_runner():
         web.get("/state", state),
         web.get("/mobile/state", mobile_state),
         web.post("/fcm/register", register_fcm),
-        web.options("/fcm/register", cors_options_handler("POST, OPTIONS")),
         web.get("/hourly-chart", hourly_chart),
         web.get("/daily-chart", daily_chart),
         web.get("/monthly-chart", monthly_chart),
@@ -560,7 +536,6 @@ def create_runner():
         web.get("/settings", get_settings),
         web.get("/has-admin-access", has_admin_access),
         web.post("/settings", update_settings),
-        web.options("/settings", cors_options_handler("GET, POST, OPTIONS")),
         web.static("/", path.join(path.dirname(__file__), "build"))
     ])
     return web.AppRunner(app, access_log=None)
