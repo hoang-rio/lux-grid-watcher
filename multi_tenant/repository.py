@@ -719,3 +719,58 @@ def upsert_user_setting(
         row.updated_at = datetime.utcnow()
     session.flush()
     return row
+
+
+# ---------------------------------------------------------------------------
+# Scoped Settings
+# ---------------------------------------------------------------------------
+
+def get_scoped_setting(session: Session, scope: str, scope_id: str | None, key: str) -> Optional[str]:
+    row = session.execute(
+        select(ScopedSetting).where(
+            ScopedSetting.scope == scope,
+            ScopedSetting.scope_id == scope_id,
+            ScopedSetting.key == key,
+        )
+    ).scalar_one_or_none()
+    return row.value if row else None
+
+
+def upsert_scoped_setting(
+    session: Session,
+    scope: str,
+    scope_id: str | None,
+    key: str,
+    value: str,
+) -> ScopedSetting:
+    row = session.execute(
+        select(ScopedSetting).where(
+            ScopedSetting.scope == scope,
+            ScopedSetting.scope_id == scope_id,
+            ScopedSetting.key == key,
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        row = ScopedSetting(scope=scope, scope_id=scope_id, key=key, value=value)
+        session.add(row)
+    else:
+        row.value = value
+        row.updated_at = datetime.utcnow()
+    session.flush()
+    return row
+
+
+# ---------------------------------------------------------------------------
+# Global Settings
+# ---------------------------------------------------------------------------
+
+def get_global_setting(session: Session, key: str) -> Optional[str]:
+    return get_scoped_setting(session, "global", None, key)
+
+
+def upsert_global_setting(
+    session: Session,
+    key: str,
+    value: str,
+) -> ScopedSetting:
+    return upsert_scoped_setting(session, "global", None, key, value)

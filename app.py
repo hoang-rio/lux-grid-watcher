@@ -728,19 +728,56 @@ ________Status: \"%s\" (%s) at deviceTime: %s with fac: %s Hz and vacr: %s V____
         )
     if last_grid_connected != is_grid_connected:
         current_history = []
-        if path.exists(config['HISTORY_FILE']):
-            with open(config['HISTORY_FILE'], 'r') as f_history:
-                current_history = json.loads(f_history.read())
+        if USE_PG:
+            # In PG mode, read current history from PG
+            from multi_tenant.db import get_db_session
+            from multi_tenant import repository as repo
+            session = next(get_db_session())
+            try:
+                if inverter_ctx and inverter_ctx.get("id"):
+                    inverter_id = inverter_ctx["id"]
+                    history_str = repo.get_scoped_setting(session, "inverter", inverter_id, "mobile_history")
+                    if history_str:
+                        current_history = json.loads(history_str)
+            except Exception as e:
+                logger.error(f"Error reading mobile history from PG: {e}")
+            finally:
+                session.close()
+        else:
+            if path.exists(config['HISTORY_FILE']):
+                with open(config['HISTORY_FILE'], 'r') as f_history:
+                    current_history = json.loads(f_history.read())
+        
         if len(current_history) == int(config["HISTORY_COUNT"]):
             del current_history[len(current_history) - 1]
         current_history.insert(0, {
             "type": "ON_GRID" if is_grid_connected else "OFF_GRID",
             "time": json_data["deviceTime"],
         })
-        with open(config['HISTORY_FILE'], 'w') as f_history_w:
-            f_history_w.write(json.dumps(current_history))
-        with open(config["STATE_FILE"], "w") as fw:
-            fw.write(str(is_grid_connected))
+        
+        if USE_PG:
+            # Write to PG
+            from multi_tenant.db import get_db_session
+            from multi_tenant import repository as repo
+            session = next(get_db_session())
+            try:
+                if inverter_ctx and inverter_ctx.get("id"):
+                    inverter_id = inverter_ctx["id"]
+                    repo.upsert_scoped_setting(session, "inverter", inverter_id, "mobile_is_connected", str(is_grid_connected))
+                    repo.upsert_scoped_setting(session, "inverter", inverter_id, "mobile_history", json.dumps(current_history))
+                    session.commit()
+            except Exception as e:
+                session.rollback()
+                logger.error(f"Error updating mobile state in PG: {e}")
+            finally:
+                session.close()
+        else:
+            # Write to file
+            with open(config['HISTORY_FILE'], 'w') as f_history_w:
+                f_history_w.write(json.dumps(current_history))
+            with open(config["STATE_FILE"], "w") as fw:
+                fw.write(str(is_grid_connected))
+        
         if is_grid_connected:
             fcm_service.ongrid_notify(inverter_ctx)
             play_audio("has-grid.mp3")

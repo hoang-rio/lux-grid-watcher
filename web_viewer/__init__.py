@@ -427,12 +427,43 @@ async def state(_: web.Request):
 
 async def mobile_state(_: web.Request):
     try:
-        state_file = config.get("STATE_FILE", "grid_connect_state.ini")
-        history_file = config.get("HISTORY_FILE", "history.json")
-        return web.json_response(
-            read_grid_state(state_file, history_file),
-            headers=VITE_CORS_HEADER,
-        )
+        if USE_PG:
+            user_id = _extract_jwt_user_id(_)
+            if user_id is None:
+                return web.json_response(
+                    {"success": False, "message": _lmsg(_, "Unauthorized")},
+                    status=401,
+                    headers=VITE_CORS_HEADER,
+                )
+            session = next(get_db_session())
+            try:
+                inverter = _resolve_request_inverter(session, user_id, _)
+                if not inverter:
+                    session.close()
+                    return web.json_response(
+                        {"is_connected": False, "history": []},
+                        headers=VITE_CORS_HEADER,
+                    )
+                inverter_id = str(inverter.id)
+                is_connected_str = mt_repo.get_scoped_setting(session, "inverter", inverter_id, "mobile_is_connected")
+                is_connected = is_connected_str == "True" if is_connected_str else False
+                history_str = mt_repo.get_scoped_setting(session, "inverter", inverter_id, "mobile_history")
+                history = json.loads(history_str) if history_str else []
+                session.close()
+                return web.json_response(
+                    {"is_connected": is_connected, "history": history},
+                    headers=VITE_CORS_HEADER,
+                )
+            except Exception:
+                session.close()
+                raise
+        else:
+            state_file = config.get("STATE_FILE", "grid_connect_state.ini")
+            history_file = config.get("HISTORY_FILE", "history.json")
+            return web.json_response(
+                read_grid_state(state_file, history_file),
+                headers=VITE_CORS_HEADER,
+            )
     except Exception as error:
         logger.error(f"Error in mobile_state: {error}")
         return web.json_response(
