@@ -376,18 +376,18 @@ async def websocket_handler(request):
         pass
     return ws
 
-async def state(_: web.Request):
+async def state(request: web.Request):
     global last_inverter_data
     global last_inverter_data_by_id
-    user_id = _extract_jwt_user_id(_)
+    user_id = _extract_jwt_user_id(request)
     if USE_PG and user_id is None:
         return web.json_response({}, status=401)
 
-    requested_inverter_id = _.rel_url.query.get("inverter_id", "").strip()
+    requested_inverter_id = request.rel_url.query.get("inverter_id", "").strip()
 
     if USE_PG and user_id is not None and not requested_inverter_id:
         return web.json_response(
-            {"success": False, "message": _lmsg(_, "inverter_id is required")},
+            {"success": False, "message": _lmsg(request, "inverter_id is required")},
             status=400,
         )
 
@@ -395,7 +395,7 @@ async def state(_: web.Request):
         try:
             session = next(get_db_session())
             try:
-                inverter = _resolve_request_inverter(session, user_id, _)
+                inverter = _resolve_request_inverter(session, user_id, request)
                 if inverter is None:
                     return web.json_response({})
                 latest = mt_repo.get_inverter_latest_state(session, inverter.id)
@@ -416,18 +416,18 @@ async def state(_: web.Request):
     return web.json_response(data)
 
 
-async def mobile_state(_: web.Request):
+async def mobile_state(request: web.Request):
     try:
         if USE_PG:
-            user_id = _extract_jwt_user_id(_)
+            user_id = _extract_jwt_user_id(request)
             if user_id is None:
                 return web.json_response(
-                    {"success": False, "message": _lmsg(_, "Unauthorized")},
+                    {"success": False, "message": _lmsg(request, "Unauthorized")},
                     status=401,
                 )
             session = next(get_db_session())
             try:
-                inverter = _resolve_request_inverter(session, user_id, _)
+                inverter = _resolve_request_inverter(session, user_id, request)
                 if not inverter:
                     session.close()
                     return web.json_response(
@@ -578,13 +578,13 @@ async def hourly_chart(request: web.Request):
         logger.error(f"Error in hourly_chart: {e}")
         return web.json_response([])
 
-async def total(_: web.Request):
-    user_id = _extract_jwt_user_id(_)
+async def total(request: web.Request):
+    user_id = _extract_jwt_user_id(request)
     if user_id is not None:
         try:
             session = next(get_db_session())
             try:
-                inverter = _resolve_request_inverter(session, user_id, _)
+                inverter = _resolve_request_inverter(session, user_id, request)
                 if inverter is None:
                     return web.json_response({})
                 totals = mt_repo.get_total(session, inverter.id)
@@ -609,11 +609,11 @@ async def total(_: web.Request):
         logger.error(f"Error in total: {e}")
         return web.json_response({})
 
-async def daily_chart(_: web.Request):
-    user_id = _extract_jwt_user_id(_)
+async def daily_chart(request: web.Request):
+    user_id = _extract_jwt_user_id(request)
     if user_id is not None:
         try:
-            request = _
+            request = request
             month_str = request.rel_url.query.get('month')
             if month_str:
                 try:
@@ -676,7 +676,7 @@ async def daily_chart(_: web.Request):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        request = _
+        request = request
         month_str = request.rel_url.query.get('month')
         if month_str:
             # Expect format YYYY-MM
@@ -780,13 +780,13 @@ async def monthly_chart(request: web.Request):
         logger.error(f"Error in monthly_chart: {e}")
         return web.json_response({"chart": [], "years": []})
 
-async def yearly_chart(_: web.Request):
-    user_id = _extract_jwt_user_id(_)
+async def yearly_chart(request: web.Request):
+    user_id = _extract_jwt_user_id(request)
     if user_id is not None:
         try:
             session = next(get_db_session())
             try:
-                inverter = _resolve_request_inverter(session, user_id, _)
+                inverter = _resolve_request_inverter(session, user_id, request)
                 if inverter is None:
                     return web.json_response([])
 
@@ -826,9 +826,9 @@ async def yearly_chart(_: web.Request):
         logger.error(f"Error in yearly_chart: {e}")
         return web.json_response([])
 
-async def notification_history(_: web.Request):
+async def notification_history(request: web.Request):
     if USE_PG:
-        user_id = _extract_jwt_user_id(_)
+        user_id = _extract_jwt_user_id(request)
         if user_id is None:
             return web.json_response({"notifications": []}, status=401)
         try:
@@ -868,9 +868,9 @@ async def notification_history(_: web.Request):
         logger.error(f"Error in notification_history: {e}")
         return web.json_response({"notifications": []})
 
-async def mark_notifications_read(_: web.Request):
+async def mark_notifications_read(request: web.Request):
     if USE_PG:
-        user_id = _extract_jwt_user_id(_)
+        user_id = _extract_jwt_user_id(request)
         if user_id is None:
             return web.json_response({"success": False}, status=401)
         try:
@@ -895,9 +895,9 @@ async def mark_notifications_read(_: web.Request):
         logger.error(f"Error in mark_notifications_read: {e}")
         return web.json_response({"success": False})
 
-async def notification_unread_count(_: web.Request):
+async def notification_unread_count(request: web.Request):
     if USE_PG:
-        user_id = _extract_jwt_user_id(_)
+        user_id = _extract_jwt_user_id(request)
         if user_id is None:
             return web.json_response({"unread_count": 0}, status=401)
         try:
@@ -927,9 +927,9 @@ ALLOWED_SLEEP_TIME_VALUES = {"3", "5", "10", "15", "30"}
 _sleep_time_cache: dict[str, int] = {}
 
 
-async def get_settings(_: web.Request):
+async def get_settings(request: web.Request):
     if USE_PG:
-        user_id = _extract_jwt_user_id(_)
+        user_id = _extract_jwt_user_id(request)
         if user_id is None:
             return web.json_response({}, status=401)
         try:
