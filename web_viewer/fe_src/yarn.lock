@@ -1753,6 +1753,7 @@ __metadata:
     react-i18next: "npm:^16.6.6"
     typescript: "npm:^6.0.2"
     typescript-eslint: "npm:^8.57.2"
+    vite: "npm:^8.0.5"
     vitest: "npm:^4.1.1"
   languageName: unknown
   linkType: soft
@@ -3259,7 +3260,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite@npm:^6.0.0 || ^7.0.0 || ^8.0.0":
+"vite@npm:^6.0.0 || ^7.0.0 || ^8.0.0, vite@npm:^8.0.5":
   version: 8.0.5
   resolution: "vite@npm:8.0.5"
   dependencies:
