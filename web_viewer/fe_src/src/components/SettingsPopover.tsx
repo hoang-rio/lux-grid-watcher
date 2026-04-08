@@ -110,7 +110,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
         setPasswordConfirm(merged.AUTH_PASSWORD || '');
       }
     } catch (err) {
-      logUtil.error('Failed to fetch settings', err);
+      logUtil.error(t('settings.fetchError'), err);
       if (!isMountedRef.current) {
         return;
       }
@@ -175,7 +175,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
         setMessage({text: t('settings.saveError'), type: 'error'});
       }
     } catch (err) {
-      logUtil.error('Failed to save settings', err);
+      logUtil.error(t('settings.saveError'), err);
       setMessage({text: t('settings.saveError'), type: 'error'});
     } finally {
       setSaving(false);

@@ -42,7 +42,7 @@ function TopAuthBar({
       }
       setVerifyMessage(json?.message || t("auth.sendVerifyEmailSuccess"));
     } catch (err) {
-      logUtil.error("send verify email error", err);
+      logUtil.error(t("auth.sendVerifyEmailFailed"), err);
       setVerifyMessage(t("auth.sendVerifyEmailFailed"));
     } finally {
       setVerifySubmitting(false);

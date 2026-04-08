@@ -79,7 +79,7 @@ function InverterManageDashboard({
       setMessage(t("inverterManager.createSuccess"));
       await onChanged();
     } catch (err) {
-      logUtil.error("create inverter failed", err);
+      logUtil.error(t("inverterManager.createFailed"), err);
       setError(t("inverterManager.createFailed"));
     } finally {
       setIsSubmitting(false);
@@ -109,7 +109,7 @@ function InverterManageDashboard({
       setMessage(t("inverterManager.deleteSuccess"));
       await onChanged();
     } catch (err) {
-      logUtil.error("delete inverter failed", err);
+      logUtil.error(t("inverterManager.deleteFailed"), err);
       setError(t("inverterManager.deleteFailed"));
     } finally {
       setDeletingId("");
@@ -153,7 +153,7 @@ function InverterManageDashboard({
       cancelEdit();
       await onChanged();
     } catch (err) {
-      logUtil.error("update inverter failed", err);
+      logUtil.error(t("inverterManager.updateFailed"), err);
       setError(t("inverterManager.updateFailed"));
     } finally {
       setSavingEditId("");

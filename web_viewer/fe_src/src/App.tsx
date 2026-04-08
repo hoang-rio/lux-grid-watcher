@@ -227,7 +227,7 @@ function App() {
         });
 
         if (!response.ok || !response.body) {
-          throw new Error(`SSE request failed with status ${response.status}`);
+          throw new Error(i18n.t("sse.requestFailedWithStatus", { status: response.status }));
         }
 
         reconnectCountRef.current = 0;
@@ -441,13 +441,13 @@ function App() {
       }
       setIsLoading(false);
     } catch (err) {
-      logUtil.error("load auth session error", err);
+      logUtil.error(i18n.t("auth.loadSessionError"), err);
       clearAuthSession();
       setIsLoading(false);
     } finally {
       setIsAuthChecking(false);
     }
-  }, [authConfigLoaded, authRequired, clearAuthSession]);
+  }, [authConfigLoaded, authRequired, clearAuthSession, i18n]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -521,12 +521,12 @@ function App() {
         },
       });
     } catch (err) {
-      logUtil.error("logout request failed", err);
+      logUtil.error(i18n.t("auth.logoutRequestFailed"), err);
     } finally {
       clearAuthSession();
       setIsLoading(false);
     }
-  }, [clearAuthSession]);
+  }, [clearAuthSession, i18n]);
 
   useEffect(() => {
     loadAuthConfig();

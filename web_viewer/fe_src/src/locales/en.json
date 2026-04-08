@@ -23,6 +23,7 @@
     "connected": "[SSE] Connected to server",
     "stopReconnect": "[SSE] Stop reconnect by reached MAX_RECONNECT_COUNT: %s",
     "reconnecting": "[SSE] Connection closed. Reconnecting (%s)...",
+    "requestFailedWithStatus": "SSE request failed with status {{status}}",
     "error": "[SSE] SSE error",
     "closing": "[SSE] Closing SSE connection...",
     "closed": "[SSE] SSE connection closed",
@@ -106,6 +107,7 @@
     "noRecords": "No notification records",
     "fetchingNotifications": "Fetching notifications...",
     "failedFetchNotifications": "Failed to fetch notifications",
+    "failedMarkRead": "Failed to mark notifications as read",
     "fetchingUnreadCount": "Fetching unread notification count...",
     "failedFetchUnreadCount": "Failed to fetch unread notification count",
     "source": "Source",
@@ -116,6 +118,8 @@
     "sendVerifyEmail": "Send verification email",
     "sendVerifyEmailSuccess": "Verification email sent.",
     "sendVerifyEmailFailed": "Failed to send verification email",
+    "loadSessionError": "Load auth session error",
+    "logoutRequestFailed": "Logout request failed",
     "logout": "Logout"
   },
   "authPanel": {
@@ -244,6 +248,7 @@
     "save": "Save",
     "saving": "Saving...",
     "saveSuccess": "Settings saved successfully",
+    "fetchError": "Failed to fetch settings",
     "saveError": "Failed to save settings",
     "hours": "hours",
     "seconds": "seconds",
@@ -251,6 +256,9 @@
     "percent": "%"
   },
   "getStateError": "API get state error",
+  "errors": {
+    "requestFailedWithStatus": "Request failed with status {{status}}"
+  },
   "changePassword": {
     "title": "Change Password",
     "subtitle": "Update your account password",

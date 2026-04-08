@@ -65,11 +65,11 @@ function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
         window.localStorage.removeItem("lux_refresh_token");
         setTimeout(() => window.location.reload(), 2000);
       } else {
-        setMessage({ text: data.message || t('changePassword.errorFailedToChangePassword'), type: "error" });
+        setMessage({ text: data.message || t('changePassword.errorFailed'), type: "error" });
       }
     } catch (err) {
-      logUtil.error("Failed to change password", err);
-      setMessage({ text: t('changePassword.errorFailedToChangePassword'), type: "error" });
+      logUtil.error(t('changePassword.errorFailed'), err);
+      setMessage({ text: t('changePassword.errorFailed'), type: "error" });
     } finally {
       setIsSubmitting(false);
     }

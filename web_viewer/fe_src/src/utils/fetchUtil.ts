@@ -1,3 +1,5 @@
+import i18n from "../i18n";
+
 export function getAccessToken(): string {
   return localStorage.getItem("lux_access_token") || "";
 }
@@ -136,7 +138,7 @@ export async function apiGetJsonOrThrow<T = unknown>(pathOrUrl: string, options:
     const message =
       json && typeof json === "object" && "message" in json && typeof json.message === "string"
         ? json.message
-        : `Request failed with status ${res.status}`;
+        : i18n.t("errors.requestFailedWithStatus", { status: res.status });
     throw new Error(message);
   }
 

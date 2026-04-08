@@ -154,14 +154,17 @@ function SystemInformation({
         })
           .then((res) => {
             if (!res.ok) {
-              throw new Error("mark read failed");
+              throw new Error(i18n.t("notification.failedMarkRead"));
             }
           })
-          .then(() => fetchUnreadCount());
+          .then(() => fetchUnreadCount())
+          .catch((err) => {
+            logUtil.error(i18n.t("notification.failedMarkRead"), err);
+          });
       }
       notificationOpened.current = false;
     }
-  }, [showNotifications, unreadCount, fetchUnreadCount]);
+  }, [showNotifications, unreadCount, fetchUnreadCount, i18n]);
 
   const handleShowNotifications = useCallback(() => {
     setShowNotifications((prev) => !prev);

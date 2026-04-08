@@ -23,6 +23,7 @@
     "connected": "[SSE] Đã kết nối đến máy chủ",
     "stopReconnect": "[SSE] Dừng kết nối lại do đã đạt MAX_RECONNECT_COUNT: %s",
     "reconnecting": "[SSE] Kết nối đã đóng. Đang kết nối lại (%s)...",
+    "requestFailedWithStatus": "Yêu cầu SSE thất bại với mã trạng thái {{status}}",
     "error": "[SSE] Lỗi SSE",
     "closing": "[SSE] Đang đóng kết nối SSE...",
     "closed": "[SSE] Đã đóng kết nối SSE",
@@ -106,6 +107,7 @@
     "noRecords": "Không có thông báo nào",
     "fetchingNotifications": "Đang lấy thông báo...",
     "failedFetchNotifications": "Lấy thông báo thất bại",
+    "failedMarkRead": "Đánh dấu thông báo đã đọc thất bại",
     "fetchingUnreadCount": "Đang lấy số lượng thông báo chưa đọc...",
     "failedFetchUnreadCount": "Lấy số lượng thông báo chưa đọc thất bại",
     "source": "Nguồn",
@@ -116,6 +118,8 @@
     "sendVerifyEmail": "Gửi email xác thực",
     "sendVerifyEmailSuccess": "Đã gửi email xác thực.",
     "sendVerifyEmailFailed": "Gửi email xác thực thất bại",
+    "loadSessionError": "Lỗi tải phiên xác thực",
+    "logoutRequestFailed": "Yêu cầu đăng xuất thất bại",
     "logout": "Đăng xuất"
   },
   "authPanel": {
@@ -244,6 +248,7 @@
     "save": "Lưu",
     "saving": "Đang lưu...",
     "saveSuccess": "Cài đặt đã được lưu thành công",
+    "fetchError": "Lấy cài đặt thất bại",
     "saveError": "Lưu cài đặt thất bại",
     "hours": "giờ",
     "seconds": "giây",
@@ -251,6 +256,9 @@
     "percent": "%"
   },
   "getStateError": "Lỗi lấy API trạng thái",
+  "errors": {
+    "requestFailedWithStatus": "Yêu cầu thất bại với mã trạng thái {{status}}"
+  },
   "changePassword": {
     "title": "Đổi mật khẩu",
     "subtitle": "Cập nhật mật khẩu tài khoản của bạn",
