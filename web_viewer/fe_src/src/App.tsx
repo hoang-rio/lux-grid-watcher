@@ -330,7 +330,7 @@ function App() {
         params.set("inverter_id", selectedInverterId);
       }
       const path = params.toString() ? `/state?${params.toString()}` : "/state";
-      const json = await apiGetJsonOrThrow<Record<string, unknown>>(path, {
+      const json = await apiGetJsonOrThrow<IInverterData>(path, {
         withAuth: true,
       });
       if (Object.keys(json).length !== 0) {
