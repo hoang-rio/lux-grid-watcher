@@ -14,7 +14,7 @@ import { IFetchChart, SeriesItem } from "../../Intefaces";
 import Loading from "../Loading";
 import { roundTo } from "../utils";
 import BarChart from "./BarChart";
-import { apiFetch } from "../../utils/fetchUtil";
+import { apiGetJsonOrThrow } from "../../utils/fetchUtil";
 
 interface DailyChartProps {
   month?: string;
@@ -96,8 +96,7 @@ const DailyChart = forwardRef((props: DailyChartProps, ref: ForwardedRef<IFetchC
       params.set("inverter_id", props.selectedInverterId);
     }
     const path = `/daily-chart?${params.toString()}`;
-    const res = await apiFetch(path, { withAuth: Boolean(props.authToken) });
-    const json = await res.json();
+    const json = await apiGetJsonOrThrow<[]>(path, { withAuth: Boolean(props.authToken) });
     setChartData(json);
     isFetchingRef.current = false;
     setIsLoading(false);

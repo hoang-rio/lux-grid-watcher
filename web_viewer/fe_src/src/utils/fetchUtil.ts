@@ -115,7 +115,30 @@ export async function apiFetch(pathOrUrl: string, options: ApiFetchOptions = {})
   return response;
 }
 
+async function parseJsonSafe<T = unknown>(res: Response): Promise<T | null> {
+  try {
+    return await res.json() as T;
+  } catch {
+    return null;
+  }
+}
+
 export async function apiGetJson<T = unknown>(pathOrUrl: string, options: ApiFetchOptions = {}): Promise<T> {
   const res = await apiFetch(pathOrUrl, options);
   return res.json() as Promise<T>;
+}
+
+export async function apiGetJsonOrThrow<T = unknown>(pathOrUrl: string, options: ApiFetchOptions = {}): Promise<T> {
+  const res = await apiFetch(pathOrUrl, options);
+  const json = await parseJsonSafe<T | { message?: string }>(res);
+
+  if (!res.ok) {
+    const message =
+      json && typeof json === "object" && "message" in json && typeof json.message === "string"
+        ? json.message
+        : `Request failed with status ${res.status}`;
+    throw new Error(message);
+  }
+
+  return json as T;
 }

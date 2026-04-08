@@ -172,6 +172,30 @@ def _lmsg(request: web.Request, message: str) -> str:
     return translate(message, locale)
 
 
+def _jwt_error_response(request: web.Request, message: str) -> web.Response:
+    return web.json_response(
+        {"success": False, "message": _lmsg(request, message)},
+        status=401,
+    )
+
+
+def _require_jwt_user_id(request: web.Request) -> tuple[Optional[uuid.UUID], Optional[web.Response]]:
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        return None, _jwt_error_response(request, "Unauthorized")
+
+    token = auth[7:]
+    try:
+        payload = decode_access_token(token)
+        return uuid.UUID(str(payload.get("sub"))), None
+    except pyjwt.ExpiredSignatureError:
+        return None, _jwt_error_response(request, "Token expired")
+    except (pyjwt.InvalidTokenError, ValueError, TypeError):
+        return None, _jwt_error_response(request, "Invalid token")
+    except Exception:
+        return None, _jwt_error_response(request, "Invalid token")
+
+
 def _resolve_request_inverter(session, user_id: uuid.UUID, request: web.Request):
     inverter_id_str = request.rel_url.query.get("inverter_id", "").strip()
     if inverter_id_str:
@@ -207,13 +231,11 @@ async def sse_handler(request):
         USE_PG,
     )
 
-    user_id = _extract_jwt_user_id(request)
-
-    if USE_PG and user_id is None:
-        return web.json_response(
-            {"success": False, "message": _lmsg(request, "Unauthorized")},
-            status=401,
-        )
+    user_id = None
+    if USE_PG:
+        user_id, auth_error = _require_jwt_user_id(request)
+        if auth_error is not None:
+            return auth_error
 
     if USE_PG and user_id is not None and not requested_inverter_id:
         return web.json_response(
@@ -379,9 +401,11 @@ async def websocket_handler(request):
 async def state(request: web.Request):
     global last_inverter_data
     global last_inverter_data_by_id
-    user_id = _extract_jwt_user_id(request)
-    if USE_PG and user_id is None:
-        return web.json_response({}, status=401)
+    user_id = None
+    if USE_PG:
+        user_id, auth_error = _require_jwt_user_id(request)
+        if auth_error is not None:
+            return auth_error
 
     requested_inverter_id = request.rel_url.query.get("inverter_id", "").strip()
 
@@ -419,12 +443,9 @@ async def state(request: web.Request):
 async def mobile_state(request: web.Request):
     try:
         if USE_PG:
-            user_id = _extract_jwt_user_id(request)
-            if user_id is None:
-                return web.json_response(
-                    {"success": False, "message": _lmsg(request, "Unauthorized")},
-                    status=401,
-                )
+            user_id, auth_error = _require_jwt_user_id(request)
+            if auth_error is not None:
+                return auth_error
             session = next(get_db_session())
             try:
                 inverter = _resolve_request_inverter(session, user_id, request)
@@ -472,12 +493,9 @@ async def register_fcm(request: web.Request):
                 token = str(payload.get("token", ""))
 
         if USE_PG:
-            user_id = _extract_jwt_user_id(request)
-            if user_id is None:
-                return web.json_response(
-                    {"is_success": False, "message": _lmsg(request, "Unauthorized"), "device_count": 0},
-                    status=401,
-                )
+            user_id, auth_error = _require_jwt_user_id(request)
+            if auth_error is not None:
+                return auth_error
             if not token.strip():
                 return web.json_response(
                     {"is_success": False, "message": _lmsg(request, "Missing required parameter 'token'"), "device_count": 0},
@@ -517,7 +535,12 @@ async def register_fcm(request: web.Request):
 
 
 async def hourly_chart(request: web.Request):
-    user_id = _extract_jwt_user_id(request)
+    user_id = None
+    if USE_PG:
+        user_id, auth_error = _require_jwt_user_id(request)
+        if auth_error is not None:
+            return auth_error
+
     if user_id is not None:
         try:
             date_str = request.rel_url.query.get('date')
@@ -554,7 +577,10 @@ async def hourly_chart(request: web.Request):
             logger.error(f"Error in hourly_chart (multi-tenant): {e}")
 
     if USE_PG:
-        return web.json_response([])
+        return web.json_response(
+            {"success": False, "message": _lmsg(request, "Failed to load hourly chart")},
+            status=500,
+        )
 
     try:
         conn = get_db_connection()
@@ -579,7 +605,12 @@ async def hourly_chart(request: web.Request):
         return web.json_response([])
 
 async def total(request: web.Request):
-    user_id = _extract_jwt_user_id(request)
+    user_id = None
+    if USE_PG:
+        user_id, auth_error = _require_jwt_user_id(request)
+        if auth_error is not None:
+            return auth_error
+
     if user_id is not None:
         try:
             session = next(get_db_session())
@@ -595,7 +626,10 @@ async def total(request: web.Request):
             logger.error(f"Error in total (multi-tenant): {e}")
 
     if USE_PG:
-        return web.json_response({})
+        return web.json_response(
+            {"success": False, "message": _lmsg(request, "Failed to load total")},
+            status=500,
+        )
 
     try:
         conn = get_db_connection()
@@ -610,7 +644,12 @@ async def total(request: web.Request):
         return web.json_response({})
 
 async def daily_chart(request: web.Request):
-    user_id = _extract_jwt_user_id(request)
+    user_id = None
+    if USE_PG:
+        user_id, auth_error = _require_jwt_user_id(request)
+        if auth_error is not None:
+            return auth_error
+
     if user_id is not None:
         try:
             request = request
@@ -671,7 +710,10 @@ async def daily_chart(request: web.Request):
             logger.error(f"Error in daily_chart (multi-tenant): {e}")
 
     if USE_PG:
-        return web.json_response([])
+        return web.json_response(
+            {"success": False, "message": _lmsg(request, "Failed to load daily chart")},
+            status=500,
+        )
 
     try:
         conn = get_db_connection()
@@ -714,7 +756,12 @@ async def daily_chart(request: web.Request):
         return web.json_response([])
 
 async def monthly_chart(request: web.Request):
-    user_id = _extract_jwt_user_id(request)
+    user_id = None
+    if USE_PG:
+        user_id, auth_error = _require_jwt_user_id(request)
+        if auth_error is not None:
+            return auth_error
+
     if user_id is not None:
         try:
             now = datetime.now()
@@ -754,7 +801,10 @@ async def monthly_chart(request: web.Request):
             logger.error(f"Error in monthly_chart (multi-tenant): {e}")
 
     if USE_PG:
-        return web.json_response({"chart": [], "years": []})
+        return web.json_response(
+            {"success": False, "message": _lmsg(request, "Failed to load monthly chart")},
+            status=500,
+        )
 
     try:
         conn = get_db_connection()
@@ -781,7 +831,12 @@ async def monthly_chart(request: web.Request):
         return web.json_response({"chart": [], "years": []})
 
 async def yearly_chart(request: web.Request):
-    user_id = _extract_jwt_user_id(request)
+    user_id = None
+    if USE_PG:
+        user_id, auth_error = _require_jwt_user_id(request)
+        if auth_error is not None:
+            return auth_error
+
     if user_id is not None:
         try:
             session = next(get_db_session())
@@ -813,7 +868,10 @@ async def yearly_chart(request: web.Request):
             logger.error(f"Error in yearly_chart (multi-tenant): {e}")
 
     if USE_PG:
-        return web.json_response([])
+        return web.json_response(
+            {"success": False, "message": _lmsg(request, "Failed to load yearly chart")},
+            status=500,
+        )
 
     try:
         conn = get_db_connection()
@@ -828,9 +886,9 @@ async def yearly_chart(request: web.Request):
 
 async def notification_history(request: web.Request):
     if USE_PG:
-        user_id = _extract_jwt_user_id(request)
-        if user_id is None:
-            return web.json_response({"notifications": []}, status=401)
+        user_id, auth_error = _require_jwt_user_id(request)
+        if auth_error is not None:
+            return auth_error
         try:
             session = next(get_db_session())
             try:
@@ -870,9 +928,9 @@ async def notification_history(request: web.Request):
 
 async def mark_notifications_read(request: web.Request):
     if USE_PG:
-        user_id = _extract_jwt_user_id(request)
-        if user_id is None:
-            return web.json_response({"success": False}, status=401)
+        user_id, auth_error = _require_jwt_user_id(request)
+        if auth_error is not None:
+            return auth_error
         try:
             session = next(get_db_session())
             try:
@@ -897,9 +955,9 @@ async def mark_notifications_read(request: web.Request):
 
 async def notification_unread_count(request: web.Request):
     if USE_PG:
-        user_id = _extract_jwt_user_id(request)
-        if user_id is None:
-            return web.json_response({"unread_count": 0}, status=401)
+        user_id, auth_error = _require_jwt_user_id(request)
+        if auth_error is not None:
+            return auth_error
         try:
             session = next(get_db_session())
             try:
@@ -916,7 +974,6 @@ async def notification_unread_count(request: web.Request):
         cursor = conn.cursor()
         unread_count = cursor.execute("SELECT COUNT(*) FROM notification_history WHERE read = 0").fetchone()[0]
         return web.json_response({"unread_count": unread_count})
-        return web.json_response({"unread_count": unread_count})
     except Exception as e:
         logger.error(f"Error in notification_unread_count: {e}")
         return web.json_response({"unread_count": 0})
@@ -929,9 +986,9 @@ _sleep_time_cache: dict[str, int] = {}
 
 async def get_settings(request: web.Request):
     if USE_PG:
-        user_id = _extract_jwt_user_id(request)
-        if user_id is None:
-            return web.json_response({}, status=401)
+        user_id, auth_error = _require_jwt_user_id(request)
+        if auth_error is not None:
+            return auth_error
         try:
             import settings
             session = next(get_db_session())
@@ -963,9 +1020,9 @@ async def get_settings(request: web.Request):
 
 async def update_settings(request: web.Request):
     if USE_PG:
-        user_id = _extract_jwt_user_id(request)
-        if user_id is None:
-            return web.json_response({"success": False}, status=401)
+        user_id, auth_error = _require_jwt_user_id(request)
+        if auth_error is not None:
+            return auth_error
         try:
             data = await request.json()
             session = next(get_db_session())

@@ -14,7 +14,7 @@ import { IFetchChart, SeriesItem } from "../../Intefaces";
 import Loading from "../Loading";
 import { roundTo } from "../utils";
 import BarChart from "./BarChart";
-import { apiFetch } from "../../utils/fetchUtil";
+import { apiGetJsonOrThrow } from "../../utils/fetchUtil";
 
 interface MonthlyChartProps {
   year?: number;
@@ -92,9 +92,8 @@ const MonthlyChart = forwardRef((props: MonthlyChartProps, ref: ForwardedRef<IFe
         params.set("inverter_id", props.selectedInverterId);
       }
       const path = `/monthly-chart?${params.toString()}`;
-      const res = await apiFetch(path, { withAuth: Boolean(props.authToken) });
-      const json = await res.json();
-      setChartData(json && json.chart ? json.chart : json || []);
+      const json = await apiGetJsonOrThrow<{ chart?: []; years?: unknown[] }>(path, { withAuth: Boolean(props.authToken) });
+      setChartData(json && json.chart ? json.chart : []);
       // report available years to parent once on first successful fetch
       if (
         !firstYearsReported.current &&

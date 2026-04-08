@@ -14,7 +14,7 @@ import { IFetchChart, SeriesItem } from "../../Intefaces";
 import Loading from "../Loading";
 import { roundTo } from "../utils";
 import BarChart from "./BarChart";
-import { apiFetch } from "../../utils/fetchUtil";
+import { apiGetJsonOrThrow } from "../../utils/fetchUtil";
 
 interface YearlyChartProps {
   selectedInverterId?: string;
@@ -85,8 +85,7 @@ const YearlyChart = forwardRef((props: YearlyChartProps, ref: ForwardedRef<IFetc
       params.set("inverter_id", props.selectedInverterId);
     }
     const path = params.toString() ? `/yearly-chart?${params.toString()}` : "/yearly-chart";
-    const res = await apiFetch(path, { withAuth: Boolean(props.authToken) });
-    const json = await res.json();
+    const json = await apiGetJsonOrThrow<[]>(path, { withAuth: Boolean(props.authToken) });
     setState((prev) => ({ ...prev, chartData: json }));
     isFetchingRef.current = false;
     setState((prev) => ({ ...prev, isLoading: false }));

@@ -11,7 +11,7 @@ import {
 import Footer from "./components/Footer";
 import Loading from "./components/Loading";
 import * as logUtil from "./utils/logUtil";
-import { apiFetch } from "./utils/fetchUtil";
+import { apiFetch, apiGetJsonOrThrow } from "./utils/fetchUtil";
 
 const SystemInformation = lazy(() => import("./components/SystemInformation"));
 const Summary = lazy(() => import("./components/Summary"));
@@ -330,10 +330,9 @@ function App() {
         params.set("inverter_id", selectedInverterId);
       }
       const path = params.toString() ? `/state?${params.toString()}` : "/state";
-      const res = await apiFetch(path, {
+      const json = await apiGetJsonOrThrow<Record<string, unknown>>(path, {
         withAuth: true,
       });
-      const json = await res.json();
       if (Object.keys(json).length !== 0) {
         hasInverterDataRef.current = true;
         setInverterData(json);

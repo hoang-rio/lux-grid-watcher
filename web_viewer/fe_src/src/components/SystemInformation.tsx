@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react";
 import Loading from "./Loading";
 import * as logUtil from "../utils/logUtil";
-import { apiFetch } from "../utils/fetchUtil";
+import { apiFetch, apiGetJsonOrThrow } from "../utils/fetchUtil";
 
 const SettingsPopover = lazy(() => import("./SettingsPopover"));
 
@@ -57,11 +57,10 @@ function SystemInformation({
   const fetchUnreadCount = useCallback(async () => {
     try {
       logUtil.log(i18n.t("notification.fetchingUnreadCount"));
-      const res = await apiFetch("/notification-unread-count", {
+      const data = await apiGetJsonOrThrow<{ unread_count?: number }>("/notification-unread-count", {
         withAuth: true,
       });
-      const data = await res.json();
-      setUnreadCount(data.unread_count);
+      setUnreadCount(data.unread_count || 0);
     } catch (err) {
       logUtil.error(i18n.t("notification.failedFetchUnreadCount"), err);
     }
@@ -83,11 +82,10 @@ function SystemInformation({
     setLoadingNotifications(true); // start loading
     try {
       logUtil.log(i18n.t("notification.fetchingNotifications"));
-      const res = await apiFetch("/notification-history", {
+      const data = await apiGetJsonOrThrow<{ notifications?: INotificationData[] }>("/notification-history", {
         withAuth: true,
       });
-      const data = await res.json();
-      setNotifications(data.notifications);
+      setNotifications(data.notifications || []);
       // Don't set unreadCount here, it's handled by fetchUnreadCount
     } catch (err) {
       logUtil.error(i18n.t("notification.failedFetchNotifications"), err);

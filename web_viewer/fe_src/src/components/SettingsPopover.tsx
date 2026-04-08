@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useState, useEffect, forwardRef, useRef } from 'react';
 import Loading from './Loading';
 import * as logUtil from '../utils/logUtil';
-import { apiFetch } from '../utils/fetchUtil';
+import { apiFetch, apiGetJsonOrThrow } from '../utils/fetchUtil';
 import './SettingsPopover.css';
 
 interface SettingsPopoverProps {
@@ -38,10 +38,9 @@ const fetchSettingsBootstrap = async (): Promise<{ pgMode: boolean; data: Record
       const authConfig = await authConfigRes.json();
       const pgMode = Boolean(authConfig?.auth_required);
 
-      const res = await apiFetch('/settings', {
+      const data = await apiGetJsonOrThrow<Record<string, string>>('/settings', {
         withAuth: pgMode,
       });
-      const data = await res.json();
 
       return { pgMode, data };
     })();
@@ -155,7 +154,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
         delete payload.AUTH_PASSWORD;
         delete payload.AUTH_BYPASS_CIDR;
       }
-      const res = await apiFetch('/settings', {
+      const data = await apiGetJsonOrThrow<{ success?: boolean }>('/settings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -163,7 +162,6 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
         withAuth: isPgMode,
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
       if (data.success) {
         const prevAuthEnabled = !isPgMode && originalSettings ? originalSettings.AUTH_ENABLED === 'true' : false;
         setOriginalSettings(settings);

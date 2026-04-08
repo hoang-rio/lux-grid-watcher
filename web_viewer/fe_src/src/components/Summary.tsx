@@ -7,7 +7,7 @@ import YieldChart from "./YieldChart";
 import { fixedIfNeed } from "./utils";
 import { useTranslation } from 'react-i18next';
 import * as logUtil from "../utils/logUtil";
-import { apiFetch } from "../utils/fetchUtil";
+import { apiGetJsonOrThrow } from "../utils/fetchUtil";
 
 interface IProps {
   invertData: IInverterData;
@@ -55,8 +55,7 @@ function Summary({ invertData, selectedInverterId, authToken }: IProps) {
         params.set("inverter_id", selectedInverterId);
       }
       const path = params.toString() ? `/total?${params.toString()}` : "/total";
-      const res = await apiFetch(path, { withAuth: Boolean(authToken) });
-      const json = await res.json();
+      const json = await apiGetJsonOrThrow<ITotal>(path, { withAuth: Boolean(authToken) });
       setTotal(json);
     } catch (err) {
       logUtil.error(i18n.t('fetchTotalError'), err);
