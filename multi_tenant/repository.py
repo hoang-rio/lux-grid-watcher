@@ -264,10 +264,8 @@ def update_inverter(
     inverter: Inverter,
     *,
     name: str,
-    invert_serial: str | None,
 ) -> Inverter:
     inverter.name = name
-    inverter.invert_serial = str(invert_serial).strip() if invert_serial else None
     inverter.updated_at = datetime.utcnow()
     session.flush()
     return inverter

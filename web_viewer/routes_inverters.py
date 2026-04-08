@@ -219,7 +219,6 @@ async def update_inverter(request: web.Request) -> web.Response:
         return _err(request, "Invalid JSON body")
 
     name = str(body.get("name", "")).strip()
-    invert_serial = str(body.get("invert_serial", "")).strip() or None
 
     if not name:
         return _err(request, "name is required")
@@ -231,16 +230,10 @@ async def update_inverter(request: web.Request) -> web.Response:
         if inverter is None:
             return _err(request, "Inverter not found", 404)
 
-        if invert_serial:
-            existed = repo.get_inverter_by_invert_serial(session, invert_serial)
-            if existed is not None and existed.id != inverter.id:
-                return _err(request, "invert_serial already registered")
-
         updated = repo.update_inverter(
             session,
             inverter,
             name=name,
-            invert_serial=invert_serial,
         )
         session.commit()
         latest_state = repo.get_inverter_latest_state(session, updated.id)
