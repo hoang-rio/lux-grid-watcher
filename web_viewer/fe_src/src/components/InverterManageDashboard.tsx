@@ -23,6 +23,7 @@ function InverterManageDashboard({
   allowClose = true,
 }: InverterManageDashboardProps) {
   const { t } = useTranslation();
+  const currentHostname = window.location.hostname;
   const [name, setName] = useState("");
   const [dongleSerial, setDongleSerial] = useState("");
   const [invertSerial, setInvertSerial] = useState("");
@@ -233,17 +234,24 @@ function InverterManageDashboard({
                   <li>{t("inverterGuide.networkSettings.items.connectionSetting2Port")}</li>
                   <li>
                     {t("inverterGuide.networkSettings.items.connectionSetting2Hostname")}{" "}
-                    <span className="inverter-manager-copy-value">lux.hoangnguyendong.dev</span>
+                    <span className="inverter-manager-copy-value">{currentHostname}</span>
                   </li>
                 </ul>
-                <img
-                  src="/assets/dongle_network_setting.png"
-                  alt={t("inverterGuide.networkSettings.imageAlt")}
-                  loading="lazy"
-                />
+                <div className="inverter-manager-network-image-wrap">
+                  <img
+                    src="/assets/dongle_network_setting.png"
+                    alt={t("inverterGuide.networkSettings.imageAlt")}
+                    loading="lazy"
+                  />
+                  <span className="inverter-manager-network-overlay" title={currentHostname} aria-hidden="true">
+                    {currentHostname}
+                  </span>
+                </div>
               </section>
             </div>
-            <p className="inverter-manager-guide-security">{t("inverterGuide.securityNote")}</p>
+            <p className="inverter-manager-guide-security">
+              {t("inverterGuide.securityNote", { hostname: currentHostname })}
+            </p>
           </div>
         )}
 

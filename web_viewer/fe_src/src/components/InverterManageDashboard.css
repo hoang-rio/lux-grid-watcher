@@ -173,6 +173,41 @@
   max-height: none;
 }
 
+.inverter-manager-network-image-wrap {
+  position: relative;
+  margin-top: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--ui-border);
+  background: color-mix(in srgb, var(--ui-surface-soft) 65%, #f6f6f6 35%);
+  overflow: hidden;
+}
+
+.inverter-manager-network-image-wrap img {
+  display: block;
+  width: 100%;
+  margin-top: 0;
+  border: none;
+  border-radius: 0;
+}
+
+.inverter-manager-network-overlay {
+  position: absolute;
+  left: 70%;
+  top: 75%;
+  max-width: 30%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #000000;
+  font-size: clamp(9px, 1.25vw, 14px);
+  line-height: 1.15;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
 .inverter-manager-guide-security {
   margin: 10px 0 0 0;
   padding: 8px 10px;
@@ -455,6 +490,17 @@
   .inverter-manager-guide-steps section,
   .inverter-manager-guide-steps img {
     border-color: var(--ui-border);
+  }
+
+  .inverter-manager-network-image-wrap {
+    border-color: var(--ui-border);
+    background: var(--ui-surface-soft);
+  }
+
+  .inverter-manager-network-overlay {
+    color: #000000;
+    border: none;
+    background: transparent;
   }
 
   .inverter-manager-form-help a {

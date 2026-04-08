@@ -210,7 +210,7 @@
         "connectionSetting2Port": "Remote Port: 4346."
       }
     },
-    "securityNote": "After reboot, the dongle will connect to server lux.hoangnguyendong.dev via port 4346."
+    "securityNote": "After reboot, the dongle will connect to server {{hostname}} via port 4346."
   },
   "settings": {
     "title": "Settings",
