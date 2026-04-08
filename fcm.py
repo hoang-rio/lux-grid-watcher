@@ -202,7 +202,15 @@ class FCM():
     def __log_notification(self, title: str, body: str, inverter_ctx: dict | None = None):
         try:
             from datetime import datetime
-            now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            from zoneinfo import ZoneInfo
+            from os import environ
+
+            tz_name = environ.get("TZ", "UTC")
+            try:
+                tz = ZoneInfo(tz_name)
+            except Exception:
+                tz = ZoneInfo("UTC")
+            now_str = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
 
             inverter_id = (inverter_ctx or {}).get("id")
             user_id = (inverter_ctx or {}).get("user_id")

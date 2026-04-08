@@ -9,6 +9,9 @@ RUN yarn build
 
 FROM python:3.13-alpine
 
+# Install tzdata for timezone support
+RUN apk add --no-cache tzdata
+
 COPY . /app
 
 WORKDIR /app

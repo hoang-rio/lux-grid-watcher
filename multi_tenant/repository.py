@@ -20,6 +20,7 @@ from .models import (
     ScopedSetting,
     User,
     UserDeviceToken,
+    get_current_datetime,
 )
 
 
@@ -48,13 +49,13 @@ def create_user(session: Session, email: str, password_hash: str) -> User:
 
 def update_user_password(session: Session, user: User, password_hash: str) -> None:
     user.password_hash = password_hash
-    user.updated_at = datetime.utcnow()
+    user.updated_at = get_current_datetime()
     session.flush()
 
 
 def mark_user_email_confirmed(session: Session, user: User) -> None:
     user.email_confirmed = True
-    user.updated_at = datetime.utcnow()
+    user.updated_at = get_current_datetime()
     session.flush()
 
 
@@ -73,7 +74,7 @@ def create_refresh_token_record(
 
 def get_active_refresh_token(session: Session, token: str) -> Optional[RefreshToken]:
     token_hash = _hash_token(token)
-    now = datetime.utcnow()
+    now = get_current_datetime()
     return session.execute(
         select(RefreshToken).where(
             RefreshToken.token_hash == token_hash,
@@ -84,7 +85,7 @@ def get_active_refresh_token(session: Session, token: str) -> Optional[RefreshTo
 
 
 def revoke_refresh_token(session: Session, rt: RefreshToken) -> None:
-    rt.revoked_at = datetime.utcnow()
+    rt.revoked_at = get_current_datetime()
     session.flush()
 
 
@@ -92,7 +93,7 @@ def revoke_all_user_refresh_tokens(session: Session, user_id: uuid.UUID) -> None
     session.execute(
         update(RefreshToken)
         .where(RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None))
-        .values(revoked_at=datetime.utcnow())
+        .values(revoked_at=get_current_datetime())
     )
     session.flush()
 
@@ -107,7 +108,7 @@ def create_email_verification_token(
     evt = EmailVerificationToken(
         user_id=user_id,
         token_hash=token_hash,
-        expires_at=datetime.utcnow() + timedelta(hours=ttl_hours),
+        expires_at=get_current_datetime() + timedelta(hours=ttl_hours),
     )
     session.add(evt)
     session.flush()
@@ -118,7 +119,7 @@ def get_valid_email_verification_token(
     session: Session, token: str
 ) -> Optional[EmailVerificationToken]:
     token_hash = _hash_token(token)
-    now = datetime.utcnow()
+    now = get_current_datetime()
     return session.execute(
         select(EmailVerificationToken).where(
             EmailVerificationToken.token_hash == token_hash,
@@ -131,7 +132,7 @@ def get_valid_email_verification_token(
 def use_email_verification_token(
     session: Session, evt: EmailVerificationToken
 ) -> None:
-    evt.used_at = datetime.utcnow()
+    evt.used_at = get_current_datetime()
     session.flush()
 
 
@@ -145,7 +146,7 @@ def create_password_reset_token(
     prt = PasswordResetToken(
         user_id=user_id,
         token_hash=token_hash,
-        expires_at=datetime.utcnow() + timedelta(hours=ttl_hours),
+        expires_at=get_current_datetime() + timedelta(hours=ttl_hours),
     )
     session.add(prt)
     session.flush()
@@ -156,7 +157,7 @@ def get_valid_password_reset_token(
     session: Session, token: str
 ) -> Optional[PasswordResetToken]:
     token_hash = _hash_token(token)
-    now = datetime.utcnow()
+    now = get_current_datetime()
     return session.execute(
         select(PasswordResetToken).where(
             PasswordResetToken.token_hash == token_hash,
@@ -167,7 +168,7 @@ def get_valid_password_reset_token(
 
 
 def use_password_reset_token(session: Session, prt: PasswordResetToken) -> None:
-    prt.used_at = datetime.utcnow()
+    prt.used_at = get_current_datetime()
     session.flush()
 
 
@@ -250,7 +251,7 @@ def create_inverter(
 
 def deactivate_inverter(session: Session, inverter: Inverter) -> None:
     inverter.is_active = False
-    inverter.updated_at = datetime.utcnow()
+    inverter.updated_at = get_current_datetime()
     session.flush()
 
 
@@ -266,7 +267,7 @@ def update_inverter(
     name: str,
 ) -> Inverter:
     inverter.name = name
-    inverter.updated_at = datetime.utcnow()
+    inverter.updated_at = get_current_datetime()
     session.flush()
     return inverter
 
@@ -277,7 +278,7 @@ def update_inverter_invert_serial(
     invert_serial: str,
 ) -> Inverter:
     inverter.invert_serial = str(invert_serial).strip() or None
-    inverter.updated_at = datetime.utcnow()
+    inverter.updated_at = get_current_datetime()
     session.flush()
     return inverter
 
@@ -300,14 +301,14 @@ def upsert_inverter_latest_state(
             inverter_id=inverter_id,
             device_time=device_time,
             payload=payload,
-            updated_at=datetime.utcnow(),
+            updated_at=get_current_datetime(),
         )
         .on_conflict_do_update(
             index_elements=["inverter_id"],
             set_={
                 "device_time": device_time,
                 "payload": payload,
-                "updated_at": datetime.utcnow(),
+                "updated_at": get_current_datetime(),
             },
         )
     )
@@ -437,7 +438,7 @@ def upsert_daily_chart(
             grid_import=grid_import,
             grid_export=grid_export,
             consumption=consumption,
-            updated_at=datetime.utcnow(),
+            updated_at=get_current_datetime(),
         )
         .on_conflict_do_update(
             index_elements=["inverter_id", "date"],
@@ -448,7 +449,7 @@ def upsert_daily_chart(
                 "grid_import": grid_import,
                 "grid_export": grid_export,
                 "consumption": consumption,
-                "updated_at": datetime.utcnow(),
+                "updated_at": get_current_datetime(),
             },
         )
     )
@@ -714,7 +715,7 @@ def upsert_user_setting(
         session.add(row)
     else:
         row.value = value
-        row.updated_at = datetime.utcnow()
+        row.updated_at = get_current_datetime()
     session.flush()
     return row
 
@@ -754,7 +755,7 @@ def upsert_scoped_setting(
     else:
         if row.value != value:
             row.value = value
-            row.updated_at = datetime.utcnow()
+            row.updated_at = get_current_datetime()
     session.flush()
     return row
 

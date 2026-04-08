@@ -1,11 +1,25 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
+from os import environ
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+
+def get_current_datetime():
+    """Get current datetime in the configured timezone (TZ env var).
+    Falls back to UTC if TZ is not set or invalid.
+    """
+    tz_name = environ.get("TZ", "UTC")
+    try:
+        tz = ZoneInfo(tz_name)
+    except Exception:
+        tz = ZoneInfo("UTC")
+    return datetime.now(tz)
 
 
 class Base(DeclarativeBase):
@@ -19,8 +33,8 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     email_confirmed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=get_current_datetime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=get_current_datetime, onupdate=get_current_datetime)
 
     inverters: Mapped[list[Inverter]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
@@ -33,7 +47,7 @@ class RefreshToken(Base):
     token_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=get_current_datetime)
 
 
 class EmailVerificationToken(Base):
@@ -44,7 +58,7 @@ class EmailVerificationToken(Base):
     token_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=get_current_datetime)
 
 
 class PasswordResetToken(Base):
@@ -55,7 +69,7 @@ class PasswordResetToken(Base):
     token_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=get_current_datetime)
 
 
 class Inverter(Base):
@@ -72,8 +86,8 @@ class Inverter(Base):
     dongle_serial: Mapped[str] = mapped_column(String(32), nullable=False)
     invert_serial: Mapped[str | None] = mapped_column(String(32), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=get_current_datetime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=get_current_datetime, onupdate=get_current_datetime)
 
     user: Mapped[User] = relationship(back_populates="inverters")
 
@@ -84,7 +98,7 @@ class InverterLatestState(Base):
     inverter_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("inverters.id", ondelete="CASCADE"), primary_key=True)
     device_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=get_current_datetime, onupdate=get_current_datetime)
 
 
 class HourlyChart(Base):
@@ -114,7 +128,7 @@ class DailyChart(Base):
     grid_import: Mapped[float] = mapped_column(Numeric(10, 1), nullable=False)
     grid_export: Mapped[float] = mapped_column(Numeric(10, 1), nullable=False)
     consumption: Mapped[float] = mapped_column(Numeric(10, 1), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=get_current_datetime, onupdate=get_current_datetime)
 
 
 class NotificationHistory(Base):
@@ -130,7 +144,7 @@ class NotificationHistory(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    notified_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    notified_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=get_current_datetime)
 
 
 class UserDeviceToken(Base):
@@ -143,7 +157,7 @@ class UserDeviceToken(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     token: Mapped[str] = mapped_column(String(500), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=get_current_datetime)
 
 
 class ScopedSetting(Base):
@@ -158,4 +172,4 @@ class ScopedSetting(Base):
     scope_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     key: Mapped[str] = mapped_column(String(128), nullable=False)
     value: Mapped[str] = mapped_column(Text, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=get_current_datetime, onupdate=get_current_datetime)
