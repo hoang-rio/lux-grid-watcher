@@ -141,7 +141,6 @@ function InverterManageDashboard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: editingName.trim(),
-          invert_serial: inv.invert_serial,
         }),
       });
       const json = await res.json();
