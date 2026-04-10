@@ -700,14 +700,41 @@ def handle_grid_status(json_data: dict, fcm_service: FCM, inverter_ctx: dict | N
     is_grid_connected = json_data["fac"] > 0
     last_grid_connected = True
     disconnected_time = json_data["deviceTime"]
-    if path.exists(config["STATE_FILE"]):
-        with open(config["STATE_FILE"], 'r') as f:
-            last_grid_connected = f.read() == "True"
-        if not last_grid_connected:
-            # Only get disconneced time from state file if disconnected from previos
-            disconnected_time = datetime.fromtimestamp(
-                path.getmtime(config['STATE_FILE'])
-            ).strftime("%Y-%m-%d %H:%M:%S")
+    if USE_PG:
+        # In PG mode, read previous state from PG and update it atomically so that
+        # duplicate notifications are not sent when the state did not change.
+        if inverter_ctx and inverter_ctx.get("id"):
+            from multi_tenant.db import get_db_session
+            from multi_tenant import repository as repo
+
+            session = next(get_db_session())
+            try:
+                inverter_id = inverter_ctx["id"]
+                last_connected_str = repo.get_scoped_setting(session, "inverter", inverter_id, "mobile_is_connected")
+                if last_connected_str is not None:
+                    last_grid_connected = last_connected_str == "True"
+                repo.upsert_scoped_setting(
+                    session,
+                    "inverter",
+                    inverter_id,
+                    "mobile_is_connected",
+                    str(is_grid_connected),
+                )
+                session.commit()
+            except Exception as e:
+                session.rollback()
+                logger.error(f"Error updating mobile connection state in PG: {e}")
+            finally:
+                session.close()
+    else:
+        if path.exists(config["STATE_FILE"]):
+            with open(config["STATE_FILE"], 'r') as f:
+                last_grid_connected = f.read() == "True"
+            if not last_grid_connected:
+                # Only get disconneced time from state file if disconnected from previos
+                disconnected_time = datetime.fromtimestamp(
+                    path.getmtime(config['STATE_FILE'])
+                ).strftime("%Y-%m-%d %H:%M:%S")
     status_text = json_data["status_text"] if "status_text" in json_data else json_data["status"]
     if not is_grid_connected:
         logger.warning(
@@ -727,29 +754,6 @@ ________Status: \"%s\" (%s) at deviceTime: %s with fac: %s Hz and vacr: %s V____
             int(json_data['vacr']) / 10,
         )
 
-    # Persist current connectivity every cycle so mobile_state reflects real-time status
-    # even when the inverter never transitions between ON_GRID/OFF_GRID.
-    if USE_PG:
-        if inverter_ctx and inverter_ctx.get("id"):
-            from multi_tenant.db import get_db_session
-            from multi_tenant import repository as repo
-
-            session = next(get_db_session())
-            try:
-                inverter_id = inverter_ctx["id"]
-                repo.upsert_scoped_setting(
-                    session,
-                    "inverter",
-                    inverter_id,
-                    "mobile_is_connected",
-                    str(is_grid_connected),
-                )
-                session.commit()
-            except Exception as e:
-                session.rollback()
-                logger.error(f"Error updating mobile connection state in PG: {e}")
-            finally:
-                session.close()
     if last_grid_connected != is_grid_connected:
         current_history = []
         if USE_PG:
