@@ -731,7 +731,7 @@ def handle_grid_status(json_data: dict, fcm_service: FCM, inverter_ctx: dict | N
             with open(config["STATE_FILE"], 'r') as f:
                 last_grid_connected = f.read() == "True"
             if not last_grid_connected:
-                # Only get disconneced time from state file if disconnected from previos
+                # Only get disconnected time from state file if disconnected from previous
                 disconnected_time = datetime.fromtimestamp(
                     path.getmtime(config['STATE_FILE'])
                 ).strftime("%Y-%m-%d %H:%M:%S")
