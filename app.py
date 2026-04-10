@@ -713,6 +713,11 @@ def handle_grid_status(json_data: dict, fcm_service: FCM, inverter_ctx: dict | N
                 last_connected_str = repo.get_scoped_setting(session, "inverter", inverter_id, "mobile_is_connected")
                 if last_connected_str is not None:
                     last_grid_connected = last_connected_str == "True"
+                if not last_grid_connected:
+                    # Grid was already disconnected — read the stored disconnection time
+                    stored_disconnected_time = repo.get_scoped_setting(session, "inverter", inverter_id, "mobile_disconnected_time")
+                    if stored_disconnected_time:
+                        disconnected_time = stored_disconnected_time
                 repo.upsert_scoped_setting(
                     session,
                     "inverter",
@@ -792,6 +797,12 @@ ________Status: \"%s\" (%s) at deviceTime: %s with fac: %s Hz and vacr: %s V____
                 if inverter_ctx and inverter_ctx.get("id"):
                     inverter_id = inverter_ctx["id"]
                     repo.upsert_scoped_setting(session, "inverter", inverter_id, "mobile_history", json.dumps(current_history))
+                    if not is_grid_connected:
+                        # Persist the disconnection timestamp so subsequent cycles can show it
+                        repo.upsert_scoped_setting(session, "inverter", inverter_id, "mobile_disconnected_time", json_data["deviceTime"])
+                    else:
+                        # Clear the stored disconnection time when reconnected
+                        repo.upsert_scoped_setting(session, "inverter", inverter_id, "mobile_disconnected_time", "")
                     session.commit()
             except Exception as e:
                 session.rollback()
