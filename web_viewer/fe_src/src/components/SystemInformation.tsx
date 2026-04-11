@@ -1,4 +1,4 @@
-import { IAuthUser, IInverterData, INotificationData, IUserInverter } from "../Intefaces";
+import { IInverterData, INotificationData, IUserInverter } from "../Intefaces";
 import "./SystemInformation.css";
 import SolarPV from "./SolarPV";
 import Battery from "./Battery";
@@ -18,10 +18,8 @@ interface Props {
   inverterData: IInverterData;
   // Changed to accept an INotificationData object or null
   newNotification?: INotificationData | null;
-  authUser?: IAuthUser | null;
   inverters?: IUserInverter[];
   selectedInverterId?: string;
-  selectedInverterIsOnline?: boolean;
 }
 
 function SystemInformation({
