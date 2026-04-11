@@ -7,14 +7,13 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to release'
-        required: true
-        default: 'SaaS-v1.0.0'
+        description: 'Tag to release (leave empty to build current branch and push as SaaS only)'
+        required: false
+        default: ''
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  TAG_TO_RELEASE: ${{ github.event.inputs.tag || github.ref_name }}
   BRANCH_TAG: SaaS
 
 concurrency:
@@ -28,10 +27,27 @@ jobs:
         contents: read
         packages: write
     steps:
+      - name: Compute checkout ref and Docker tags
+        id: meta
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # Tag push: checkout the pushed tag
+            echo "checkout_ref=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "docker_tags=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BRANCH_TAG }}" >> $GITHUB_OUTPUT
+          elif [ -n "${{ github.event.inputs.tag }}" ]; then
+            # workflow_dispatch with a tag: checkout that tag, push both tag and SaaS
+            echo "checkout_ref=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+            echo "docker_tags=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.tag }},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BRANCH_TAG }}" >> $GITHUB_OUTPUT
+          else
+            # workflow_dispatch without tag: checkout current branch, push SaaS only
+            echo "checkout_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
+            echo "docker_tags=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BRANCH_TAG }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          ref: ${{ env.TAG_TO_RELEASE }}
+          ref: ${{ steps.meta.outputs.checkout_ref }}
           submodules: recursive
           fetch-depth: 0
 
@@ -55,10 +71,12 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_TO_RELEASE }},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BRANCH_TAG }}
+          tags: ${{ steps.meta.outputs.docker_tags }}
 
   deploy:
     needs: build-and-push
+    # Only deploy when a specific tag is known (tag push or workflow_dispatch with tag)
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -67,7 +85,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          ref: ${{ env.TAG_TO_RELEASE }}
+          ref: ${{ github.event.inputs.tag || github.ref_name }}
 
       - name: Ensure remote deploy directory exists
         uses: appleboy/ssh-action@v1.2.2
@@ -103,5 +121,4 @@ jobs:
             docker compose pull
             docker compose up -d
             docker image prune -af
-
 

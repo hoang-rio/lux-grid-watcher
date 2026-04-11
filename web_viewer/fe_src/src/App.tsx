@@ -336,16 +336,6 @@ function App() {
       if (Object.keys(json).length !== 0) {
         hasInverterDataRef.current = true;
         setInverterData(json);
-        if (selectedInverterId) {
-          const nowIso = new Date().toISOString();
-          setUserInverters((prev) =>
-            prev.map((inv) =>
-              inv.id === selectedInverterId
-                ? { ...inv, is_online: true, last_communication_at: nowIso }
-                : inv
-            )
-          );
-        }
         setIsLoading(false);
       }
     } catch (err) {
@@ -481,11 +471,11 @@ function App() {
 
     // Before the first realtime payload arrives, trust /state-derived online snapshot.
     if (!hasSeenRealtime) {
-      return isSSEConnected || hasOnlineSnapshot;
+      return hasOnlineSnapshot;
     }
 
-    // After realtime started, status should follow transport + realtime heartbeat.
-    return isSSEConnected || hasFreshRealtime;
+    // After realtime started, status should follow realtime heartbeat only.
+    return hasFreshRealtime;
   }, [
     isSSEConnected,
     lastRealtimeByInverterId,
