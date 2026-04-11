@@ -2,9 +2,10 @@ import { useMemo } from "react";
 import { ICProps } from "../Intefaces";
 import GeneralValue from "./GeneralValue";
 
-export default function Grid({ inverterData, isSSEConnected }: ICProps) {
+export default function Grid({ inverterData, displayInverterData, isSSEConnected }: ICProps) {
+  const data = displayInverterData ?? inverterData!;
   // Destructure inverterData for cleaner access
-  const { vacr, vacs, vact, p_to_user, p_to_grid, fac } = inverterData;
+  const { vacr, vacs, vact, p_to_user, p_to_grid, fac } = data;
 
   // Compute vac with refactored logic
   const vac = useMemo(() => {

@@ -8,7 +8,8 @@ const getArrowClass = (inverterData: IInverterData, isSSEConnected: boolean) => 
   return "none";
 };
 
-function Inverter({ inverterData, isSSEConnected }: ICProps) {
+function Inverter({ inverterData, displayInverterData, isSSEConnected }: ICProps) {
+  const data = displayInverterData ?? inverterData!;
   return (
     <div className="inverter flex-1">
       <div className="row align-center">
@@ -17,7 +18,7 @@ function Inverter({ inverterData, isSSEConnected }: ICProps) {
           {Array.from({ length: 4 }).map((_, index) => (
             <div
               key={`inverter-arrow-${index}`}
-              className={`x-arrow ${getArrowClass(inverterData, isSSEConnected)}`}
+              className={`x-arrow ${getArrowClass(data, isSSEConnected)}`}
             ></div>
           ))}
         </div>

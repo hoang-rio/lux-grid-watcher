@@ -245,6 +245,31 @@ function SystemInformation({
     inverterData.v_bat,
   ]);
 
+  const displayInverterData = useMemo(() => {
+    if (effectiveSSEConnected) return inverterData;
+    return {
+      ...inverterData,
+      p_pv: 0,
+      p_pv_1: 0,
+      p_pv_2: 0,
+      v_pv_1: 0,
+      v_pv_2: 0,
+      p_discharge: 0,
+      p_charge: 0,
+      soc: 0,
+      v_bat: 0,
+      p_inv: 0,
+      p_rec: 0,
+      vacr: 0,
+      vacs: 0,
+      vact: 0,
+      p_to_user: 0,
+      p_to_grid: 0,
+      fac: 0,
+      p_eps: 0,
+    };
+  }, [effectiveSSEConnected, inverterData]);
+
   return (
     <>
       <div className="card system-information">
@@ -328,33 +353,33 @@ function SystemInformation({
             <div className="row">
               <div className="flex-1"></div>
               <SolarPV
-                inverterData={inverterData}
+                displayInverterData={displayInverterData}
                 isSSEConnected={effectiveSSEConnected}
               />
               <div className="flex-1"></div>
             </div>
             <div className="row">
               <Battery
-                inverterData={inverterData}
+                displayInverterData={displayInverterData}
                 isSSEConnected={effectiveSSEConnected}
               />
               <Inverter
-                inverterData={inverterData}
+                displayInverterData={displayInverterData}
                 isSSEConnected={effectiveSSEConnected}
               />
               <Grid
-                inverterData={inverterData}
+                displayInverterData={displayInverterData}
                 isSSEConnected={effectiveSSEConnected}
               />
             </div>
             <div className="row">
               <div className="flex-1"></div>
               <EPS
-                inverterData={inverterData}
+                displayInverterData={displayInverterData}
                 isSSEConnected={effectiveSSEConnected}
               />
               <Consumption
-                inverterData={inverterData}
+                displayInverterData={displayInverterData}
                 isSSEConnected={effectiveSSEConnected}
               />
             </div>

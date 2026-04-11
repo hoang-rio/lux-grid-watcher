@@ -49,7 +49,8 @@ export interface IInverterData {
 }
 
 export interface ICProps {
-  inverterData: IInverterData;
+  inverterData?: IInverterData;
+  displayInverterData?: IInverterData;
   isSSEConnected: boolean;
 }
 

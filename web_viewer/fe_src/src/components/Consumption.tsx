@@ -4,11 +4,13 @@ import { useTranslation } from "react-i18next";
 
 export default function Consumption({
   inverterData,
+  displayInverterData,
   isSSEConnected,
 }: ICProps) {
   const { t } = useTranslation();
+  const data = displayInverterData ?? inverterData!;
   const pConsumption =
-    inverterData.p_inv + inverterData.p_to_user - inverterData.p_rec;
+    data.p_inv + data.p_to_user - data.p_rec;
   return (
     <div className="consumption flex-1">
       <div className="row">
