@@ -195,19 +195,11 @@ function SystemInformation({
   }, [inverters, selectedInverterId]);
 
   const effectiveSSEConnected = useMemo(() => {
-    const baseOnline = Boolean(isSSEConnected);
-    const lastCommunicationTs = toTimestamp(selectedInverter?.last_communication_at) || toTimestamp(inverterData.deviceTime);
-    const hasFreshCommunication =
-      Boolean(lastCommunicationTs) && new Date().getTime() - lastCommunicationTs <= INVERTER_OFFLINE_TIMEOUT_MS;
-
-    return baseOnline && hasFreshCommunication;
-  }, [
-    inverterData.deviceTime,
-    isSSEConnected,
-    selectedInverter?.last_communication_at,
-    selectedInverterId,
-    toTimestamp,
-  ]);
+    // Simple offline check: only consider inverterData.deviceTime
+    const deviceTs = toTimestamp(inverterData.deviceTime);
+    const hasFreshDeviceTime = Boolean(deviceTs) && Date.now() - deviceTs <= INVERTER_OFFLINE_TIMEOUT_MS;
+    return hasFreshDeviceTime;
+  }, [inverterData.deviceTime, toTimestamp]);
 
   const status = useMemo(() => {
     if (!effectiveSSEConnected) {
