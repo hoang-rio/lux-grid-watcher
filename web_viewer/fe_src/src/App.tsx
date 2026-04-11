@@ -627,9 +627,7 @@ function App() {
         />
         <SystemInformation
           inverterData={inverterData}
-          isSSEConnected={isSSEConnected}
           newNotification={newNotification}
-          authUser={authUser}
           inverters={userInverters}
           selectedInverterId={selectedInverterId}
         />
