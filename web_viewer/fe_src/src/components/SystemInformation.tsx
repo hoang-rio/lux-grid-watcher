@@ -187,12 +187,7 @@ function SystemInformation({
     return inverterNameById.get(selectedInverterId) || inverterData.serial || inverterData.dongle_serial || "";
   }, [inverterData.dongle_serial, inverterData.serial, inverterNameById, selectedInverterId]);
 
-  const selectedInverter = useMemo(() => {
-    if (!selectedInverterId) {
-      return undefined;
-    }
-    return inverters.find((inv) => inv.id === selectedInverterId);
-  }, [inverters, selectedInverterId]);
+
 
   const effectiveSSEConnected = useMemo(() => {
     // Simple offline check: only consider inverterData.deviceTime
