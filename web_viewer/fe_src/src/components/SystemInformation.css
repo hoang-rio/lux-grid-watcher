@@ -183,10 +183,6 @@
     background-color: #b6b6b6;
 }
 
-.system-status-reconnect {
-    margin-left: 5px;
-}
-
 .battery-row {
     display: flex;
     flex-direction: row;
@@ -797,20 +793,6 @@
     border: 1px solid var(--ui-border);
 }
 
-.system-status-reconnect {
-    border: 1px solid var(--ui-border);
-    background: var(--ui-surface-soft);
-    color: var(--ui-text);
-    border-radius: 9px;
-    padding: 5px 9px;
-    cursor: pointer;
-}
-
-.system-status-reconnect:disabled {
-    opacity: 0.65;
-    cursor: not-allowed;
-}
-
 .settings-popover,
 .notification-popover,
 .notification-history {
@@ -838,8 +820,7 @@
 
 @media (prefers-color-scheme: dark) {
     .settings-button button,
-    .notification-button button,
-    .system-status-reconnect {
+    .notification-button button {
         background: var(--ui-surface-soft);
         border-color: var(--ui-border);
         color: var(--ui-text);

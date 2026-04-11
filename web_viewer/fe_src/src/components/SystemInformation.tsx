@@ -17,23 +17,23 @@ const SettingsPopover = lazy(() => import("./SettingsPopover"));
 interface Props {
   inverterData: IInverterData;
   isSSEConnected: boolean;
-  onReconnect: () => void;
   // Changed to accept an INotificationData object or null
   newNotification?: INotificationData | null;
   authUser?: IAuthUser | null;
   inverters?: IUserInverter[];
   selectedInverterId?: string;
   selectedInverterIsOnline?: boolean;
+  onlineClock: number;
 }
 
 function SystemInformation({
   inverterData,
   isSSEConnected,
-  onReconnect,
   newNotification,
   inverters = [],
   selectedInverterId = "",
   selectedInverterIsOnline,
+  onlineClock,
 }: Props) {
   const { t, i18n } = useTranslation();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -190,23 +190,32 @@ function SystemInformation({
     return inverterNameById.get(selectedInverterId) || inverterData.serial || inverterData.dongle_serial || "";
   }, [inverterData.dongle_serial, inverterData.serial, inverterNameById, selectedInverterId]);
 
+  const selectedInverter = useMemo(() => {
+    if (!selectedInverterId) {
+      return undefined;
+    }
+    return inverters.find((inv) => inv.id === selectedInverterId);
+  }, [inverters, selectedInverterId]);
+
   const effectiveSSEConnected = useMemo(() => {
-    // Determine base online state from selectedInverterIsOnline (if provided) else from SSE connection.
     const baseOnline =
       selectedInverterId && selectedInverterIsOnline !== undefined
         ? Boolean(selectedInverterIsOnline)
         : Boolean(isSSEConnected);
+    const lastCommunicationTs = toTimestamp(selectedInverter?.last_communication_at) || toTimestamp(inverterData.deviceTime);
+    const hasFreshCommunication =
+      Boolean(lastCommunicationTs) && onlineClock - lastCommunicationTs <= INVERTER_OFFLINE_TIMEOUT_MS;
 
-    // If we have deviceTime from inverterData, require it to be fresh to consider the device online.
-    if (inverterData && inverterData.deviceTime) {
-      const deviceTs = toTimestamp(inverterData.deviceTime);
-      const deviceFresh = Boolean(deviceTs) && Date.now() - deviceTs <= INVERTER_OFFLINE_TIMEOUT_MS;
-      return baseOnline && deviceFresh;
-    }
-
-    // No deviceTime to judge freshness — fall back to baseOnline.
-    return baseOnline;
-  }, [isSSEConnected, selectedInverterId, selectedInverterIsOnline, inverterData, toTimestamp]);
+    return baseOnline && hasFreshCommunication;
+  }, [
+    inverterData.deviceTime,
+    isSSEConnected,
+    onlineClock,
+    selectedInverter?.last_communication_at,
+    selectedInverterId,
+    selectedInverterIsOnline,
+    toTimestamp,
+  ]);
 
   const status = useMemo(() => {
     if (!effectiveSSEConnected) {
@@ -311,14 +320,6 @@ function SystemInformation({
                   {t(status)}
                 </div>
               </div>
-              <button
-                className="system-status-reconnect"
-                onClick={onReconnect}
-                title={t("reconnect")}
-                disabled={effectiveSSEConnected}
-              >
-                {t("reconnect")}
-              </button>
             </div>
             <div className="row">
               <div className="flex-1"></div>

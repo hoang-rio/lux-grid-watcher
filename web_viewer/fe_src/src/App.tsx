@@ -674,12 +674,12 @@ function App() {
         <SystemInformation
           inverterData={inverterData}
           isSSEConnected={isSSEConnected}
-          onReconnect={connectSSE}
           newNotification={newNotification}
           authUser={authUser}
           inverters={userInverters}
           selectedInverterId={selectedInverterId}
           selectedInverterIsOnline={selectedInverterIsOnline}
+          onlineClock={onlineClock}
         />
         <div className="row chart">
           <HourlyChart
