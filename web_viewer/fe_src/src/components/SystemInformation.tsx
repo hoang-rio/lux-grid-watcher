@@ -16,7 +16,6 @@ const SettingsPopover = lazy(() => import("./SettingsPopover"));
 
 interface Props {
   inverterData: IInverterData;
-  isSSEConnected: boolean;
   // Changed to accept an INotificationData object or null
   newNotification?: INotificationData | null;
   authUser?: IAuthUser | null;
@@ -27,7 +26,6 @@ interface Props {
 
 function SystemInformation({
   inverterData,
-  isSSEConnected,
   newNotification,
   inverters = [],
   selectedInverterId = "",
