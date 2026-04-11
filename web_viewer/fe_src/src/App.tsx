@@ -24,7 +24,7 @@ const TopAuthBar = lazy(() => import("./components/TopAuthBar"));
 const MAX_RECONNECT_COUNT = 5;
 const RECONNECT_BASE_DELAY_MS = 250;
 const RECONNECT_MAX_DELAY_MS = 1000;
-const INVERTER_OFFLINE_TIMEOUT_MS = 10 * 60 * 1000;
+const INVERTER_OFFLINE_TIMEOUT_MS = 20 * 60 * 1000;
 const REALTIME_ONLINE_TIMEOUT_MS = 60 * 1000;
 const ACCESS_TOKEN_KEY = "lux_access_token";
 const REFRESH_TOKEN_KEY = "lux_refresh_token";
@@ -336,16 +336,6 @@ function App() {
       if (Object.keys(json).length !== 0) {
         hasInverterDataRef.current = true;
         setInverterData(json);
-        if (selectedInverterId) {
-          const nowIso = new Date().toISOString();
-          setUserInverters((prev) =>
-            prev.map((inv) =>
-              inv.id === selectedInverterId
-                ? { ...inv, is_online: true, last_communication_at: nowIso }
-                : inv
-            )
-          );
-        }
         setIsLoading(false);
       }
     } catch (err) {
@@ -481,11 +471,11 @@ function App() {
 
     // Before the first realtime payload arrives, trust /state-derived online snapshot.
     if (!hasSeenRealtime) {
-      return isSSEConnected || hasOnlineSnapshot;
+      return hasOnlineSnapshot;
     }
 
-    // After realtime started, status should follow transport + realtime heartbeat.
-    return isSSEConnected || hasFreshRealtime;
+    // After realtime started, status should follow realtime heartbeat only.
+    return hasFreshRealtime;
   }, [
     isSSEConnected,
     lastRealtimeByInverterId,
