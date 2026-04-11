@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, lazy } from "react";
+import { useCallback, useEffect, useRef, useState, lazy } from "react";
 import { useTranslation } from "react-i18next";
 import "./App.css";
 import {
@@ -25,7 +25,6 @@ const MAX_RECONNECT_COUNT = 5;
 const RECONNECT_BASE_DELAY_MS = 250;
 const RECONNECT_MAX_DELAY_MS = 1000;
 const INVERTER_OFFLINE_TIMEOUT_MS = 20 * 60 * 1000;
-const REALTIME_ONLINE_TIMEOUT_MS = 60 * 1000;
 const ACCESS_TOKEN_KEY = "lux_access_token";
 const REFRESH_TOKEN_KEY = "lux_refresh_token";
 const INVERTER_ID_KEY = "lux_selected_inverter_id";
@@ -112,7 +111,6 @@ function App() {
     if (jsonData.event === "new_notification") {
       setNewNotification(jsonData.data);
     } else {
-      const nowTs = Date.now();
       setIsInitialRealtimeLoading(false);
       hasInverterDataRef.current = true;
       setInverterData(jsonData.inverter_data);
@@ -439,11 +437,6 @@ function App() {
     }, 30 * 1000);
     return () => clearInterval(timer);
   }, []);
-
-  const selectedInverter = useMemo(
-    () => userInverters.find((inv) => inv.id === selectedInverterId),
-    [selectedInverterId, userInverters]
-  );
 
   const onAuthSuccess = useCallback(async (token: string, refreshToken: string) => {
     localStorage.setItem(ACCESS_TOKEN_KEY, token);
