@@ -23,7 +23,6 @@ interface Props {
   inverters?: IUserInverter[];
   selectedInverterId?: string;
   selectedInverterIsOnline?: boolean;
-  onlineClock: number;
 }
 
 function SystemInformation({
@@ -32,8 +31,6 @@ function SystemInformation({
   newNotification,
   inverters = [],
   selectedInverterId = "",
-  selectedInverterIsOnline,
-  onlineClock,
 }: Props) {
   const { t, i18n } = useTranslation();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -198,26 +195,17 @@ function SystemInformation({
   }, [inverters, selectedInverterId]);
 
   const effectiveSSEConnected = useMemo(() => {
-    // If a specific inverter is selected and the parent provided
-    // selectedInverterIsOnline (derived from realtime heartbeats in App.tsx),
-    // trust that value directly. It already encodes realtime freshness.
-    if (selectedInverterId && selectedInverterIsOnline !== undefined) {
-      return Boolean(selectedInverterIsOnline);
-    }
-
     const baseOnline = Boolean(isSSEConnected);
     const lastCommunicationTs = toTimestamp(selectedInverter?.last_communication_at) || toTimestamp(inverterData.deviceTime);
     const hasFreshCommunication =
-      Boolean(lastCommunicationTs) && onlineClock - lastCommunicationTs <= INVERTER_OFFLINE_TIMEOUT_MS;
+      Boolean(lastCommunicationTs) && new Date().getTime() - lastCommunicationTs <= INVERTER_OFFLINE_TIMEOUT_MS;
 
     return baseOnline && hasFreshCommunication;
   }, [
     inverterData.deviceTime,
     isSSEConnected,
-    onlineClock,
     selectedInverter?.last_communication_at,
     selectedInverterId,
-    selectedInverterIsOnline,
     toTimestamp,
   ]);
 

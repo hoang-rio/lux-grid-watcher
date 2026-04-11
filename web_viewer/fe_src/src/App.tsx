@@ -69,8 +69,6 @@ function App() {
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectCountRef = useRef<number>(0);
   const [isSSEConnected, setIsSSEConnected] = useState<boolean>(false);
-  const [lastRealtimeByInverterId, setLastRealtimeByInverterId] = useState<Record<string, number>>({});
-  const [onlineClock, setOnlineClock] = useState<number>(Date.now());
   const hourlyChartfRef = useRef<IUpdateChart>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasStartedRealtimeRequests, setHasStartedRealtimeRequests] = useState(false);
@@ -120,10 +118,6 @@ function App() {
       setInverterData(jsonData.inverter_data);
       if (selectedInverterId) {
         const nowIso = new Date().toISOString();
-        setLastRealtimeByInverterId((prev) => ({
-          ...prev,
-          [selectedInverterId]: nowTs,
-        }));
         setUserInverters((prev) =>
           prev.map((inv) =>
             inv.id === selectedInverterId
@@ -446,43 +440,10 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setOnlineClock(Date.now());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   const selectedInverter = useMemo(
     () => userInverters.find((inv) => inv.id === selectedInverterId),
     [selectedInverterId, userInverters]
   );
-
-  const selectedInverterIsOnline = useMemo(() => {
-    if (!selectedInverterId) {
-      return isSSEConnected;
-    }
-
-    const lastRealtimeTs = lastRealtimeByInverterId[selectedInverterId] || 0;
-    const hasSeenRealtime = Boolean(lastRealtimeTs);
-    const hasFreshRealtime =
-      Boolean(lastRealtimeTs) && onlineClock - lastRealtimeTs <= REALTIME_ONLINE_TIMEOUT_MS;
-    const hasOnlineSnapshot = Boolean(selectedInverter?.is_online);
-
-    // Before the first realtime payload arrives, trust /state-derived online snapshot.
-    if (!hasSeenRealtime) {
-      return hasOnlineSnapshot;
-    }
-
-    // After realtime started, status should follow realtime heartbeat only.
-    return hasFreshRealtime;
-  }, [
-    isSSEConnected,
-    lastRealtimeByInverterId,
-    onlineClock,
-    selectedInverter?.is_online,
-    selectedInverterId,
-  ]);
 
   const onAuthSuccess = useCallback(async (token: string, refreshToken: string) => {
     localStorage.setItem(ACCESS_TOKEN_KEY, token);
@@ -678,8 +639,6 @@ function App() {
           authUser={authUser}
           inverters={userInverters}
           selectedInverterId={selectedInverterId}
-          selectedInverterIsOnline={selectedInverterIsOnline}
-          onlineClock={onlineClock}
         />
         <div className="row chart">
           <HourlyChart
