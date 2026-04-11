@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IInverterData, ITotal } from "../Intefaces";
 import GeneralValue from "./GeneralValue";
 import "./Summary.css";
@@ -28,6 +28,30 @@ function Summary({ invertData, selectedInverterId, authToken }: IProps) {
   const [yieldDisplay, setYieldDisplay] = useState<YieldDisplay>(
     YieldDisplay.YIELD
   );
+
+  // Zero out "today" energy fields if the inverter's deviceTime is not today's date.
+  const todayInvertData = useMemo(() => {
+    if (!invertData.deviceTime) return invertData;
+    const deviceDate = invertData.deviceTime.split(" ")[0]; // "YYYY-MM-DD"
+    const todayDate = new Date().toLocaleDateString("sv"); // "YYYY-MM-DD" in local time
+    if (deviceDate !== todayDate) {
+      return {
+        ...invertData,
+        e_pv_day: 0,
+        e_pv_1_day: 0,
+        e_pv_2_day: 0,
+        e_pv_3_day: 0,
+        e_inv_day: 0,
+        e_rec_day: 0,
+        e_chg_day: 0,
+        e_dischg_day: 0,
+        e_eps_day: 0,
+        e_to_grid_day: 0,
+        e_to_user_day: 0,
+      };
+    }
+    return invertData;
+  }, [invertData]);
 
   const switchYieldDisplay = useCallback(() => {
     switch (yieldDisplay) {
@@ -82,14 +106,14 @@ function Summary({ invertData, selectedInverterId, authToken }: IProps) {
   const renderYieldContent = useCallback(() => {
     switch (yieldDisplay) {
       case YieldDisplay.YIELD:
-        return <DisplayYield total={total} ePVDay={invertData.e_pv_day} />;
+        return <DisplayYield total={total} ePVDay={todayInvertData.e_pv_day} />;
       case YieldDisplay.CHART_TODAY:
         return (
           <YieldChart
             label="today"
-            totalYield={invertData.e_pv_day}
-            charge={invertData.e_chg_day - invertData.e_rec_day}
-            gridExport={invertData.e_to_grid_day}
+            totalYield={todayInvertData.e_pv_day}
+            charge={todayInvertData.e_chg_day - todayInvertData.e_rec_day}
+            gridExport={todayInvertData.e_to_grid_day}
           />
         );
       case YieldDisplay.CHART_TOTAL:
@@ -104,7 +128,7 @@ function Summary({ invertData, selectedInverterId, authToken }: IProps) {
       default:
         return null;
     }
-  }, [yieldDisplay, total, invertData]);
+  }, [yieldDisplay, total, todayInvertData]);
 
   return (
     <div className="summary row">
@@ -130,7 +154,7 @@ function Summary({ invertData, selectedInverterId, authToken }: IProps) {
             <div className="summary-item-content-texts">
               <GeneralValue
                 value={
-                  isShowCharged ? invertData.e_chg_day : invertData.e_dischg_day
+                  isShowCharged ? todayInvertData.e_chg_day : todayInvertData.e_dischg_day
                 }
                 unit=" kWh"
               />
@@ -174,7 +198,7 @@ function Summary({ invertData, selectedInverterId, authToken }: IProps) {
               <div className="col">
                 <GeneralValue
                   value={
-                    isShowFeed ? invertData.e_to_grid_day : invertData.e_to_user_day
+                    isShowFeed ? todayInvertData.e_to_grid_day : todayInvertData.e_to_user_day
                   }
                   unit=" kWh"
                 />
@@ -207,10 +231,10 @@ function Summary({ invertData, selectedInverterId, authToken }: IProps) {
             <div className="feed-texts summary-item-content-texts">
               <GeneralValue
                 value={(
-                  invertData.e_inv_day +
-                  invertData.e_to_user_day +
-                  invertData.e_eps_day -
-                  invertData.e_rec_day
+                  todayInvertData.e_inv_day +
+                  todayInvertData.e_to_user_day +
+                  todayInvertData.e_eps_day -
+                  todayInvertData.e_rec_day
                 ).toFixed(1)}
                 unit=" kWh"
               />

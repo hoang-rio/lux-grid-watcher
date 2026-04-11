@@ -75,8 +75,6 @@ jobs:
 
   deploy:
     needs: build-and-push
-    # Only deploy when a specific tag is known (tag push or workflow_dispatch with tag)
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -85,7 +83,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.inputs.tag || github.ref_name }}
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: Ensure remote deploy directory exists
         uses: appleboy/ssh-action@v1.2.2
