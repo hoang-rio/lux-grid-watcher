@@ -24,7 +24,7 @@ const TopAuthBar = lazy(() => import("./components/TopAuthBar"));
 const MAX_RECONNECT_COUNT = 5;
 const RECONNECT_BASE_DELAY_MS = 250;
 const RECONNECT_MAX_DELAY_MS = 1000;
-const INVERTER_OFFLINE_TIMEOUT_MS = 10 * 60 * 1000;
+const INVERTER_OFFLINE_TIMEOUT_MS = 20 * 60 * 1000;
 const REALTIME_ONLINE_TIMEOUT_MS = 60 * 1000;
 const ACCESS_TOKEN_KEY = "lux_access_token";
 const REFRESH_TOKEN_KEY = "lux_refresh_token";

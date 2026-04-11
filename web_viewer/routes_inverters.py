@@ -16,7 +16,7 @@ import settings
 
 logger = getLogger(__name__)
 
-INVERTER_OFFLINE_TIMEOUT = timedelta(minutes=10)
+INVERTER_OFFLINE_TIMEOUT = timedelta(minutes=20)
 
 
 # ---------------------------------------------------------------------------
