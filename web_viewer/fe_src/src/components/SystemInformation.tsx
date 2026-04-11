@@ -198,10 +198,14 @@ function SystemInformation({
   }, [inverters, selectedInverterId]);
 
   const effectiveSSEConnected = useMemo(() => {
-    const baseOnline =
-      selectedInverterId && selectedInverterIsOnline !== undefined
-        ? Boolean(selectedInverterIsOnline)
-        : Boolean(isSSEConnected);
+    // If a specific inverter is selected and the parent provided
+    // selectedInverterIsOnline (derived from realtime heartbeats in App.tsx),
+    // trust that value directly. It already encodes realtime freshness.
+    if (selectedInverterId && selectedInverterIsOnline !== undefined) {
+      return Boolean(selectedInverterIsOnline);
+    }
+
+    const baseOnline = Boolean(isSSEConnected);
     const lastCommunicationTs = toTimestamp(selectedInverter?.last_communication_at) || toTimestamp(inverterData.deviceTime);
     const hasFreshCommunication =
       Boolean(lastCommunicationTs) && onlineClock - lastCommunicationTs <= INVERTER_OFFLINE_TIMEOUT_MS;
