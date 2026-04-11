@@ -53,6 +53,18 @@ function SystemInformation({
     return date.toLocaleString();
   }, []);
 
+  // Consider inverter deviceTime stale after this timeout (ms)
+  const INVERTER_OFFLINE_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
+
+  const toTimestamp = useCallback((value?: string | null) => {
+    if (!value) return 0;
+    // Treat timezone-naive datetime as UTC to match backend utcnow storage.
+    const hasTimezone = /([zZ]|[+-]\d{2}:\d{2})$/.test(value);
+    const normalizedValue = hasTimezone ? value : `${value}Z`;
+    const parsed = Date.parse(normalizedValue);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }, []);
+
   // Fetch unread notification count on mount and when page becomes visible
   const fetchUnreadCount = useCallback(async () => {
     try {
@@ -179,11 +191,22 @@ function SystemInformation({
   }, [inverterData.dongle_serial, inverterData.serial, inverterNameById, selectedInverterId]);
 
   const effectiveSSEConnected = useMemo(() => {
+    // If a specific inverter is selected and upstream computed its online state, use that.
     if (selectedInverterId && selectedInverterIsOnline !== undefined) {
       return Boolean(selectedInverterIsOnline);
     }
+
+    // For global view (no selected inverter), consider SSE connection AND
+    // whether inverterData's deviceTime is fresh. This prevents showing "online"
+    // when SSE is connected but the inverter hasn't reported for a long time.
+    if (inverterData && inverterData.deviceTime) {
+      const deviceTs = toTimestamp(inverterData.deviceTime);
+      const deviceFresh = Boolean(deviceTs) && Date.now() - deviceTs <= INVERTER_OFFLINE_TIMEOUT_MS;
+      return Boolean(isSSEConnected && deviceFresh);
+    }
+
     return isSSEConnected;
-  }, [isSSEConnected, selectedInverterId, selectedInverterIsOnline]);
+  }, [isSSEConnected, selectedInverterId, selectedInverterIsOnline, inverterData, toTimestamp]);
 
   const status = useMemo(() => {
     if (!effectiveSSEConnected) {
