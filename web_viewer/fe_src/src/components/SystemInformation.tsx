@@ -191,21 +191,21 @@ function SystemInformation({
   }, [inverterData.dongle_serial, inverterData.serial, inverterNameById, selectedInverterId]);
 
   const effectiveSSEConnected = useMemo(() => {
-    // If a specific inverter is selected and upstream computed its online state, use that.
-    if (selectedInverterId && selectedInverterIsOnline !== undefined) {
-      return Boolean(selectedInverterIsOnline);
-    }
+    // Determine base online state from selectedInverterIsOnline (if provided) else from SSE connection.
+    const baseOnline =
+      selectedInverterId && selectedInverterIsOnline !== undefined
+        ? Boolean(selectedInverterIsOnline)
+        : Boolean(isSSEConnected);
 
-    // For global view (no selected inverter), consider SSE connection AND
-    // whether inverterData's deviceTime is fresh. This prevents showing "online"
-    // when SSE is connected but the inverter hasn't reported for a long time.
+    // If we have deviceTime from inverterData, require it to be fresh to consider the device online.
     if (inverterData && inverterData.deviceTime) {
       const deviceTs = toTimestamp(inverterData.deviceTime);
       const deviceFresh = Boolean(deviceTs) && Date.now() - deviceTs <= INVERTER_OFFLINE_TIMEOUT_MS;
-      return Boolean(isSSEConnected && deviceFresh);
+      return baseOnline && deviceFresh;
     }
 
-    return isSSEConnected;
+    // No deviceTime to judge freshness — fall back to baseOnline.
+    return baseOnline;
   }, [isSSEConnected, selectedInverterId, selectedInverterIsOnline, inverterData, toTimestamp]);
 
   const status = useMemo(() => {
