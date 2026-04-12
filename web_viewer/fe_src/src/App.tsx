@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, lazy } from "react";
+import { useCallback, useEffect, useRef, useState, lazy, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import "./App.css";
 import {
@@ -34,11 +34,7 @@ function toTimestamp(value?: string | null): number {
     return 0;
   }
 
-  // Treat timezone-naive datetime as UTC to match backend utcnow storage.
-  const hasTimezone = /([zZ]|[+-]\d{2}:\d{2})$/.test(value);
-  const normalizedValue = hasTimezone ? value : `${value}Z`;
-
-  const parsed = Date.parse(normalizedValue);
+  const parsed = Date.parse(value);
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
@@ -87,8 +83,17 @@ function App() {
   const authSessionReady = authConfigLoaded && (!authRequired || !isAuthChecking);
   const hasSSEPrerequisites = !authRequired || (!!authUser && (!useBearerAuth || !!selectedInverterId));
 
+  const isOffline = useMemo(() => {
+    if (!isSSEConnected) {
+      return true;
+    }
+    const deviceTs = toTimestamp(inverterData?.deviceTime);
+    return !(Boolean(deviceTs) && Date.now() - deviceTs <= INVERTER_OFFLINE_TIMEOUT_MS);
+  }, [inverterData?.deviceTime, isSSEConnected, toTimestamp]);
+
+
   const setConnectedTitle = useCallback((deviceTimeOnly?: string) => {
-    if (document.hidden) {
+    if (document.hidden || isOffline) {
       return;
     }
     const currentDeviceTime = deviceTimeOnly || deviceTimeRef.current;
@@ -630,6 +635,7 @@ function App() {
           isSSEConnected={isSSEConnected}
           newNotification={newNotification}
           inverters={userInverters}
+          isOffline={isOffline}
           selectedInverterId={selectedInverterId}
         />
         <div className="row chart">

@@ -21,6 +21,7 @@ interface Props {
   newNotification?: INotificationData | null;
   inverters?: IUserInverter[];
   selectedInverterId?: string;
+  isOffline: boolean;
 }
 
 function SystemInformation({
@@ -29,6 +30,7 @@ function SystemInformation({
   newNotification,
   inverters = [],
   selectedInverterId = "",
+  isOffline,
 }: Props) {
   const { t, i18n } = useTranslation();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -46,15 +48,6 @@ function SystemInformation({
   const formatDateTime = useCallback((dateInput: string | number) => {
     const date = new Date(dateInput);
     return date.toLocaleString();
-  }, []);
-
-  // Consider inverter deviceTime stale after this timeout (ms)
-  const INVERTER_OFFLINE_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
-
-  const toTimestamp = useCallback((value?: string | null) => {
-    if (!value) return 0;
-    const parsed = Date.parse(value);
-    return Number.isFinite(parsed) ? parsed : 0;
   }, []);
 
   // Fetch unread notification count on mount and when page becomes visible
@@ -181,16 +174,6 @@ function SystemInformation({
   const selectedInverterName = useMemo(() => {
     return inverterNameById.get(selectedInverterId) || inverterData.serial || inverterData.dongle_serial || "";
   }, [inverterData.dongle_serial, inverterData.serial, inverterNameById, selectedInverterId]);
-
-
-
-  const isOffline = useMemo(() => {
-    if (!isSSEConnected) {
-      return true;
-    }
-    const deviceTs = toTimestamp(inverterData.deviceTime);
-    return !(Boolean(deviceTs) && Date.now() - deviceTs <= INVERTER_OFFLINE_TIMEOUT_MS);
-  }, [inverterData.deviceTime, isSSEConnected, toTimestamp]);
 
   const effectiveSSEConnected = useMemo(() => {
     return isSSEConnected && !isOffline;
