@@ -67,7 +67,7 @@ function App() {
   const sseAbortControllerRef = useRef<AbortController | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectCountRef = useRef<number>(0);
-  const [, setIsSSEConnected] = useState<boolean>(false);
+  const [isSSEConnected, setIsSSEConnected] = useState<boolean>(false);
   const hourlyChartfRef = useRef<IUpdateChart>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasStartedRealtimeRequests, setHasStartedRealtimeRequests] = useState(false);
@@ -627,6 +627,7 @@ function App() {
         />
         <SystemInformation
           inverterData={inverterData}
+          isSSEConnected={isSSEConnected}
           newNotification={newNotification}
           inverters={userInverters}
           selectedInverterId={selectedInverterId}

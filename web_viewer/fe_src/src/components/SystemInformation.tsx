@@ -16,6 +16,7 @@ const SettingsPopover = lazy(() => import("./SettingsPopover"));
 
 interface Props {
   inverterData: IInverterData;
+  isSSEConnected: boolean;
   // Changed to accept an INotificationData object or null
   newNotification?: INotificationData | null;
   inverters?: IUserInverter[];
@@ -24,6 +25,7 @@ interface Props {
 
 function SystemInformation({
   inverterData,
+  isSSEConnected,
   newNotification,
   inverters = [],
   selectedInverterId = "",
@@ -185,31 +187,35 @@ function SystemInformation({
 
 
 
-  const effectiveSSEConnected = useMemo(() => {
-    // Simple offline check: only consider inverterData.deviceTime
+  const isOffline = useMemo(() => {
+    if (!isSSEConnected) {
+      return true;
+    }
     const deviceTs = toTimestamp(inverterData.deviceTime);
-    const hasFreshDeviceTime = Boolean(deviceTs) && Date.now() - deviceTs <= INVERTER_OFFLINE_TIMEOUT_MS;
-    return hasFreshDeviceTime;
-  }, [inverterData.deviceTime, toTimestamp]);
+    return !(Boolean(deviceTs) && Date.now() - deviceTs <= INVERTER_OFFLINE_TIMEOUT_MS);
+  }, [inverterData.deviceTime, isSSEConnected, toTimestamp]);
+
+  const effectiveSSEConnected = useMemo(() => {
+    return isSSEConnected && !isOffline;
+  }, [isOffline, isSSEConnected]);
 
   const status = useMemo(() => {
-    if (!effectiveSSEConnected) {
+    if (isOffline) {
       return "offline";
     }
     if (inverterData.status === 1) {
       return "fault";
     }
     if (
-      inverterData.internal_fault !== 0 ||
+      (inverterData.internal_fault != null && inverterData.internal_fault !== 0) ||
       inverterData.status_text == "Unknow status" ||
-      inverterData.v_bat < 40 ||
-      inverterData.v_bat > 58
+      (inverterData.v_bat != null && (inverterData.v_bat < 40 || inverterData.v_bat > 58))
     ) {
       return "notice";
     }
     return "normal";
   }, [
-    effectiveSSEConnected,
+    isOffline,
     inverterData.status,
     inverterData.internal_fault,
     inverterData.status_text,
@@ -217,7 +223,7 @@ function SystemInformation({
   ]);
 
   const displayInverterData = useMemo(() => {
-    if (effectiveSSEConnected) return inverterData;
+    if (!isOffline) return inverterData;
     return {
       ...inverterData,
       p_pv: 0,
@@ -239,7 +245,7 @@ function SystemInformation({
       fac: 0,
       p_eps: 0,
     };
-  }, [effectiveSSEConnected, inverterData]);
+  }, [isOffline, inverterData]);
 
   return (
     <>
