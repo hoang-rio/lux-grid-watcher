@@ -53,10 +53,7 @@ function SystemInformation({
 
   const toTimestamp = useCallback((value?: string | null) => {
     if (!value) return 0;
-    // Treat timezone-naive datetime as UTC to match backend utcnow storage.
-    const hasTimezone = /([zZ]|[+-]\d{2}:\d{2})$/.test(value);
-    const normalizedValue = hasTimezone ? value : `${value}Z`;
-    const parsed = Date.parse(normalizedValue);
+    const parsed = Date.parse(value);
     return Number.isFinite(parsed) ? parsed : 0;
   }, []);
 
