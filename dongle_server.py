@@ -2,18 +2,12 @@ import asyncio
 import logging
 from typing import Optional
 import dongle_handler
-
-# Per-user sleep_time cache to avoid repeated DB queries
-_sleep_time_cache: dict[str, int] = {}
-
-
-def _normalize_sleep_time(value, fallback: int = 30) -> int:
-    allowed_values = {3, 5, 10, 15, 30}
-    try:
-        parsed = int(value)
-    except Exception:
-        parsed = fallback
-    return parsed if parsed in allowed_values else fallback
+import time
+from sleep_cache import (
+    get_cached_sleep_time,
+    normalize_sleep_time as _normalize_sleep_time,
+    set_cached_sleep_time,
+)
 
 
 def _resolve_inverter_id(dongle_serial: str, logger: logging.Logger) -> Optional[str]:
@@ -50,18 +44,21 @@ def _resolve_sleep_time(dongle_serial: str, default_sleep_time: int, logger: log
         try:
             inverter = repo.get_inverter_by_dongle_serial(session, dongle_serial)
             if inverter is None:
+                logger.debug("No inverter found for dongle_serial=%s; using default sleep_time=%s", dongle_serial, default_sleep_time)
                 return default_sleep_time
             
             user_id_str = str(inverter.user_id)
             # Check cache first
-            if user_id_str in _sleep_time_cache:
-                return _sleep_time_cache[user_id_str]
+            cached_value = get_cached_sleep_time(user_id_str)
+            if cached_value is not None:
+                logger.debug("SLEEP_TIME cache hit for user_id=%s -> %s (dongle_serial=%s)", user_id_str, cached_value, dongle_serial)
+                return cached_value
             
             # Query and cache
             user_sleep_time = repo.get_user_setting(session, inverter.user_id, "SLEEP_TIME")
-            cached_value = _normalize_sleep_time(user_sleep_time, default_sleep_time)
-            _sleep_time_cache[user_id_str] = cached_value
-            return cached_value
+            normalized = set_cached_sleep_time(user_id_str, user_sleep_time, default_sleep_time)
+            logger.info("Resolved per-user SLEEP_TIME=%s for user_id=%s (dongle_serial=%s)", normalized, user_id_str, dongle_serial)
+            return normalized
         finally:
             session.close()
     except RuntimeError:
@@ -69,16 +66,6 @@ def _resolve_sleep_time(dongle_serial: str, default_sleep_time: int, logger: log
     except Exception as exc:
         logger.warning("Failed to resolve sleep_time for dongle_serial=%s: %s", dongle_serial, exc)
         return default_sleep_time
-
-
-def clear_sleep_time_cache(user_id: str) -> None:
-    """Clear per-user sleep_time cache for the given user_id."""
-    try:
-        _sleep_time_cache.pop(str(user_id), None)
-    except Exception:
-        pass
-
-
 class DongleServer:
     __server: asyncio.Server | None = None
     __config: dict
@@ -124,7 +111,8 @@ class DongleServer:
         try:
             dongle_serial = self.__config.get("DONGLE_SERIAL", "")
             inverter_serial = self.__config.get("INVERT_SERIAL", "")
-            sleep_time = _normalize_sleep_time(self.__config.get("SLEEP_TIME", 30))
+            configured_sleep_time = _normalize_sleep_time(self.__config.get("SLEEP_TIME", 30))
+            sleep_time = configured_sleep_time
             read_mode = dongle_handler.normalize_read_input_mode(
                 self.__config.get("READ_INPUT_MODE", dongle_handler.READ_INPUT_MODE_ALL)
             )
@@ -132,6 +120,13 @@ class DongleServer:
             next_register_idx = 0
             all_mode_buffer: dict = {}
             all_mode_received_registers: set[int] = set()
+
+            # Duplicate-send guard: track last sent register/time and skip sends that happen
+            # within a very short interval (likely accidental duplicate). Guarding avoids
+            # duplicate write/drain cycles while preserving normal polling behavior.
+            last_sent_register: int | None = None
+            last_sent_time: float = 0.0
+            last_send_guard_seconds = 0.5
 
             def build_poll_request(register: int) -> bytes:
                 return dongle_handler.Dongle.build_read_input_request(
@@ -167,14 +162,24 @@ class DongleServer:
                 # Send ReadInput request immediately when dongle connects
                 current_register = get_next_register()
                 request = build_poll_request(current_register)
-                writer.write(request)
-                await writer.drain()
-                self.__logger.debug(
-                    "Sent %s request (register=%s, protocol 1) to %s immediately",
-                    request_name,
-                    current_register,
-                    client_addr,
-                )
+                now = time.time()
+                if last_sent_register == current_register and now - last_sent_time < last_send_guard_seconds:
+                    self.__logger.info(
+                        "Skipping duplicate immediate send for register=%s to %s",
+                        current_register,
+                        client_addr,
+                    )
+                else:
+                    writer.write(request)
+                    await writer.drain()
+                    self.__logger.info(
+                        "Sent %s request (register=%s, protocol 1) to %s (immediate)",
+                        request_name,
+                        current_register,
+                        client_addr,
+                    )
+                    last_sent_register = current_register
+                    last_sent_time = now
                 advance_next_register()
             else:
                 self.__logger.warning(
@@ -228,7 +233,7 @@ class DongleServer:
                                 )
 
                         resolved_dongle_serial = str(parsed_data.get("dongle_serial") or dongle_serial)
-                        sleep_time = _resolve_sleep_time(resolved_dongle_serial, sleep_time, self.__logger)
+                        sleep_time = _resolve_sleep_time(resolved_dongle_serial, configured_sleep_time, self.__logger)
                         if read_mode == dongle_handler.READ_INPUT_MODE_INPUT1_ONLY:
                             await self.__enqueue_inverter_data(parsed_data, client_addr)
                             self.__logger.debug(
@@ -261,22 +266,44 @@ class DongleServer:
                     if dongle_serial:
                         current_register = get_next_register()
                         request = build_poll_request(current_register)
-                        writer.write(request)
-                        await writer.drain()
-                        self.__logger.debug(
-                            "Sent %s request (register=%s) to %s",
-                            request_name,
-                            current_register,
-                            client_addr,
-                        )
+                        now = time.time()
+                        if last_sent_register == current_register and now - last_sent_time < last_send_guard_seconds:
+                            self.__logger.info(
+                                "Skipping duplicate send for register=%s to %s (recently sent)",
+                                current_register,
+                                client_addr,
+                            )
+                        else:
+                            writer.write(request)
+                            await writer.drain()
+                            self.__logger.info(
+                                "Sent %s request (register=%s) to %s",
+                                request_name,
+                                current_register,
+                                client_addr,
+                            )
+                            last_sent_register = current_register
+                            last_sent_time = now
                         advance_next_register()
                     if cycle_complete:
                         # Only sleep after a complete cycle; in ALL mode the 4 intermediate
                         # register reads now happen back-to-back without unnecessary delay.
-                        self.__logger.debug(
-                            "Waiting %s seconds before next request to %s",
+                        try:
+                            source = "configured"
+                            if sleep_time != configured_sleep_time:
+                                # Try to resolve inverter id for helpful debugging context
+                                try:
+                                    inverter_id = _resolve_inverter_id(resolved_dongle_serial, self.__logger)
+                                    source = f"user:{inverter_id}" if inverter_id else "user"
+                                except Exception:
+                                    source = "user"
+                        except Exception:
+                            source = "configured"
+                        self.__logger.info(
+                            "Waiting %s seconds before next request to %s (source: %s)",
                             sleep_time,
-                            client_addr
+                            client_addr,
+                            source,
                         )
                         await asyncio.sleep(sleep_time)
 
@@ -289,14 +316,24 @@ class DongleServer:
                     if dongle_serial:
                         current_register = get_next_register()
                         request = build_poll_request(current_register)
-                        writer.write(request)
-                        await writer.drain()
-                        self.__logger.debug(
-                            "Resent %s request (register=%s) to %s after timeout",
-                            request_name,
-                            current_register,
-                            client_addr,
-                        )
+                        now = time.time()
+                        if last_sent_register == current_register and now - last_sent_time < last_send_guard_seconds:
+                            self.__logger.info(
+                                "Skipping duplicate resend for register=%s to %s (recently sent)",
+                                current_register,
+                                client_addr,
+                            )
+                        else:
+                            writer.write(request)
+                            await writer.drain()
+                            self.__logger.info(
+                                "Resent %s request (register=%s) to %s after timeout",
+                                request_name,
+                                current_register,
+                                client_addr,
+                            )
+                            last_sent_register = current_register
+                            last_sent_time = now
                         advance_next_register()
                     await asyncio.sleep(sleep_time)
                 except Exception as e:
@@ -422,7 +459,7 @@ class DongleServer:
             if inverter_id:
                 data = dict(data)  # avoid mutating the shared all_mode_buffer
                 data["_inverter_id"] = inverter_id
-                self.__logger.info(
+                self.__logger.debug(
                     "Resolved inverter_id=%s for dongle_serial=%s", inverter_id, dongle_serial
                 )
         await self.__data_queue.put(data)

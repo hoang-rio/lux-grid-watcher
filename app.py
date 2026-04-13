@@ -15,6 +15,12 @@ import asyncio
 from web_socket_client import WebSocketClient
 import settings
 import database
+from sleep_cache import (
+    get_cached_sleep_time,
+    normalize_sleep_time as _normalize_sleep_time,
+    set_cached_sleep_time,
+    set_enabled as _sleep_cache_set_enabled,
+)
 
 DONGLE_MODE = "DONGLE"
 SERVER_MODE = "SERVER"
@@ -58,9 +64,11 @@ if _postgres_db_url:
 # Initialize settings module with config for fallback
 settings.init_config(config)
 USE_PG = bool(config.get("POSTGRES_DB_URL") or config.get("DATABASE_URL"))
-
-# Per-user sleep_time cache to avoid repeated DB queries
-_sleep_time_cache: dict[str, int] = {}
+# Configure centralized sleep cache to be enabled only when PostgreSQL is configured
+try:
+    _sleep_cache_set_enabled(USE_PG)
+except Exception:
+    pass
 
 log_level = logging.DEBUG if config["IS_DEBUG"] == 'True' else logging.INFO
 
@@ -514,20 +522,6 @@ def _to_int(value: str, fallback: int) -> int:
         return fallback
 
 
-def _normalize_sleep_time(value, fallback: int = 30) -> int:
-    allowed_values = {3, 5, 10, 15, 30}
-    try:
-        parsed = int(value)
-    except Exception:
-        parsed = fallback
-    return parsed if parsed in allowed_values else fallback
-
-
-def _clear_sleep_time_cache(user_id: str) -> None:
-    """Clear sleep_time cache for a user."""
-    _sleep_time_cache.pop(user_id, None)
-
-
 def _get_sleep_time(inverter_ctx: dict | None = None) -> int:
     configured_sleep_time = _normalize_sleep_time(config.get("SLEEP_TIME", 30))
     if not USE_PG or not inverter_ctx:
@@ -538,16 +532,16 @@ def _get_sleep_time(inverter_ctx: dict | None = None) -> int:
         return configured_sleep_time
     
     # Check cache first
-    if user_id in _sleep_time_cache:
-        return _sleep_time_cache[user_id]
+    cached_value = get_cached_sleep_time(str(user_id))
+    if cached_value is not None:
+        return cached_value
     
     # Query and cache
-    cached_value = _normalize_sleep_time(
+    return set_cached_sleep_time(
+        str(user_id),
         _get_user_setting(inverter_ctx, "SLEEP_TIME", str(configured_sleep_time)),
         configured_sleep_time,
     )
-    _sleep_time_cache[user_id] = cached_value
-    return cached_value
 
 
 def _migrate_sqlite_to_pg_if_needed() -> None:
@@ -969,8 +963,7 @@ async def main():
                 current_sleep_time = _normalize_sleep_time(config.get("SLEEP_TIME", 30))
                 if inverter_data is not None and USE_PG:
                     current_sleep_time = _get_sleep_time(_resolve_inverter_context(inverter_data))
-                logger.info("Wating for %s second before next check",
-                                current_sleep_time)
+                logger.info("Waiting for %s seconds before next check", current_sleep_time)
                 time.sleep(current_sleep_time)
         elif config["WORKING_MODE"] == SERVER_MODE:
             from dongle_server import DongleServer
@@ -995,8 +988,15 @@ async def main():
             logger.info("Waiting for dongle connections on port %s",
                         config.get("SERVER_MODE_PORT", 4346))
             while True:
+                # Always use SERVER_MODE_TIMEOUT if present; otherwise use a safe default
+                # which is large enough to cover per-user sleep_time (user max 30s).
+                # Default chosen: 90 seconds
                 try:
-                    timeout_duration = int(config["SLEEP_TIME"]) * 3
+                    timeout_duration = int(config.get("SERVER_MODE_TIMEOUT", 90))
+                except Exception:
+                    timeout_duration = 90
+
+                try:
                     inverter_data = await dongle_server.wait_for_data(
                         timeout=timeout_duration
                     )
@@ -1011,8 +1011,7 @@ async def main():
                         inverter_data = dongle_server.get_pending_data()
                 except Exception as e:
                     logger.exception("Got error in SERVER_MODE %s", e)
-                logger.info("Waiting for next dongle data (timeout: %s seconds)",
-                            config["SLEEP_TIME"])
+                logger.info("Waiting for next dongle data (timeout: %s seconds)", timeout_duration)
         else:
             http = http_handler.Http(logger, config)
             while True:
@@ -1021,8 +1020,7 @@ async def main():
                     handle_grid_status(inverter_data, fcm_service)
                 except Exception as e:
                     logger.exception("Got error when get http input %s", e)
-                logger.info("Wating for %s second before next check",
-                                config["SLEEP_TIME"])
+                logger.info("Waiting for %s seconds before next check", config["SLEEP_TIME"])
                 time.sleep(int(config["SLEEP_TIME"]))
     except Exception as e:
         logger.exception("Got error when run main %s", e)

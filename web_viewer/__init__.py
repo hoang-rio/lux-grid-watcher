@@ -24,10 +24,16 @@ from multi_tenant.auth import decode_access_token
 from multi_tenant.db import get_db_session
 from multi_tenant import repository as mt_repo
 from multi_tenant.i18n import get_locale_from_accept_language, translate
+from sleep_cache import ALLOWED_SLEEP_TIME_SETTING_VALUES, clear_sleep_time_cache, set_enabled as _sleep_cache_set_enabled
 
 # Load config from .env and environment
 config: dict = {**dotenv_values(".env"), **environ}
 USE_PG = bool(config.get("POSTGRES_DB_URL") or config.get("DATABASE_URL"))
+# Configure centralized sleep cache to follow PG availability
+try:
+    _sleep_cache_set_enabled(USE_PG)
+except Exception:
+    pass
 
 # Comma-separated CIDR list that are allowed to access admin features (settings + notification modification).
 # Configured via `ADMIN_ALLOWED_CIDR` environment variable.
@@ -978,12 +984,6 @@ async def notification_unread_count(request: web.Request):
         logger.error(f"Error in notification_unread_count: {e}")
         return web.json_response({"unread_count": 0})
 
-ALLOWED_SLEEP_TIME_VALUES = {"3", "5", "10", "15", "30"}
-
-# Per-user sleep_time cache to avoid repeated DB queries
-_sleep_time_cache: dict[str, int] = {}
-
-
 async def get_settings(request: web.Request):
     if USE_PG:
         user_id, auth_error = _require_jwt_user_id(request)
@@ -1032,15 +1032,14 @@ async def update_settings(request: web.Request):
                     # Basic auth settings are deprecated in multi-tenant mode.
                     if key in {"AUTH_ENABLED", "AUTH_USERNAME", "AUTH_PASSWORD", "AUTH_BYPASS_CIDR"}:
                         continue
-                    if key == "SLEEP_TIME" and str(value) not in ALLOWED_SLEEP_TIME_VALUES:
+                    if key == "SLEEP_TIME" and str(value) not in ALLOWED_SLEEP_TIME_SETTING_VALUES:
                         return web.json_response({"success": False}, status=400)
                     if key == "SLEEP_TIME":
                         sleep_time_changed = True
                     mt_repo.upsert_user_setting(session, user_id, key, str(value))
                 session.commit()
-                # Invalidate sleep_time cache only if SLEEP_TIME was changed
                 if sleep_time_changed:
-                    _sleep_time_cache.pop(str(user_id), None)
+                    clear_sleep_time_cache(str(user_id))
                 return web.json_response({"success": True})
             except Exception:
                 session.rollback()
@@ -1055,10 +1054,22 @@ async def update_settings(request: web.Request):
         data = await request.json()
         conn = get_db_connection()
         import settings
+        saved_sleep_value = None
         for key, value in data.items():
-            if key == "SLEEP_TIME" and str(value) not in ALLOWED_SLEEP_TIME_VALUES:
+            if key == "SLEEP_TIME" and str(value) not in ALLOWED_SLEEP_TIME_SETTING_VALUES:
                 return web.json_response({"success": False}, status=400)
             settings.save_setting(key, value, conn)
+            if key == "SLEEP_TIME":
+                saved_sleep_value = str(value)
+        # If non-PG mode and sleep time changed, update in-memory app config so running app picks it up
+        if saved_sleep_value is not None:
+            try:
+                import sys
+                app_mod = sys.modules.get("app") or sys.modules.get("__main__")
+                if app_mod and hasattr(app_mod, "config"):
+                    app_mod.config["SLEEP_TIME"] = saved_sleep_value
+            except Exception:
+                pass
         return web.json_response({"success": True})
     except Exception as e:
         logger.error(f"Error in update_settings: {e}")

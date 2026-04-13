@@ -1,4 +1,5 @@
 import sqlite3
+from sleep_cache import normalize_sleep_time
 
 settings = {}
 config = {}
@@ -74,12 +75,7 @@ def get_auth_bypass_cidr():
 
 def get_sleep_time() -> int:
     raw_value = str(get_setting("SLEEP_TIME", config.get("SLEEP_TIME", 30)))
-    allowed_values = {3, 5, 10, 15, 30}
-    try:
-        parsed = int(raw_value)
-    except Exception:
-        parsed = 30
-    return parsed if parsed in allowed_values else 30
+    return normalize_sleep_time(raw_value, 30)
 
 
 def get_max_inverters_system() -> int:
