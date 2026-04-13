@@ -38,17 +38,6 @@ function toTimestamp(value?: string | null): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function normalizeInvertersWithOnline(inverters: IUserInverter[]): IUserInverter[] {
-  const now = Date.now();
-  return inverters.map((inv) => {
-    const lastTs = toTimestamp(inv.last_communication_at);
-    return {
-      ...inv,
-      is_online: Boolean(lastTs) && now - lastTs <= INVERTER_OFFLINE_TIMEOUT_MS,
-    };
-  });
-}
-
 function App() {
   const { t, i18n } = useTranslation();
   const [inverterData, setInverterData] = useState<IInverterData>();
@@ -123,16 +112,6 @@ function App() {
       setIsInitialRealtimeLoading(false);
       hasInverterDataRef.current = true;
       setInverterData(jsonData.inverter_data);
-      if (selectedInverterId) {
-        const nowIso = new Date().toISOString();
-        setUserInverters((prev) =>
-          prev.map((inv) =>
-            inv.id === selectedInverterId
-              ? { ...inv, is_online: true, last_communication_at: nowIso }
-              : inv
-          )
-        );
-      }
       if (jsonData.hourly_chart_item) {
         hourlyChartfRef.current?.updateItem(jsonData.hourly_chart_item);
       }
@@ -419,8 +398,7 @@ function App() {
         setIsLoading(false);
         return;
       }
-
-      setUserInverters(normalizeInvertersWithOnline(invJson.inverters));
+      setUserInverters(invJson.inverters);
       const savedInverterId = localStorage.getItem(INVERTER_ID_KEY) || "";
       const defaultInverterId =
         invJson.inverters.find((inv: IUserInverter) => inv.id === savedInverterId)?.id ||
@@ -439,13 +417,6 @@ function App() {
       setIsAuthChecking(false);
     }
   }, [authConfigLoaded, authRequired, clearAuthSession, i18n]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setUserInverters((prev) => normalizeInvertersWithOnline(prev));
-    }, 30 * 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   const onAuthSuccess = useCallback(async (token: string, refreshToken: string) => {
     localStorage.setItem(ACCESS_TOKEN_KEY, token);
