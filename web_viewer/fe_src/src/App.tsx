@@ -71,22 +71,19 @@ function App() {
   const useBearerAuth = Boolean(accessToken);
   const authSessionReady = authConfigLoaded && (!authRequired || !isAuthChecking);
   const hasSSEPrerequisites = !authRequired || (!!authUser && (!useBearerAuth || !!selectedInverterId));
-  const isOfflineRef = useRef(false);
+  const isOfflineByDeviceTimeRef = useRef(false);
 
-  const isOffline = useMemo(() => {
-    if (!isSSEConnected) {
-      return true;
-    }
+  const isOfflineByDeviceTime = useMemo(() => {
     const deviceTs = toTimestamp(inverterData?.deviceTime);
     return !(Boolean(deviceTs) && Date.now() - deviceTs <= INVERTER_OFFLINE_TIMEOUT_MS);
   }, [inverterData?.deviceTime, isSSEConnected, toTimestamp]);
 
   useEffect(() => {
-    isOfflineRef.current = isOffline;
-  }, [isOffline]);
+    isOfflineByDeviceTimeRef.current = isOfflineByDeviceTime;
+  }, [isOfflineByDeviceTime]);
 
   const setConnectedTitle = useCallback((deviceTimeOnly?: string) => {
-    if (document.hidden || isOfflineRef.current) {
+    if (document.hidden || isOfflineByDeviceTimeRef.current) {
       return;
     }
     const currentDeviceTime = deviceTimeOnly || deviceTimeRef.current;
@@ -610,7 +607,7 @@ function App() {
           isSSEConnected={isSSEConnected}
           newNotification={newNotification}
           inverters={userInverters}
-          isOffline={isOffline}
+          isOffline={isOfflineByDeviceTime}
           selectedInverterId={selectedInverterId}
         />
         <div className="row chart">
