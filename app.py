@@ -343,8 +343,14 @@ async def main():
             logger.info("Waiting for dongle connections on port %s",
                         config.get("SERVER_MODE_PORT", 4346))
             while True:
+                # Always use SERVER_MODE_TIMEOUT if present; otherwise use a safe default
+                # which is large enough to cover per-user sleep_time (user max 30s).
+                # Default chosen: 90 seconds
                 try:
-                    timeout_duration = int(config["SLEEP_TIME"]) * 3
+                    timeout_duration = int(config.get("SERVER_MODE_TIMEOUT", 90))
+                except Exception:
+                    timeout_duration = 90
+                try:
                     inverter_data = await dongle_server.wait_for_data(
                         timeout=timeout_duration
                     )
@@ -370,8 +376,7 @@ async def main():
                             dectect_abnormal_usage(db_connection, fcm_service)
                 except Exception as e:
                     logger.exception("Got error in SERVER_MODE %s", e)
-                logger.info("Waiting for next dongle data (timeout: %s seconds)",
-                            config["SLEEP_TIME"])
+                logger.info("Waiting for next dongle data (timeout: %s seconds)", timeout_duration)
         else:
             http = http_handler.Http(logger, config)
             while True:
@@ -380,8 +385,7 @@ async def main():
                     handle_grid_status(inverter_data, fcm_service)
                 except Exception as e:
                     logger.exception("Got error when get http input %s", e)
-                logger.info("Wating for %s second before next check",
-                                config["SLEEP_TIME"])
+                logger.info("Waiting for %s seconds before next check", config["SLEEP_TIME"])
                 time.sleep(int(config["SLEEP_TIME"]))
     except Exception as e:
         logger.exception("Got error when run main %s", e)
