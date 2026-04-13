@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import queue
 from typing import Optional
 import dongle_handler
 
@@ -200,6 +199,7 @@ class DongleServer:
                     # Parse the received data
                     raw_data = list(data)
                     parsed_data = self.__parse_inverter_data(raw_data)
+                    cycle_complete = False
                     if parsed_data is not None:
                         if not inverter_serial:
                             parsed_inverter_serial = str(parsed_data.get("serial") or "").strip()
@@ -218,6 +218,7 @@ class DongleServer:
                                 "Successfully parsed data from %s",
                                 client_addr
                             )
+                            cycle_complete = True
                         else:
                             register = extract_register(raw_data)
                             if register is not None:
@@ -237,6 +238,7 @@ class DongleServer:
                                     )
                                     all_mode_buffer = {}
                                     all_mode_received_registers.clear()
+                                    cycle_complete = True
 
                     # Send next ReadInput request after processing
                     if dongle_serial:
@@ -251,14 +253,15 @@ class DongleServer:
                             client_addr,
                         )
                         advance_next_register()
-                    
-                    # Wait for next polling interval
-                    self.__logger.debug(
-                        "Waiting %s seconds before next request to %s",
-                        sleep_time,
-                        client_addr
-                    )
-                    await asyncio.sleep(sleep_time)
+                    if cycle_complete:
+                        # Only sleep after a complete cycle; in ALL mode the 4 intermediate
+                        # register reads now happen back-to-back without unnecessary delay.
+                        self.__logger.debug(
+                            "Waiting %s seconds before next request to %s",
+                            sleep_time,
+                            client_addr
+                        )
+                        await asyncio.sleep(sleep_time)
 
                 except asyncio.TimeoutError:
                     self.__logger.warning(
@@ -413,7 +416,7 @@ class DongleServer:
         """Return queued payload immediately without blocking."""
         try:
             return self.__data_queue.get_nowait()
-        except queue.Empty:
+        except asyncio.QueueEmpty:
             return None
 
     async def stop_server(self):
