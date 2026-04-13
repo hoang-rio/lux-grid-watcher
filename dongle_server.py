@@ -71,6 +71,14 @@ def _resolve_sleep_time(dongle_serial: str, default_sleep_time: int, logger: log
         return default_sleep_time
 
 
+def clear_sleep_time_cache(user_id: str) -> None:
+    """Clear per-user sleep_time cache for the given user_id."""
+    try:
+        _sleep_time_cache.pop(str(user_id), None)
+    except Exception:
+        pass
+
+
 class DongleServer:
     __server: asyncio.Server | None = None
     __config: dict
@@ -177,10 +185,19 @@ class DongleServer:
             while True:
                 try:
                     # Wait for data from dongle
-                    data = await asyncio.wait_for(
-                        reader.read(1024),
-                        timeout=int(self.__config.get("SERVER_MODE_TIMEOUT", 300))
-                    )
+                    try:
+                        data = await asyncio.wait_for(
+                            reader.read(1024),
+                            timeout=int(self.__config.get("SERVER_MODE_TIMEOUT", 300))
+                        )
+                    except (ConnectionResetError, ConnectionAbortedError) as e:
+                        # Remote peer reset/aborted connection while we were waiting for data
+                        self.__logger.info(
+                            "Connection reset by peer while reading from %s: %s",
+                            client_addr,
+                            e
+                        )
+                        break
 
                     if not data:
                         self.__logger.info(
