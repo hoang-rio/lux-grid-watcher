@@ -82,6 +82,7 @@ function App() {
   const useBearerAuth = Boolean(accessToken);
   const authSessionReady = authConfigLoaded && (!authRequired || !isAuthChecking);
   const hasSSEPrerequisites = !authRequired || (!!authUser && (!useBearerAuth || !!selectedInverterId));
+  const isOfflineRef = useRef(false);
 
   const isOffline = useMemo(() => {
     if (!isSSEConnected) {
@@ -91,16 +92,19 @@ function App() {
     return !(Boolean(deviceTs) && Date.now() - deviceTs <= INVERTER_OFFLINE_TIMEOUT_MS);
   }, [inverterData?.deviceTime, isSSEConnected, toTimestamp]);
 
+  useEffect(() => {
+    isOfflineRef.current = isOffline;
+  }, [isOffline]);
 
   const setConnectedTitle = useCallback((deviceTimeOnly?: string) => {
-    if (document.hidden || isOffline) {
+    if (document.hidden || isOfflineRef.current) {
       return;
     }
     const currentDeviceTime = deviceTimeOnly || deviceTimeRef.current;
     if (currentDeviceTime) {
       document.title = `[${currentDeviceTime}] ${i18n.t("webTitle")}`;
     }
-  }, [i18n, isOffline]);
+  }, [i18n]);
 
   const setOfflineTitle = useCallback(() => {
     if (!isNoInverterOnboarding && !isAuthScreen) {
