@@ -100,7 +100,7 @@ function App() {
     if (currentDeviceTime) {
       document.title = `[${currentDeviceTime}] ${i18n.t("webTitle")}`;
     }
-  }, [i18n]);
+  }, [i18n, isOffline]);
 
   const setOfflineTitle = useCallback(() => {
     if (!isNoInverterOnboarding && !isAuthScreen) {
