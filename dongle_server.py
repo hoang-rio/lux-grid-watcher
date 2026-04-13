@@ -291,8 +291,21 @@ class DongleServer:
                     break
 
         finally:
-            writer.close()
-            await writer.wait_closed()
+            try:
+                writer.close()
+                await writer.wait_closed()
+            except ConnectionResetError:
+                # Remote peer reset connection while we were closing; ignore
+                self.__logger.debug(
+                    "Connection reset by peer while closing connection from %s",
+                    client_addr
+                )
+            except Exception as e:
+                self.__logger.debug(
+                    "Exception while closing connection from %s: %s",
+                    client_addr,
+                    e
+                )
             self.__logger.info("Connection from %s closed", client_addr)
 
     def __parse_inverter_data(self, data: list[int]) -> Optional[dict]:
