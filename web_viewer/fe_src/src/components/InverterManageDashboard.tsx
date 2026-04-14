@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { IUserInverter } from "../Intefaces";
 import { apiFetch } from "../utils/fetchUtil";
@@ -35,6 +35,14 @@ function InverterManageDashboard({
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [showSetupGuide, setShowSetupGuide] = useState(inverters.length === 0);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (inverters.length === 0) {
+      // focus the name input to make first-time add easier
+      nameInputRef.current?.focus();
+    }
+  }, [inverters]);
 
   const sortedInverters = useMemo(() => {
     return [...inverters].sort((a, b) => {
@@ -343,6 +351,7 @@ function InverterManageDashboard({
 
             <label>{t("inverterManager.name")}</label>
             <input
+              ref={nameInputRef}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t("inverterManager.namePlaceholder")}
