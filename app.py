@@ -95,8 +95,9 @@ logging.basicConfig(
 
 play_audio_thread: PlayAudio | None = None
 
-
 def play_audio(audio_file: str, repeat=3):
+    if USE_PG:
+        return
     global play_audio_thread
     if play_audio_thread is not None:
         play_audio_thread.stop()
@@ -817,7 +818,7 @@ ________Status: \"%s\" (%s) at deviceTime: %s with fac: %s Hz and vacr: %s V____
             logger.warning("All json data: %s", json_data)
             fcm_service.offgrid_notify(inverter_ctx)
             play_audio("lost-grid.mp3", 5)
-    else:
+    elif not USE_PG:
         logger.info("State did not change. Skip play notify audio")
     dectect_off_grid_warning(
         is_grid_connected, json_data["p_pv"], json_data["p_eps"], json_data["soc"], fcm_service, inverter_ctx)
