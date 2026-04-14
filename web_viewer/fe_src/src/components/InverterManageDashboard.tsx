@@ -34,7 +34,7 @@ function InverterManageDashboard({
   const [savingEditId, setSavingEditId] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [showSetupGuide, setShowSetupGuide] = useState(false);
+  const [showSetupGuide, setShowSetupGuide] = useState(inverters.length === 0);
 
   const sortedInverters = useMemo(() => {
     return [...inverters].sort((a, b) => {
