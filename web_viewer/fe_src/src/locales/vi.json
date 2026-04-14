@@ -187,11 +187,11 @@
     "creating": "Đang tạo...",
     "createSuccess": "Tạo biến tần thành công",
     "createFailed": "Tạo biến tần thất bại"
-  }
+  },
   "inverterGuide": {
     "show": "Hiện hướng dẫn cài đặt",
     "hide": "Ẩn hướng dẫn cài đặt",
-    "title": "Hướng dẫn cấu hình inverter",
+    "title": "Hướng dẫn cấu hình biến tần",
     "description": "Cấu hình giao diện web của dongle theo các thông số bên dưới.",
     "openDongleSettings": {
       "title": "Bước 1: Truy cập IP của dongle",
@@ -214,9 +214,9 @@
   },
   "settings": {
     "title": "Cài đặt",
-    "inverterSurveySection": "Chu kỳ khảo sát inverter",
-    "inverterSurveyInterval": "Khoảng thời gian khảo sát inverter",
-    "inverterSurveyIntervalDescription": "Đặt khoảng thời gian khảo sát dữ liệu inverter. Lưu ý: Khoảng thời gian cập nhật thực tế có thể thay đổi do điều kiện mạng, thời gian xử lý dữ liệu và tải hệ thống. Đây là khoảng thời gian mục tiêu, không phải tần suất cập nhật được đảm bảo.",
+    "inverterSurveySection": "Chu kỳ khảo sát biến tần",
+    "inverterSurveyInterval": "Khoảng thời gian khảo sát biến tần",
+    "inverterSurveyIntervalDescription": "Đặt khoảng thời gian khảo sát dữ liệu biến tần. Lưu ý: Khoảng thời gian cập nhật thực tế có thể thay đổi do điều kiện mạng, thời gian xử lý dữ liệu và tải hệ thống. Đây là khoảng thời gian mục tiêu, không phải tần suất cập nhật được đảm bảo.",
     "abnormalUsageSection": "Phát hiện sử dụng bất thường",
     "abnormalDetectionEnabled": "Bật phát hiện",
     "abnormalSkipCheckHours": "Thời gian tạm dừng kiểm tra sau khi phát hiện bất thường",
