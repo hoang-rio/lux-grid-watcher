@@ -42,12 +42,21 @@ function Battery({ inverterData, isSSEConnected }: ICProps) {
             }
             unit=" W"
           />
-          <img
-            className="battery-icon"
-            src={`/assets/icon_battery_${
-              isSSEConnected ? Math.round(inverterData.soc / 2 / 10) : 0
-            }_${iconColor}.png`}
-          />
+          <div className="battery-icon-container">
+            <img
+              className="battery-icon"
+              src={`/assets/icon_battery_${
+                isSSEConnected ? Math.round(inverterData.soc / 2 / 10) : 0
+              }_${iconColor}.png`}
+            />
+            {inverterData.bat_capacity && (
+              <div className="battery-type-info">
+                <span>{inverterData.soh > 0 ? t("batteryTypeLithium") : t("batteryTypeLeadAcid")}: </span>
+                <span className="battery-cap-bold">{inverterData.bat_capacity}</span>
+                <span> Ah</span>
+              </div>
+            )}
+          </div>
           <GeneralValue
             className="show-small"
             value={isSSEConnected ? inverterData.soc : 0}
@@ -76,11 +85,6 @@ function Battery({ inverterData, isSSEConnected }: ICProps) {
           ))}
         </div>
       </div>
-      {inverterData.bat_capacity && (
-        <div className="battery-type-label text-center">
-          {inverterData.soh > 0 ? t("batteryTypeLithium") : t("batteryTypeLeadAcid")}: {inverterData.bat_capacity} Ah
-        </div>
-      )}
     </div>
   );
 }
