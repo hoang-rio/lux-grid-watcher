@@ -145,5 +145,7 @@
     "percent": "%",
     "adminAccessCheckFailed": "Kiểm tra quyền truy cập admin thất bại"
   },
-  "getStateError": "Lỗi lấy API trạng thái"
+  "getStateError": "Lỗi lấy API trạng thái",
+  "batteryTypeLeadAcid": "Ắc quy chì",
+  "batteryTypeLithium": "Pin Lithium"
 }

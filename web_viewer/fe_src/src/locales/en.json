@@ -147,5 +147,7 @@
     "percent": "%",
     "adminAccessCheckFailed": "Admin access check failed"
   },
-  "getStateError": "API get state error"
+  "getStateError": "API get state error",
+  "batteryTypeLeadAcid": "Lead-acid battery",
+  "batteryTypeLithium": "Lithium battery"
 }

@@ -45,6 +45,7 @@ export interface IInverterData {
   v_bus_2: number;
   deviceTime: string;
   serial?: string;
+  bat_capacity?: number;
 }
 
 export interface ICProps {

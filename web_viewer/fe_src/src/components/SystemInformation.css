@@ -710,3 +710,9 @@
         color: #fff;
     }
 }
+
+.battery-type-label {
+  font-size: 10px;
+  color: #a0a0a0;
+  margin-top: 4px;
+}
