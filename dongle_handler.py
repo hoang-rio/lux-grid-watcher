@@ -273,15 +273,8 @@ class Dongle():
         """
         # Remove header + checksum
         data = input[20: len(input) - 2]
-        dongle_serial = Dongle.parse_dongle_serial_from_header(input)
-        
-        # Parse dongle serial (bytes 2-12)
-        serial = bytes(data[2:13]).decode('utf-8', errors='ignore').strip('\x00')
         
         return {
-            "dongle_serial": dongle_serial,
-            "serial": serial,
-            
             # Energy totals (all time) - 4 bytes each
             "e_pv_all_1": Dongle.to_int32(data[15:19]) / 10.0,  # kWh
             "e_pv_all_2": Dongle.to_int32(data[19:23]) / 10.0,  # kWh
@@ -318,15 +311,8 @@ class Dongle():
         """
         # Remove header + checksum
         data = input[20: len(input) - 2]
-        dongle_serial = Dongle.parse_dongle_serial_from_header(input)
-        
-        # Parse dongle serial (bytes 2-12)
-        serial = bytes(data[2:13]).decode('utf-8', errors='ignore').strip('\x00')
         
         return {
-            "dongle_serial": dongle_serial,
-            "serial": serial,
-            
             # Battery charge/discharge limits
             "max_chg_curr": Dongle.to_int(data[17:19]) / 10.0,  # A
             "max_dischg_curr": Dongle.to_int(data[19:21]) / 10.0,  # A
@@ -377,15 +363,8 @@ class Dongle():
         """
         # Remove header + checksum
         data = input[20: len(input) - 2]
-        dongle_serial = Dongle.parse_dongle_serial_from_header(input)
-        
-        # Parse dongle serial (bytes 2-12)
-        serial = bytes(data[2:13]).decode('utf-8', errors='ignore').strip('\x00')
         
         return {
-            "dongle_serial": dongle_serial,
-            "serial": serial,
-            
             # Generator data
             "v_gen": Dongle.to_int(data[17:19]) / 10.0,  # V
             "f_gen": Dongle.to_int(data[19:21]) / 100.0,  # Hz
