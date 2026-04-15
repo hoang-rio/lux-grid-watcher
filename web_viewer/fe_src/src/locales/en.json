@@ -276,5 +276,7 @@
     "errorPasswordSameAsCurrent": "New password must be different from current password",
     "success": "Password changed successfully. Logging out...",
     "errorFailed": "Failed to change password"
-  }
+  },
+  "batteryTypeLeadAcid": "Lead-acid battery",
+  "batteryTypeLithium": "Lithium battery"
 }

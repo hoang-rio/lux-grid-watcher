@@ -46,6 +46,7 @@ export interface IInverterData {
   deviceTime: string;
   serial?: string;
   dongle_serial?: string;
+  bat_capacity?: number;
 }
 
 export interface ICProps {

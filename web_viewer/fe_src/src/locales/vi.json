@@ -276,5 +276,7 @@
     "errorPasswordSameAsCurrent": "Mật khẩu mới phải khác mật khẩu hiện tại",
     "success": "Đổi mật khẩu thành công. Đang đăng xuất...",
     "errorFailed": "Đổi mật khẩu thất bại"
-  }
+  },
+  "batteryTypeLeadAcid": "Ắc quy chì",
+  "batteryTypeLithium": "Pin Lithium"
 }

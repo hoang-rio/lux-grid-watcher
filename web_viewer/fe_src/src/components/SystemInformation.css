@@ -306,7 +306,7 @@
 }
 
 .notification-history li.notification-unread:hover {
-    background-color: #ffd6d6;
+    background-color: #ffeaea;
 }
 
 
@@ -735,6 +735,32 @@
         background: #7a2323;
         color: #fff;
     }
+}
+
+.battery-icon-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.battery-type-info {
+    position: absolute;
+    bottom: -22px; /* Increased gap for PC */
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+@media screen and (max-width: 900px) {
+    .battery-type-info {
+        bottom: -55px; /* Positioned below SOC and Voltage on mobile */
+    }
+}
+
+.battery-cap-bold {
+    font-weight: bold;
 }
 
 /* Design refresh overrides */

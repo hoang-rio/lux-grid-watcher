@@ -29,19 +29,74 @@ READ_INPUT_MODE_ALL = "ALL"
 
 def normalize_read_input_mode(mode: str | None) -> str:
     mode_value = (mode or READ_INPUT_MODE_ALL).strip().upper()
-    if mode_value in {"INPUT1", "READINPUT1", "READ_INPUT1", "INPUT1_ONLY"}:
+    if mode_value in {READ_INPUT_MODE_INPUT1_ONLY, "INPUT1", "READINPUT1", "READ_INPUT1"}:
         return READ_INPUT_MODE_INPUT1_ONLY
     return READ_INPUT_MODE_ALL
+
+
+def get_read_input_registers(mode: str | None) -> list[int]:
+    """Get list of register addresses to poll based on mode string."""
+    mode_value = (mode or READ_INPUT_MODE_ALL).strip().upper()
+    if mode_value == READ_INPUT_MODE_ALL:
+        return [0, 40, 80, 120]
+    if mode_value in {READ_INPUT_MODE_INPUT1_ONLY, "INPUT1", "READINPUT1", "READ_INPUT1"}:
+        return [0]
+    
+    registers = []
+    for part in mode_value.split(","):
+        clean_part = part.strip()
+        if clean_part in Dongle.INPUT_MAP:
+            registers.append(Dongle.INPUT_MAP[clean_part][0])
+    return registers if registers else [0]
+
 
 class Dongle():
     __client: socket | None = None
     __config: dict
     __logger: logging.Logger
 
+    # Map input names to their register address, parser function, and label
+    INPUT_MAP = {
+        "INPUT1": (0, "read_input1", "ReadInput1"),
+        "INPUT2": (40, "read_input2", "ReadInput2"),
+        "INPUT3": (80, "read_input3", "ReadInput3"),
+        "INPUT4": (120, "read_input4", "ReadInput4"),
+    }
+
     def __init__(self, logger: logging.Logger, config: dict) -> None:
         self.__config = config
         self.__logger = logger
         self.__connect_socket()
+
+    def __get_request_plan(self) -> list[tuple[int, any, str]]:
+        """Determine which registers to poll based on READ_INPUT_MODE config."""
+        mode = (self.__config.get("READ_INPUT_MODE") or READ_INPUT_MODE_ALL).strip().upper()
+        
+        # Handle legacy "ALL" mode
+        if mode == READ_INPUT_MODE_ALL:
+            return [
+                (0, Dongle.read_input1, "ReadInput1"),
+                (40, Dongle.read_input2, "ReadInput2"),
+                (80, Dongle.read_input3, "ReadInput3"),
+                (120, Dongle.read_input4, "ReadInput4"),
+            ]
+        
+        # Handle legacy "INPUT1_ONLY" or "INPUT1"
+        if mode in {READ_INPUT_MODE_INPUT1_ONLY, "INPUT1", "READINPUT1", "READ_INPUT1"}:
+            return [(0, Dongle.read_input1, "ReadInput1")]
+
+        # Parse comma-separated list (e.g., "INPUT1,INPUT3")
+        plan = []
+        for part in mode.split(","):
+            clean_part = part.strip()
+            if clean_part in Dongle.INPUT_MAP:
+                reg, parser_name, label = Dongle.INPUT_MAP[clean_part]
+                parser = getattr(Dongle, parser_name)
+                plan.append((reg, parser, label))
+            else:
+                self.__logger.warning("Unknown input mode part: %s", clean_part)
+        
+        return plan if plan else [(0, Dongle.read_input1, "ReadInput1")]
 
     def __connect_socket(self):
         try:
@@ -53,7 +108,7 @@ class Dongle():
             self.__logger.exception("Got exception when connect socket %s", e)
 
     def get_dongle_input(self) -> Optional[dict]:
-        """Get all input data from dongle (ReadInput1, ReadInput2, ReadInput3, ReadInput4)."""
+        """Get requested input data from dongle based on configuration."""
         import time
         try:
             self.__logger.info("Start get dongle input")
@@ -66,56 +121,28 @@ class Dongle():
                 return None
             
             all_data = {}
-            read_mode = normalize_read_input_mode(
-                self.__config.get("READ_INPUT_MODE", READ_INPUT_MODE_ALL)
-            )
+            request_plan = self.__get_request_plan()
 
-            if read_mode == READ_INPUT_MODE_INPUT1_ONLY:
+            for register, parser, label in request_plan:
                 msg = Dongle.build_read_input_request(
                     self.__config["DONGLE_SERIAL"],
                     self.__config["INVERT_SERIAL"],
-                    register=0,
+                    register=register,
                 )
                 self.__client.send(bytes(msg))
                 try:
                     data = self.__client.recv(1024)
-                    self.__logger.debug("ReadInput1 response: %s", list(data))
+                    self.__logger.debug("%s response: %s", label, list(data))
                     if data and data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE:
-                        parsed_data = Dongle.read_input1(list(data))
+                        parsed_data = parser(list(data))
                         if parsed_data:
                             all_data.update(parsed_data)
-                            self.__logger.info("ReadInput1 parsed successfully")
+                            self.__logger.info("%s parsed successfully", label)
                 except TimeoutError:
-                    self.__logger.warning("ReadInput1 timeout, continuing...")
-            else:
-                # Poll ReadInput1 -> 4 so data stays compatible with more dongle firmwares.
-                request_plan = [
-                    (0, Dongle.read_input1, "ReadInput1"),
-                    (40, Dongle.read_input2, "ReadInput2"),
-                    (80, Dongle.read_input3, "ReadInput3"),
-                    (120, Dongle.read_input4, "ReadInput4"),
-                ]
+                    self.__logger.warning("%s timeout, continuing...", label)
 
-                for register, parser, label in request_plan:
-                    msg = Dongle.build_read_input_request(
-                        self.__config["DONGLE_SERIAL"],
-                        self.__config["INVERT_SERIAL"],
-                        register=register,
-                    )
-                    self.__client.send(bytes(msg))
-                    try:
-                        data = self.__client.recv(1024)
-                        self.__logger.debug("%s response: %s", label, list(data))
-                        if data and data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE:
-                            parsed_data = parser(list(data))
-                            if parsed_data:
-                                all_data.update(parsed_data)
-                                self.__logger.info("%s parsed successfully", label)
-                    except TimeoutError:
-                        self.__logger.warning("%s timeout, continuing...", label)
-
-                    # Small delay between requests
-                    time.sleep(0.1)
+                # Small delay between requests
+                time.sleep(0.1)
 
             # Keep a tiny delay to avoid tight reconnect loops on unstable links.
             time.sleep(0.1)

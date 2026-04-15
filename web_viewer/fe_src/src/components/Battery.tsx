@@ -1,8 +1,10 @@
 import { useMemo } from "react";
 import { ICProps } from "../Intefaces";
 import GeneralValue from "./GeneralValue";
+import { useTranslation } from "react-i18next";
 
 function Battery({ inverterData, displayInverterData, isSSEConnected }: ICProps) {
+  const { t } = useTranslation();
   const data = displayInverterData ?? inverterData!;
   const iconColor = useMemo(() => {
     if (data.soc < 10 || data.v_bat < 40) return "red";
@@ -41,12 +43,21 @@ function Battery({ inverterData, displayInverterData, isSSEConnected }: ICProps)
             }
             unit=" W"
           />
-          <img
-            className="battery-icon"
-            src={`/assets/icon_battery_${
-              isSSEConnected ? Math.round(data.soc / 2 / 10) : 0
-            }_${iconColor}.png`}
-          />
+          <div className="battery-icon-container">
+            <img
+              className="battery-icon"
+              src={`/assets/icon_battery_${
+                isSSEConnected ? Math.round(data.soc / 2 / 10) : 0
+              }_${iconColor}.png`}
+            />
+            {data.bat_capacity && (
+              <div className="battery-type-info">
+                <span>{data.soh > 0 ? t("batteryTypeLithium") : t("batteryTypeLeadAcid")}: </span>
+                <span className="battery-cap-bold">{data.bat_capacity}</span>
+                <span> Ah</span>
+              </div>
+            )}
+          </div>
           <GeneralValue
             className="show-small"
             value={isSSEConnected ? data.soc : 0}
