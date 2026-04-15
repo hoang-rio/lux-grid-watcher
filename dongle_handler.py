@@ -27,6 +27,29 @@ READ_INPUT_MODE_INPUT1_ONLY = "INPUT1_ONLY"
 READ_INPUT_MODE_ALL = "ALL"
 
 
+def normalize_read_input_mode(mode: str | None) -> str:
+    mode_value = (mode or READ_INPUT_MODE_ALL).strip().upper()
+    if mode_value in {READ_INPUT_MODE_INPUT1_ONLY, "INPUT1", "READINPUT1", "READ_INPUT1"}:
+        return READ_INPUT_MODE_INPUT1_ONLY
+    return READ_INPUT_MODE_ALL
+
+
+def get_read_input_registers(mode: str | None) -> list[int]:
+    """Get list of register addresses to poll based on mode string."""
+    mode_value = (mode or READ_INPUT_MODE_ALL).strip().upper()
+    if mode_value == READ_INPUT_MODE_ALL:
+        return [0, 40, 80, 120]
+    if mode_value in {READ_INPUT_MODE_INPUT1_ONLY, "INPUT1", "READINPUT1", "READ_INPUT1"}:
+        return [0]
+    
+    registers = []
+    for part in mode_value.split(","):
+        clean_part = part.strip()
+        if clean_part in Dongle.INPUT_MAP:
+            registers.append(Dongle.INPUT_MAP[clean_part][0])
+    return registers if registers else [0]
+
+
 class Dongle():
     __client: socket | None = None
     __config: dict

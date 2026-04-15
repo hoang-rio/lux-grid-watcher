@@ -51,10 +51,10 @@ class DongleServer:
             dongle_serial = self.__config.get("DONGLE_SERIAL", "")
             inverter_serial = self.__config.get("INVERT_SERIAL", "")
             sleep_time = int(self.__config.get("SLEEP_TIME", 120))
-            read_mode = dongle_handler.normalize_read_input_mode(
-                self.__config.get("READ_INPUT_MODE", dongle_handler.READ_INPUT_MODE_ALL)
-            )
-            registers = [0] if read_mode == dongle_handler.READ_INPUT_MODE_INPUT1_ONLY else [0, 40, 80, 120]
+            read_input_mode_str = self.__config.get("READ_INPUT_MODE", dongle_handler.READ_INPUT_MODE_ALL)
+            read_mode = dongle_handler.normalize_read_input_mode(read_input_mode_str)
+            registers = dongle_handler.get_read_input_registers(read_input_mode_str)
+            
             next_register_idx = 0
             all_mode_buffer: dict = {}
             all_mode_received_registers: set[int] = set()
@@ -67,7 +67,7 @@ class DongleServer:
                     protocol=1,
                 )
 
-            request_name = "ReadInput1" if read_mode == dongle_handler.READ_INPUT_MODE_INPUT1_ONLY else "ReadInput1-4"
+            request_name = "ReadInput (registers: %s)" % registers
 
             def extract_register(raw_data: list[int]) -> int | None:
                 if len(raw_data) < 38:
@@ -152,11 +152,11 @@ class DongleServer:
                                     client_addr,
                                     len(all_mode_received_registers),
                                 )
-                                if all_mode_received_registers.issuperset({0, 40, 80, 120}):
+                                if all_mode_received_registers.issuperset(set(registers)):
                                     self.__inverter_data = dict(all_mode_buffer)
                                     self.__data_received_event.set()
                                     self.__logger.debug(
-                                        "Merged ReadInput1-4 data ready from %s",
+                                        "Merged ReadInput data ready from %s",
                                         client_addr,
                                     )
                                     all_mode_buffer = {}
