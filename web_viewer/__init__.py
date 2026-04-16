@@ -304,8 +304,16 @@ async def sse_handler(request):
             cached_payload = last_inverter_data_by_id.get(requested_inverter_id)
             if isinstance(cached_payload, dict) and cached_payload:
                 initial_event_data = json.dumps({"inverter_data": cached_payload})
-        elif last_inverter_data and last_inverter_data != '{"inverter_data": {}}':
-            initial_event_data = last_inverter_data
+        elif not USE_PG:
+            # For non-SaaS/non-PG, bootstrap UI with all currently cached states
+            for payload in last_inverter_data_by_id.values():
+                try:
+                    await response.write(f"data: {json.dumps({'inverter_data': payload})}\n\n".encode('utf-8'))
+                except Exception:
+                    pass
+            # Also check the legacy single-item cache
+            if last_inverter_data and last_inverter_data != '{"inverter_data": {}}':
+                initial_event_data = last_inverter_data
 
     sse_client = {
         "response": response,
@@ -393,6 +401,10 @@ async def websocket_handler(request):
                         parsed = json.loads(msg.data)
                         inverter_payload = parsed.get("inverter_data") or {}
                         inverter_id = inverter_payload.get("_inverter_id")
+                        if not inverter_id:
+                            # Fallback to serial or dongle_serial for non-SaaS or identification
+                            inverter_id = inverter_payload.get("serial") or inverter_payload.get("dongle_serial")
+                        
                         if inverter_id:
                             last_inverter_data_by_id[str(inverter_id)] = inverter_payload
                     except Exception:
@@ -428,6 +440,12 @@ async def state(request: web.Request):
                 inverter = _resolve_request_inverter(session, user_id, request)
                 if inverter is None:
                     return web.json_response({})
+                
+                # Try cache first
+                inverter_id_str = str(inverter.id)
+                if inverter_id_str in last_inverter_data_by_id:
+                    return web.json_response(last_inverter_data_by_id[inverter_id_str])
+                
                 latest = mt_repo.get_inverter_latest_state(session, inverter.id)
                 payload = latest.payload if latest and latest.payload else {}
                 return web.json_response(payload)
@@ -436,9 +454,16 @@ async def state(request: web.Request):
         except Exception as error:
             logger.error("Error in state (multi-tenant): %s", error)
 
+    # Fallback for non-SaaS/non-PG mode
+    serial = request.rel_url.query.get('serial')
     try:
         if requested_inverter_id:
             data = last_inverter_data_by_id.get(requested_inverter_id, {})
+        elif serial and serial in last_inverter_data_by_id:
+            data = last_inverter_data_by_id.get(serial, {})
+        elif last_inverter_data_by_id and not requested_inverter_id:
+            # Return first available as default for legacy dashboard
+            data = next(iter(last_inverter_data_by_id.values()))
         else:
             data = json.loads(last_inverter_data)["inverter_data"]
     except Exception:
