@@ -997,7 +997,6 @@ async def main():
                     timeout_duration = int(config.get("SERVER_MODE_TIMEOUT", 90))
                 except Exception:
                     timeout_duration = 90
-
                 try:
                     inverter_data = await dongle_server.wait_for_data(
                         timeout=timeout_duration
