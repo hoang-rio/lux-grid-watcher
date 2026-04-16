@@ -82,8 +82,8 @@ class Dongle():
         # Determine if we should read low-frequency inputs (INPUT2, 3, 4)
         # Default interval is 1 (read every time)
         interval = int(self.__config.get("READ_LOW_FREQ_INTERVAL") or 1)
-        # Read on the first time (count=1) and then every 'interval' times
-        should_read_low_freq = interval <= 1 or (self.__read_count % interval == 1)
+        # Read on the first time (count=1), every 'interval' times, or if cache is empty
+        should_read_low_freq = interval <= 1 or (self.__read_count % interval == 1) or not self.__cached_data
 
         # Handle legacy "ALL" mode
         if mode == READ_INPUT_MODE_ALL:
