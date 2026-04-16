@@ -53,7 +53,7 @@ function Battery({ inverterData, isSSEConnected }: ICProps) {
               <div className="battery-type-info">
                 <span>{inverterData.soh > 0 ? t("batteryTypeLithium") : t("batteryTypeLeadAcid")}: </span>
                 <span className="battery-cap-bold">{inverterData.bat_capacity}</span>
-                <span> Ah</span>
+                <span>Ah</span>
               </div>
             )}
           </div>
