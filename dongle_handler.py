@@ -34,11 +34,14 @@ def normalize_read_input_mode(mode: str | None) -> str:
     return READ_INPUT_MODE_ALL
 
 
-def get_read_input_registers(mode: str | None) -> list[int]:
+def get_read_input_registers(mode: str | None, should_read_low_freq: bool = True) -> list[int]:
     """Get list of register addresses to poll based on mode string."""
     mode_value = (mode or READ_INPUT_MODE_ALL).strip().upper()
     if mode_value == READ_INPUT_MODE_ALL:
-        return [0, 40, 80, 120]
+        regs = [0]
+        if should_read_low_freq:
+            regs.extend([40, 80, 120])
+        return regs
     if mode_value in {READ_INPUT_MODE_INPUT1_ONLY, "INPUT1", "READINPUT1", "READ_INPUT1"}:
         return [0]
     
@@ -46,7 +49,9 @@ def get_read_input_registers(mode: str | None) -> list[int]:
     for part in mode_value.split(","):
         clean_part = part.strip()
         if clean_part in Dongle.INPUT_MAP:
-            registers.append(Dongle.INPUT_MAP[clean_part][0])
+            reg = Dongle.INPUT_MAP[clean_part][0]
+            if reg == 0 or should_read_low_freq:
+                registers.append(reg)
     return registers if registers else [0]
 
 
