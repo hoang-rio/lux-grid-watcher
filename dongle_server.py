@@ -59,7 +59,8 @@ class DongleServer:
             def get_current_plan():
                 self.__read_count += 1
                 interval = int(self.__config.get("READ_LOW_FREQ_INTERVAL") or 1)
-                should_read_low_freq = interval <= 1 or (self.__read_count % interval == 1)
+                # Read on the first time (count=1), every 'interval' times, or if cache is empty
+                should_read_low_freq = interval <= 1 or (self.__read_count % interval == 1) or not self.__cached_data
                 return dongle_handler.get_read_input_registers(read_input_mode_str, should_read_low_freq)
 
             registers = get_current_plan()
