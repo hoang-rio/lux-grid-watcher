@@ -34,11 +34,14 @@ def normalize_read_input_mode(mode: str | None) -> str:
     return READ_INPUT_MODE_ALL
 
 
-def get_read_input_registers(mode: str | None) -> list[int]:
+def get_read_input_registers(mode: str | None, should_read_low_freq: bool = True) -> list[int]:
     """Get list of register addresses to poll based on mode string."""
     mode_value = (mode or READ_INPUT_MODE_ALL).strip().upper()
     if mode_value == READ_INPUT_MODE_ALL:
-        return [0, 40, 80, 120]
+        regs = [0]
+        if should_read_low_freq:
+            regs.extend([40, 80, 120])
+        return regs
     if mode_value in {READ_INPUT_MODE_INPUT1_ONLY, "INPUT1", "READINPUT1", "READ_INPUT1"}:
         return [0]
     
@@ -46,7 +49,9 @@ def get_read_input_registers(mode: str | None) -> list[int]:
     for part in mode_value.split(","):
         clean_part = part.strip()
         if clean_part in Dongle.INPUT_MAP:
-            registers.append(Dongle.INPUT_MAP[clean_part][0])
+            reg = Dongle.INPUT_MAP[clean_part][0]
+            if reg == 0 or should_read_low_freq:
+                registers.append(reg)
     return registers if registers else [0]
 
 
@@ -66,20 +71,30 @@ class Dongle():
     def __init__(self, logger: logging.Logger, config: dict) -> None:
         self.__config = config
         self.__logger = logger
+        self.__read_count = 0
+        self.__cached_data = {}
         self.__connect_socket()
 
     def __get_request_plan(self) -> list[tuple[int, any, str]]:
         """Determine which registers to poll based on READ_INPUT_MODE config."""
         mode = (self.__config.get("READ_INPUT_MODE") or READ_INPUT_MODE_ALL).strip().upper()
         
+        # Determine if we should read low-frequency inputs (INPUT2, 3, 4)
+        # Default interval is 1 (read every time)
+        interval = int(self.__config.get("READ_LOW_FREQ_INTERVAL") or 1)
+        # Read on the first time (count=1) and then every 'interval' times
+        should_read_low_freq = interval <= 1 or (self.__read_count % interval == 1)
+
         # Handle legacy "ALL" mode
         if mode == READ_INPUT_MODE_ALL:
-            return [
-                (0, Dongle.read_input1, "ReadInput1"),
-                (40, Dongle.read_input2, "ReadInput2"),
-                (80, Dongle.read_input3, "ReadInput3"),
-                (120, Dongle.read_input4, "ReadInput4"),
-            ]
+            plan = [(0, Dongle.read_input1, "ReadInput1")]
+            if should_read_low_freq:
+                plan.extend([
+                    (40, Dongle.read_input2, "ReadInput2"),
+                    (80, Dongle.read_input3, "ReadInput3"),
+                    (120, Dongle.read_input4, "ReadInput4"),
+                ])
+            return plan
         
         # Handle legacy "INPUT1_ONLY" or "INPUT1"
         if mode in {READ_INPUT_MODE_INPUT1_ONLY, "INPUT1", "READINPUT1", "READ_INPUT1"}:
@@ -91,8 +106,9 @@ class Dongle():
             clean_part = part.strip()
             if clean_part in Dongle.INPUT_MAP:
                 reg, parser_name, label = Dongle.INPUT_MAP[clean_part]
-                parser = getattr(Dongle, parser_name)
-                plan.append((reg, parser, label))
+                if reg == 0 or should_read_low_freq:
+                    parser = getattr(Dongle, parser_name)
+                    plan.append((reg, parser, label))
             else:
                 self.__logger.warning("Unknown input mode part: %s", clean_part)
         
@@ -120,7 +136,7 @@ class Dongle():
                 self.__connect_socket()
                 return None
             
-            all_data = {}
+            self.__read_count += 1
             request_plan = self.__get_request_plan()
 
             for register, parser, label in request_plan:
@@ -136,7 +152,7 @@ class Dongle():
                     if data and data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE:
                         parsed_data = parser(list(data))
                         if parsed_data:
-                            all_data.update(parsed_data)
+                            self.__cached_data.update(parsed_data)
                             self.__logger.info("%s parsed successfully", label)
                 except TimeoutError:
                     self.__logger.warning("%s timeout, continuing...", label)
@@ -147,17 +163,19 @@ class Dongle():
             # Keep a tiny delay to avoid tight reconnect loops on unstable links.
             time.sleep(0.1)
             
-            if all_data:
-                all_data['deviceTime'] = datetime.now().strftime(
+            if self.__cached_data:
+                # Always update the timestamp to now for the returned data
+                result = dict(self.__cached_data)
+                result['deviceTime'] = datetime.now().strftime(
                     "%Y-%m-%d %H:%M:%S"
                 )
                 self.__logger.info("Finish get dongle input")
-                if "v_bat" in all_data and (all_data["v_bat"] < 40 or all_data["v_bat"] > 58):
+                if "v_bat" in result and (result["v_bat"] < 40 or result["v_bat"] > 58):
                     self.__logger.warning(
                         "v_bat should between 40V and 58V. Inverter may not work properly. Parsed data: %s",
-                        all_data,
+                        result,
                     )
-                return all_data
+                return result
             else:
                 self.__logger.info("No data parsed from dongle")
                 return None

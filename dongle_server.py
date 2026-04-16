@@ -66,6 +66,8 @@ def _resolve_sleep_time(dongle_serial: str, default_sleep_time: int, logger: log
     except Exception as exc:
         logger.warning("Failed to resolve sleep_time for dongle_serial=%s: %s", dongle_serial, exc)
         return default_sleep_time
+
+
 class DongleServer:
     __server: asyncio.Server | None = None
     __config: dict
@@ -115,10 +117,19 @@ class DongleServer:
             sleep_time = configured_sleep_time
             read_input_mode_str = self.__config.get("READ_INPUT_MODE", dongle_handler.READ_INPUT_MODE_ALL)
             read_mode = dongle_handler.normalize_read_input_mode(read_input_mode_str)
-            registers = dongle_handler.get_read_input_registers(read_input_mode_str)
+            
+            read_count = 0
+            cached_data: dict = {}
 
+            def get_current_plan():
+                nonlocal read_count
+                read_count += 1
+                interval = int(self.__config.get("READ_LOW_FREQ_INTERVAL") or 1)
+                should_read_low_freq = interval <= 1 or (read_count % interval == 1)
+                return dongle_handler.get_read_input_registers(read_input_mode_str, should_read_low_freq)
+
+            registers = get_current_plan()
             next_register_idx = 0
-            all_mode_buffer: dict = {}
             all_mode_received_registers: set[int] = set()
 
             # Duplicate-send guard: track last sent register/time and skip sends that happen
@@ -135,8 +146,6 @@ class DongleServer:
                     register=register,
                     protocol=1,
                 )
-
-            request_name = "ReadInput (registers: %s)" % registers
 
             def extract_register(raw_data: list[int]) -> int | None:
                 if len(raw_data) < 38:
@@ -156,8 +165,7 @@ class DongleServer:
             if dongle_serial:
                 self.__logger.debug(
                     "DONGLE_SERIAL configured (INVERT_SERIAL optional), "
-                    "will send %s requests to dongle",
-                    request_name,
+                    "will send ReadInput requests to dongle",
                 )
                 # Send ReadInput request immediately when dongle connects
                 current_register = get_next_register()
@@ -173,8 +181,7 @@ class DongleServer:
                     writer.write(request)
                     await writer.drain()
                     self.__logger.info(
-                        "Sent %s request (register=%s, protocol 1) to %s (immediate)",
-                        request_name,
+                        "Sent ReadInput request (register=%s, protocol 1) to %s (immediate)",
                         current_register,
                         client_addr,
                     )
@@ -234,8 +241,10 @@ class DongleServer:
 
                         resolved_dongle_serial = str(parsed_data.get("dongle_serial") or dongle_serial)
                         sleep_time = _resolve_sleep_time(resolved_dongle_serial, configured_sleep_time, self.__logger)
+                        
+                        cached_data.update(parsed_data)
                         if read_mode == dongle_handler.READ_INPUT_MODE_INPUT1_ONLY:
-                            await self.__enqueue_inverter_data(parsed_data, client_addr)
+                            await self.__enqueue_inverter_data(dict(cached_data), client_addr)
                             self.__logger.debug(
                                 "Successfully parsed data from %s",
                                 client_addr
@@ -244,23 +253,31 @@ class DongleServer:
                         else:
                             register = extract_register(raw_data)
                             if register is not None:
-                                all_mode_buffer.update(parsed_data)
                                 all_mode_received_registers.add(register)
                                 self.__logger.debug(
-                                    "Parsed register=%s from %s (%s/4)",
+                                    "Parsed register=%s from %s (%s/%s)",
                                     register,
                                     client_addr,
                                     len(all_mode_received_registers),
+                                    len(registers),
                                 )
                                 if all_mode_received_registers.issuperset(set(registers)):
-                                    await self.__enqueue_inverter_data(dict(all_mode_buffer), client_addr)
+                                    # Always update the timestamp to now for the returned data
+                                    from datetime import datetime
+                                    ready_data = dict(cached_data)
+                                    ready_data['deviceTime'] = datetime.now().strftime(
+                                        "%Y-%m-%d %H:%M:%S"
+                                    )
+                                    await self.__enqueue_inverter_data(ready_data, client_addr)
                                     self.__logger.debug(
                                         "Merged ReadInput data ready from %s",
                                         client_addr,
                                     )
-                                    all_mode_buffer = {}
                                     all_mode_received_registers.clear()
                                     cycle_complete = True
+                                    # Update plan for next cycle
+                                    registers = get_current_plan()
+                                    next_register_idx = 0
 
                     # Send next ReadInput request after processing
                     if dongle_serial:
@@ -277,8 +294,7 @@ class DongleServer:
                             writer.write(request)
                             await writer.drain()
                             self.__logger.info(
-                                "Sent %s request (register=%s) to %s",
-                                request_name,
+                                "Sent ReadInput request (register=%s) to %s",
                                 current_register,
                                 client_addr,
                             )
@@ -327,8 +343,7 @@ class DongleServer:
                             writer.write(request)
                             await writer.drain()
                             self.__logger.info(
-                                "Resent %s request (register=%s) to %s after timeout",
-                                request_name,
+                                "Resent ReadInput request (register=%s) to %s after timeout",
                                 current_register,
                                 client_addr,
                             )
@@ -457,7 +472,7 @@ class DongleServer:
         if dongle_serial:
             inverter_id = _resolve_inverter_id(dongle_serial, self.__logger)
             if inverter_id:
-                data = dict(data)  # avoid mutating the shared all_mode_buffer
+                data = dict(data)  # avoid mutating the connection-local data
                 data["_inverter_id"] = inverter_id
                 self.__logger.debug(
                     "Resolved inverter_id=%s for dongle_serial=%s", inverter_id, dongle_serial
