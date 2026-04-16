@@ -120,6 +120,7 @@ class DongleServer:
             
             read_count = 0
             cached_data: dict = {}
+            resolved_dongle_serial = dongle_serial
 
             def get_current_plan():
                 nonlocal read_count
@@ -250,6 +251,9 @@ class DongleServer:
                                 client_addr
                             )
                             cycle_complete = True
+                            # Update plan for next cycle
+                            registers = get_current_plan(resolved_dongle_serial)
+                            next_register_idx = 0
                         else:
                             register = extract_register(raw_data)
                             if register is not None:
@@ -330,6 +334,8 @@ class DongleServer:
                     )
                     # Keep polling on timeout in case the previous response was dropped.
                     if dongle_serial:
+                        # Use last known resolved serial to maintain correct frequency plan
+                        registers = get_current_plan(resolved_dongle_serial)
                         current_register = get_next_register()
                         request = build_poll_request(current_register)
                         now = time.time()
