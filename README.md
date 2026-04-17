@@ -22,10 +22,10 @@ See wiki from `lxp-bridge` [here](https://github.com/celsworth/lxp-bridge/wiki/I
 ### ReadInput Mode (DONGLE/SERVER)
 You can control which inverter input frame is requested by setting `READ_INPUT_MODE` in `.env`:
 
-* `READ_INPUT_MODE=INPUT1_ONLY`: request only ReadInput1 (register `0`, count `40`)
-* `READ_INPUT_MODE=ALL`: request ReadInput1 -> ReadInput4 sequentially (registers `0`, `40`, `80`, `120`)
+* `READ_INPUT_MODE=INPUT1` (aliases: `INPUT1`, `READINPUT1`, `READ_INPUT1`): request only ReadInput1 (register `0`, count `40`)
+* `READ_INPUT_MODE=ALL` (default): request ReadInput1 -> ReadInput4 sequentially (registers `0`, `40`, `80`, `120`)
 
-`ALL` provides the most complete data set by combining ReadInput1-4, while `INPUT1_ONLY` uses smaller payloads.
+`ALL` provides the most complete data set by combining ReadInput1-4, while `INPUT1` uses smaller payloads.
 
 ## Installation and run
 * Sync gitsubmodule with `git submodule init && git submodule update`
