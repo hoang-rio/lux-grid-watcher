@@ -246,7 +246,7 @@ class DongleServer:
                         cached_data.update(parsed_data)
                         if read_mode == dongle_handler.READ_INPUT_MODE_INPUT1_ONLY:
                             await self.__enqueue_inverter_data(dict(cached_data), client_addr)
-                            self.__logger.debug(
+                            self.__logger.info(
                                 "Successfully parsed data from %s",
                                 client_addr
                             )
@@ -258,7 +258,7 @@ class DongleServer:
                             register = extract_register(raw_data)
                             if register is not None:
                                 all_mode_received_registers.add(register)
-                                self.__logger.debug(
+                                self.__logger.info(
                                     "Parsed register=%s from %s (%s/%s)",
                                     register,
                                     client_addr,
