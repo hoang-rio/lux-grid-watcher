@@ -298,8 +298,8 @@ function SystemInformation({
           <div className="system-graph">
             <div className="system-status row">
               <div
-                className="system-status-display"
-                title={inverterData.status_text}
+                className={`system-status-display ${status}`}
+                title={status === "offline" ? t("offline") : inverterData.status_text}
               >
                 <div
                   className={`system-status-icon ${status}`}
