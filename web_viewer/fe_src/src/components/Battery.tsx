@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { ICProps } from "../Intefaces";
 import GeneralValue from "./GeneralValue";
 import { useTranslation } from "react-i18next";
@@ -6,6 +6,13 @@ import { useTranslation } from "react-i18next";
 function Battery({ inverterData, displayInverterData, isSSEConnected }: ICProps) {
   const { t } = useTranslation();
   const data = displayInverterData ?? inverterData!;
+
+  useEffect(() => {
+    // Preload image to save on cache to make image display able when server hit offline or error
+    const img = new Image();
+    img.src = "/assets/icon_battery_0_red.png";
+  }, []);
+
   const iconColor = useMemo(() => {
     if (data.soc < 10 || data.v_bat < 40) return "red";
     if (data.soc < 50) return "yellow";
