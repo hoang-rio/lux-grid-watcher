@@ -22,6 +22,7 @@ interface Props {
   inverters?: IUserInverter[];
   selectedInverterId?: string;
   isOffline: boolean;
+  onReconnect?: () => void;
 }
 
 function SystemInformation({
@@ -31,6 +32,7 @@ function SystemInformation({
   inverters = [],
   selectedInverterId = "",
   isOffline,
+  onReconnect,
 }: Props) {
   const { t, i18n } = useTranslation();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -180,7 +182,7 @@ function SystemInformation({
   }, [isOffline, isSSEConnected]);
 
   const status = useMemo(() => {
-    if (isOffline) {
+    if (isOffline || !isSSEConnected) {
       return "offline";
     }
     if (inverterData.status === 1) {
@@ -306,6 +308,14 @@ function SystemInformation({
                   {t(status)}
                 </div>
               </div>
+              <button
+                className="system-status-reconnect"
+                onClick={onReconnect}
+                title={t("reconnect")}
+                disabled={isSSEConnected}
+              >
+                {t("reconnect")}
+              </button>
             </div>
             <div className="row">
               <div className="flex-1"></div>

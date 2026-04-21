@@ -609,6 +609,7 @@ function App() {
           inverters={userInverters}
           isOffline={isOfflineByDeviceTime}
           selectedInverterId={selectedInverterId}
+          onReconnect={connectSSE}
         />
         <div className="row chart">
           <HourlyChart

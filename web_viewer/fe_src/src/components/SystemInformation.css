@@ -152,6 +152,31 @@
     position: absolute;
     right: 0;
     top: -5px;
+    display: flex;
+    align-items: center;
+}
+
+.system-status-reconnect {
+    margin-left: 10px;
+    border: 1px solid var(--ui-border);
+    border-radius: 10px;
+    padding: 6px 12px;
+    background: var(--ui-surface-soft);
+    color: var(--ui-primary);
+    transition: background-color 0.18s ease, transform 0.18s ease;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.system-status-reconnect:hover:not(:disabled) {
+    background: var(--ui-primary-soft);
+    transform: translateY(-1px);
+}
+
+.system-status-reconnect:disabled {
+    cursor: default;
+    opacity: 0.6;
+    filter: grayscale(1);
 }
 
 .system-status-display {
