@@ -198,7 +198,8 @@ def dectect_abnormal_usage(db_connection: sqlite3.Connection, fcm_service: FCM, 
 
 
 dectect_off_grid_warning_skip_check_count = 0
-last_battery_full_notify_date = None
+
+
 def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: int, soc: int, fcm_service: FCM, inverter_ctx: dict | None = None):
     off_grid_warning_enabled = _to_bool(
         _get_user_setting(
@@ -277,10 +278,12 @@ def detect_battery_full(soc: int, fcm_service: FCM, inverter_ctx: dict | None = 
     )
     if not battery_full_notify_enabled:
         return
-    global last_battery_full_notify_date
+
     now = datetime.now()
-    today = now.date()
-    if soc == 100 and (last_battery_full_notify_date is None or last_battery_full_notify_date != today):
+    today_str = now.date().isoformat()
+    last_notify_date = _get_user_setting(inverter_ctx, "LAST_BATTERY_FULL_NOTIFY_DATE", "")
+
+    if soc == 100 and last_notify_date != today_str:
         logger.info("_________Battery full detected with soc: %s%%_________", soc)
         body = _get_user_setting(
             inverter_ctx,
@@ -288,7 +291,7 @@ def detect_battery_full(soc: int, fcm_service: FCM, inverter_ctx: dict | None = 
             settings.get_battery_full_notify_body(),
         )
         fcm_service.battery_full_notify(body, inverter_ctx)
-        last_battery_full_notify_date = today
+        _save_user_setting(inverter_ctx, "LAST_BATTERY_FULL_NOTIFY_DATE", today_str)
 
 
 def has_input1_data(json_data: dict) -> bool:
@@ -504,12 +507,40 @@ def _get_user_setting(inverter_ctx: dict | None, key: str, default: str) -> str:
 
         session = next(get_db_session())
         try:
+            # Try inverter scope first
+            if inverter_ctx.get("id"):
+                val = repo.get_scoped_setting(session, "inverter", inverter_ctx["id"], key)
+                if val is not None:
+                    return val
+
+            # Fallback to user scope
             value = repo.get_user_setting(session, uuid.UUID(inverter_ctx["user_id"]), key)
             return value if value is not None else default
         finally:
             session.close()
     except Exception:
         return default
+
+
+def _save_user_setting(inverter_ctx: dict | None, key: str, value: str):
+    if not USE_PG or not inverter_ctx or not inverter_ctx.get("user_id"):
+        return
+    try:
+        import uuid
+        from multi_tenant.db import get_db_session
+        from multi_tenant import repository as repo
+
+        session = next(get_db_session())
+        try:
+            if inverter_ctx.get("id"):
+                repo.upsert_scoped_setting(session, "inverter", inverter_ctx["id"], key, value)
+            else:
+                repo.upsert_user_setting(session, uuid.UUID(inverter_ctx["user_id"]), key, value)
+            session.commit()
+        finally:
+            session.close()
+    except Exception as exc:
+        logger.error("Failed to save user setting %s: %s", key, exc)
 
 
 def _to_bool(value: str) -> bool:
