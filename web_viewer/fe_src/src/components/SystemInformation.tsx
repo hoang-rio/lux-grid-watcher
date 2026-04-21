@@ -328,6 +328,7 @@ function SystemInformation({
             </div>
             <div className="row">
               <Battery
+                inverterData={inverterData}
                 displayInverterData={displayInverterData}
                 isSSEConnected={effectiveSSEConnected}
               />

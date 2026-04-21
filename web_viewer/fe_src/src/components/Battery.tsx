@@ -6,18 +6,21 @@ import { useTranslation } from "react-i18next";
 function Battery({ inverterData, displayInverterData, isSSEConnected }: ICProps) {
   const { t } = useTranslation();
   const data = displayInverterData ?? inverterData!;
+  const colorData = inverterData ?? data;
 
   useEffect(() => {
     // Preload image to save on cache to make image display able when server hit offline or error
-    const img = new Image();
-    img.src = "/assets/icon_battery_0_red.png";
+    ["red", "yellow", "green"].forEach((color) => {
+      const img = new Image();
+      img.src = `/assets/icon_battery_0_${color}.png`;
+    });
   }, []);
 
   const iconColor = useMemo(() => {
-    if (data.soc < 10 || data.v_bat < 40) return "red";
-    if (data.soc < 50) return "yellow";
+    if (colorData.soc < 10 || colorData.v_bat < 40) return "red";
+    if (colorData.soc < 50) return "yellow";
     return "green";
-  }, [data.soc, data.v_bat]);
+  }, [colorData.soc, colorData.v_bat]);
 
   return (
     <div className="battery flex-1">
