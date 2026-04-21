@@ -198,6 +198,7 @@ function SystemInformation({
     return "normal";
   }, [
     isOffline,
+    isSSEConnected,
     inverterData.status,
     inverterData.internal_fault,
     inverterData.status_text,
