@@ -8,8 +8,10 @@ function Battery({ inverterData, isSSEConnected }: ICProps) {
 
   useEffect(() => {
     // Preload image to save on cache to make image display able when server hit offline or error
-    const img = new Image();
-    img.src = "/assets/icon_battery_0_red.png";
+    ["red", "yellow", "green"].forEach((color) => {
+      const img = new Image();
+      img.src = `/assets/icon_battery_0_${color}.png`;
+    });
   }, []);
 
   const iconColor = useMemo(() => {
