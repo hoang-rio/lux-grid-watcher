@@ -205,7 +205,7 @@ function SystemInformation({
   ]);
 
   const displayInverterData = useMemo(() => {
-    if (!isOffline) return inverterData;
+    if (!isOffline && isSSEConnected) return inverterData;
     return {
       ...inverterData,
       p_pv: 0,
@@ -227,7 +227,7 @@ function SystemInformation({
       fac: 0,
       p_eps: 0,
     };
-  }, [isOffline, inverterData]);
+  }, [isOffline, isSSEConnected, inverterData]);
 
   return (
     <>
