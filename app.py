@@ -173,24 +173,36 @@ def dectect_off_grid_warning(is_grid_connected: bool, pv_power: int, eps_power: 
     else:
         dectect_off_grid_warning_skip_check_count = 0
 
-def detect_battery_full(soc: int, fcm_service: FCM):
+def detect_battery_full(soc: int, fcm_service: FCM, db_connection: sqlite3.Connection):
     if not settings.get_battery_full_notify_enabled():
         return
     global last_battery_full_notify_date
     now = datetime.now()
     today = now.date()
+
+    # Load from DB if not already loaded (e.g. after restart)
+    if last_battery_full_notify_date is None:
+        last_date_str = settings.get_setting("LAST_BATTERY_FULL_NOTIFY_DATE")
+        if last_date_str:
+            try:
+                last_battery_full_notify_date = datetime.strptime(last_date_str, "%Y-%m-%d").date()
+            except ValueError:
+                pass
+
     if soc == 100 and (last_battery_full_notify_date is None or last_battery_full_notify_date != today):
         logger.info("_________Battery full detected with soc: %s%%_________", soc)
         body = settings.get_battery_full_notify_body()
         fcm_service.battery_full_notify(body)
         last_battery_full_notify_date = today
+        if db_connection:
+            settings.save_setting("LAST_BATTERY_FULL_NOTIFY_DATE", str(today), db_connection)
 
 
 def has_input1_data(json_data: dict) -> bool:
     """Return True when payload has minimum fields from ReadInput1."""
     return isinstance(json_data, dict) and ("fac" in json_data)
 
-def handle_grid_status(json_data: dict, fcm_service: FCM):
+def handle_grid_status(json_data: dict, fcm_service: FCM, db_connection: sqlite3.Connection):
     if not has_input1_data(json_data):
         logger.debug(
             "Skip handle_grid_status because payload does not contain ReadInput1 fields (missing fac). Keys: %s",
@@ -243,18 +255,29 @@ ________Status: \"%s\" (%s) at deviceTime: %s with fac: %s Hz and vacr: %s V____
             f_history_w.write(json.dumps(current_history))
         with open(config["STATE_FILE"], "w") as fw:
             fw.write(str(is_grid_connected))
+        
+        # Check against last notification date in DB
+        last_notify_date = settings.get_last_grid_notify_date()
+        current_date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
         if is_grid_connected:
-            fcm_service.ongrid_notify()
-            play_audio("has-grid.mp3")
+            if last_notify_date != current_date_str:
+                fcm_service.ongrid_notify()
+                play_audio("has-grid.mp3")
+                if db_connection:
+                    settings.set_last_grid_notify_date(current_date_str, db_connection)
         else:
             logger.warning("All json data: %s", json_data)
-            fcm_service.offgrid_notify()
-            play_audio("lost-grid.mp3", 5)
+            if last_notify_date != current_date_str:
+                fcm_service.offgrid_notify()
+                play_audio("lost-grid.mp3", 5)
+                if db_connection:
+                    settings.set_last_grid_notify_date(current_date_str, db_connection)
     else:
         logger.info("State did not change. Skip play notify audio")
     dectect_off_grid_warning(
         is_grid_connected, json_data["p_pv"], json_data["p_eps"], json_data["soc"], fcm_service)
-    detect_battery_full(json_data["soc"], fcm_service)
+    detect_battery_full(json_data["soc"], fcm_service, db_connection)
 
 
 async def initialize_web_socket_client(fcm_service: FCM, old_ws_client: WebSocketClient | None = None):
@@ -300,7 +323,7 @@ async def main():
                     except asyncio.TimeoutError:
                         logger.error("Timeout waiting for dongle input for %s seconds", timeout_duration)
                     if inverter_data is not None:
-                        handle_grid_status(inverter_data, fcm_service)
+                        handle_grid_status(inverter_data, fcm_service, db_connection)
                         if run_web_view:
                             hourly_chart_item = database.insert_hourly_chart(db_connection, inverter_data, int(config["SLEEP_TIME"]))
                             try:
@@ -355,7 +378,7 @@ async def main():
                         timeout=timeout_duration
                     )
                     if inverter_data is not None:
-                        handle_grid_status(inverter_data, fcm_service)
+                        handle_grid_status(inverter_data, fcm_service, db_connection)
                         if run_web_view:
                             hourly_chart_item = database.insert_hourly_chart(db_connection, inverter_data, int(config["SLEEP_TIME"]))
                             try:
@@ -382,7 +405,7 @@ async def main():
             while True:
                 try:
                     inverter_data = http.get_run_time_data()
-                    handle_grid_status(inverter_data, fcm_service)
+                    handle_grid_status(inverter_data, fcm_service, None)
                 except Exception as e:
                     logger.exception("Got error when get http input %s", e)
                 logger.info("Waiting for %s seconds before next check", config["SLEEP_TIME"])
