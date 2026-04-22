@@ -844,21 +844,14 @@ def handle_grid_status(json_data: dict, fcm_service: FCM, inverter_ctx: dict | N
             with open(config["STATE_FILE"], "w") as fw:
                 fw.write(str(is_grid_connected))
         
-        # Check against last notification time in DB to prevent duplicates on restart
-        # We use deviceTime as the event identifier
-        last_notify_time = _get_user_setting(inverter_ctx, "LAST_GRID_NOTIFY_TIME", "")
-        current_event_time = json_data["deviceTime"]
-        
-        if last_notify_time != current_event_time:
-            if is_grid_connected:
-                fcm_service.ongrid_notify(inverter_ctx)
-                play_audio("has-grid.mp3")
-            else:
-                logger.warning("All json data: %s", json_data)
-                fcm_service.offgrid_notify(inverter_ctx)
-                play_audio("lost-grid.mp3", 5)
-            _save_user_setting(inverter_ctx, "LAST_GRID_NOTIFY_TIME", current_event_time)
-    elif not USE_PG:
+        if is_grid_connected:
+            fcm_service.ongrid_notify(inverter_ctx)
+            play_audio("has-grid.mp3")
+        else:
+            logger.warning("All json data: %s", json_data)
+            fcm_service.offgrid_notify(inverter_ctx)
+            play_audio("lost-grid.mp3", 5)
+    else:
         logger.info("State did not change. Skip play notify audio")
     dectect_off_grid_warning(
         is_grid_connected, json_data["p_pv"], json_data["p_eps"], json_data["soc"], fcm_service, inverter_ctx)
