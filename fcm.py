@@ -107,7 +107,7 @@ class FCMThread(Thread):
                 'Content-Type': 'application/json; UTF-8',
             }
         )
-        self.valid_device = req.status_code != 404
+        self.valid_device = req.status_code == 200
         self.__logger.info("FCM send to device: %s", device)
         self.__logger.info("FCM Status code: %s", req.status_code)
         self.__logger.info("FCM Result: %s", req.text)
