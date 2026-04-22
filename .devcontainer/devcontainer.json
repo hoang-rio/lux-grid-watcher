@@ -6,7 +6,7 @@
     "features": {
         // ... other features
         "ghcr.io/devcontainers/features/node:1": {
-            "version": "24.14.1"
+            "version": "24.15.0"
         },
         "ghcr.io/tailscale/codespace/tailscale": {
             "version": "latest"
