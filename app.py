@@ -256,23 +256,13 @@ ________Status: \"%s\" (%s) at deviceTime: %s with fac: %s Hz and vacr: %s V____
         with open(config["STATE_FILE"], "w") as fw:
             fw.write(str(is_grid_connected))
         
-        # Check against last notification date in DB
-        last_notify_date = settings.get_last_grid_notify_date()
-        current_date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
         if is_grid_connected:
-            if last_notify_date != current_date_str:
-                fcm_service.ongrid_notify()
-                play_audio("has-grid.mp3")
-                if db_connection:
-                    settings.set_last_grid_notify_date(current_date_str, db_connection)
+            fcm_service.ongrid_notify()
+            play_audio("has-grid.mp3")
         else:
             logger.warning("All json data: %s", json_data)
-            if last_notify_date != current_date_str:
-                fcm_service.offgrid_notify()
-                play_audio("lost-grid.mp3", 5)
-                if db_connection:
-                    settings.set_last_grid_notify_date(current_date_str, db_connection)
+            fcm_service.offgrid_notify()
+            play_audio("lost-grid.mp3", 5)
     else:
         logger.info("State did not change. Skip play notify audio")
     dectect_off_grid_warning(

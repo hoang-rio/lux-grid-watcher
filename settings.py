@@ -70,9 +70,3 @@ def get_auth_bypass_cidr():
         "AUTH_BYPASS_CIDR",
         config.get("AUTH_BYPASS_CIDR", "127.0.0.1/32,::1/128")
     )
-
-def get_last_grid_notify_date():
-    return get_setting("LAST_GRID_NOTIFY_DATE", None)
-
-def set_last_grid_notify_date(date_str, db_conn: sqlite3.Connection):
-    save_setting("LAST_GRID_NOTIFY_DATE", date_str, db_conn)
