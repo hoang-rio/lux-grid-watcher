@@ -729,7 +729,7 @@
 
 @media screen and (max-width: 900px) {
     .battery-type-info {
-        bottom: -55px; /* Positioned below SOC and Voltage on mobile */
+        bottom: -60px; /* Positioned below SOC and Voltage on mobile */
     }
 }
 
