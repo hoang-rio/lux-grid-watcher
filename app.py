@@ -298,6 +298,7 @@ def has_input1_data(json_data: dict) -> bool:
     """Return True when payload has minimum fields from ReadInput1."""
     return isinstance(json_data, dict) and ("fac" in json_data)
 
+<<<<<<< HEAD
 
 def _build_hourly_chart_item(inverter_data: dict) -> list:
     device_time = datetime.strptime(inverter_data["deviceTime"], "%Y-%m-%d %H:%M:%S")
@@ -714,6 +715,9 @@ def _migrate_sqlite_to_pg_if_needed() -> None:
         logger.exception("SQLite→PostgreSQL migration failed: %s", exc)
 
 def handle_grid_status(json_data: dict, fcm_service: FCM, inverter_ctx: dict | None = None):
+=======
+def handle_grid_status(json_data: dict, fcm_service: FCM, db_connection: sqlite3.Connection):
+>>>>>>> main
     if not has_input1_data(json_data):
         logger.debug(
             "Skip handle_grid_status because payload does not contain ReadInput1 fields (missing fac). Keys: %s",
@@ -814,42 +818,21 @@ def handle_grid_status(json_data: dict, fcm_service: FCM, inverter_ctx: dict | N
             "type": "ON_GRID" if is_grid_connected else "OFF_GRID",
             "time": json_data["deviceTime"],
         })
-        
-        if USE_PG:
-            # Write to PG
-            from multi_tenant.db import get_db_session
-            from multi_tenant import repository as repo
-            session = next(get_db_session())
-            try:
-                if inverter_ctx and inverter_ctx.get("id"):
-                    inverter_id = inverter_ctx["id"]
-                    repo.upsert_scoped_setting(session, "inverter", inverter_id, "mobile_history", json.dumps(current_history))
-                    if not is_grid_connected:
-                        # Persist the disconnection timestamp so subsequent cycles can show it
-                        repo.upsert_scoped_setting(session, "inverter", inverter_id, "mobile_disconnected_time", json_data["deviceTime"])
-                    else:
-                        # Clear the stored disconnection time when reconnected
-                        repo.upsert_scoped_setting(session, "inverter", inverter_id, "mobile_disconnected_time", "")
-                    session.commit()
-            except Exception as e:
-                session.rollback()
-                logger.error(f"Error updating mobile state in PG: {e}")
-            finally:
-                session.close()
-        else:
-            # Write to file
-            with open(config['HISTORY_FILE'], 'w') as f_history_w:
-                f_history_w.write(json.dumps(current_history))
-            with open(config["STATE_FILE"], "w") as fw:
-                fw.write(str(is_grid_connected))
+        # Check against last notification date in DB
+        last_notify_date = _get_user_setting(inverter_ctx, "LAST_GRID_NOTIFY_DATE", "")
+        current_date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         if is_grid_connected:
-            fcm_service.ongrid_notify(inverter_ctx)
-            play_audio("has-grid.mp3")
+            if last_notify_date != current_date_str:
+                fcm_service.ongrid_notify(inverter_ctx)
+                play_audio("has-grid.mp3")
+                _save_user_setting(inverter_ctx, "LAST_GRID_NOTIFY_DATE", current_date_str)
         else:
             logger.warning("All json data: %s", json_data)
-            fcm_service.offgrid_notify(inverter_ctx)
-            play_audio("lost-grid.mp3", 5)
+            if last_notify_date != current_date_str:
+                fcm_service.offgrid_notify(inverter_ctx)
+                play_audio("lost-grid.mp3", 5)
+                _save_user_setting(inverter_ctx, "LAST_GRID_NOTIFY_DATE", current_date_str)
     elif not USE_PG:
         logger.info("State did not change. Skip play notify audio")
     dectect_off_grid_warning(
@@ -984,6 +967,7 @@ async def main():
                     except asyncio.TimeoutError:
                         logger.error("Timeout waiting for dongle input for %s seconds", timeout_duration)
                     if inverter_data is not None:
+<<<<<<< HEAD
                         ws_client = await process_inverter_data(
                             inverter_data,
                             fcm_service,
@@ -991,6 +975,27 @@ async def main():
                             db_connection if run_web_view else None,
                             ws_client if run_web_view else None,
                         )
+=======
+                        handle_grid_status(inverter_data, fcm_service, db_connection)
+                        if run_web_view:
+                            hourly_chart_item = database.insert_hourly_chart(db_connection, inverter_data, int(config["SLEEP_TIME"]))
+                            try:
+                                sent = await asyncio.wait_for(
+                                    ws_client.send_json({
+                                        "inverter_data": inverter_data,
+                                        "hourly_chart_item": hourly_chart_item
+                                    }),
+                                    timeout=timeout_duration
+                                )
+                                if not sent:
+                                    logger.error("Failed to send data to web socket")
+                                    ws_client = await initialize_web_socket_client(fcm_service, ws_client)
+                            except asyncio.TimeoutError:
+                                logger.error("Timeout waiting for web socket to send data for %s seconds", timeout_duration)
+                                ws_client = await initialize_web_socket_client(fcm_service, ws_client)
+                            database.insert_daily_chart(db_connection, inverter_data)
+                            dectect_abnormal_usage(db_connection, fcm_service)
+>>>>>>> main
                 except Exception as e:
                     logger.exception("Got error when get dongle input %s", e)
                 current_sleep_time = _normalize_sleep_time(config.get("SLEEP_TIME", 30))
@@ -1032,6 +1037,7 @@ async def main():
                     inverter_data = await dongle_server.wait_for_data(
                         timeout=timeout_duration
                     )
+<<<<<<< HEAD
                     while inverter_data is not None:
                         ws_client = await process_inverter_data(
                             inverter_data,
@@ -1041,6 +1047,28 @@ async def main():
                             ws_client if run_web_view else None,
                         )
                         inverter_data = dongle_server.get_pending_data()
+=======
+                    if inverter_data is not None:
+                        handle_grid_status(inverter_data, fcm_service, db_connection)
+                        if run_web_view:
+                            hourly_chart_item = database.insert_hourly_chart(db_connection, inverter_data, int(config["SLEEP_TIME"]))
+                            try:
+                                sent = await asyncio.wait_for(
+                                    ws_client.send_json({
+                                        "inverter_data": inverter_data,
+                                        "hourly_chart_item": hourly_chart_item
+                                    }),
+                                    timeout=timeout_duration
+                                )
+                                if not sent:
+                                    logger.error("Failed to send data to web socket")
+                                    ws_client = await initialize_web_socket_client(fcm_service, ws_client)
+                            except asyncio.TimeoutError:
+                                logger.error("Timeout waiting for web socket to send data for %s seconds", timeout_duration)
+                                ws_client = await initialize_web_socket_client(fcm_service, ws_client)
+                            database.insert_daily_chart(db_connection, inverter_data)
+                            dectect_abnormal_usage(db_connection, fcm_service)
+>>>>>>> main
                 except Exception as e:
                     logger.exception("Got error in SERVER_MODE %s", e)
                 logger.info("Waiting for next dongle data (timeout: %s seconds)", timeout_duration)
@@ -1049,7 +1077,7 @@ async def main():
             while True:
                 try:
                     inverter_data = http.get_run_time_data()
-                    handle_grid_status(inverter_data, fcm_service)
+                    handle_grid_status(inverter_data, fcm_service, None)
                 except Exception as e:
                     logger.exception("Got error when get http input %s", e)
                 logger.info("Waiting for %s seconds before next check", config["SLEEP_TIME"])
