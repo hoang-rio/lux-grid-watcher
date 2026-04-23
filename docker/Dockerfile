@@ -1,9 +1,11 @@
 FROM node:24.15.0-alpine AS fe_builder
 
-COPY web_viewer/fe_src /fe_builder/fe_src
-
-WORKDIR /fe_builder/fe_src
+COPY web_viewer/fe_src/package.json web_viewer/fe_src/yarn.lock* web_viewer/fe_src/.yarnrc.yml ./
+COPY web_viewer/fe_src/.yarn ./.yarn
 RUN yarn install
+
+COPY web_viewer/fe_src /fe_builder/fe_src
+WORKDIR /fe_builder/fe_src
 # Build the frontend
 RUN yarn build
 
