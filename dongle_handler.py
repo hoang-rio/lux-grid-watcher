@@ -139,7 +139,16 @@ class Dongle():
             self.__read_count += 1
             request_plan = self.__get_request_plan()
 
-            for register, parser, label in request_plan:
+            # Drain any leftover data in the socket buffer before starting a new poll cycle
+            self.__client.setblocking(False)
+            try:
+                while self.__client.recv(1024):
+                    pass
+            except Exception:
+                pass
+            self.__client.setblocking(True)
+
+            for register, _, label in request_plan:
                 msg = Dongle.build_read_input_request(
                     self.__config["DONGLE_SERIAL"],
                     self.__config["INVERT_SERIAL"],
@@ -147,15 +156,23 @@ class Dongle():
                 )
                 self.__client.send(bytes(msg))
                 try:
+                    # Wait up to 2 seconds for a response
+                    self.__client.settimeout(2.0)
                     data = self.__client.recv(1024)
                     self.__logger.debug("%s response: %s", label, list(data))
                     if data and data[0] != 0 and data[7] == TCP_FUNCTION_TRANSLATE:
-                        parsed_data = parser(list(data))
+                        # Use auto-detection to ensure we parse the correct register block
+                        # even if packets arrive out of order or are delayed.
+                        parsed_data = Dongle.read_input(list(data))
                         if parsed_data:
                             self.__cached_data.update(parsed_data)
-                            self.__logger.info("%s parsed successfully", label)
-                except TimeoutError:
+                            self.__logger.info("Parsed register block successfully from %s response", label)
+                except (TimeoutError, socket.timeout):
                     self.__logger.warning("%s timeout, continuing...", label)
+                except Exception as e:
+                    self.__logger.warning("%s error: %s", label, e)
+                finally:
+                    self.__client.settimeout(None)
 
                 # Small delay between requests
                 time.sleep(0.1)

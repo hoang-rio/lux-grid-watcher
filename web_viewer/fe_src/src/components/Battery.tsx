@@ -58,7 +58,9 @@ function Battery({ inverterData, isSSEConnected }: ICProps) {
                 isSSEConnected ? Math.round(inverterData.soc / 2 / 10) : 0
               }_${iconColor}.png`}
             />
-            {inverterData.bat_capacity && (
+<<<<<<< HEAD
+            {!!inverterData.bat_capacity && (
+>>>>>>> a3b4912 (fix: resolve bat_capacity zeroing in DONGLE mode and FE rendering)
               <div className="battery-type-info">
                 <span>{inverterData.soh > 0 ? t("batteryTypeLithium") : t("batteryTypeLeadAcid")}: </span>
                 <span className="battery-cap-bold">{inverterData.bat_capacity}</span>
