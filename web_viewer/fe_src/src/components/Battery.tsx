@@ -60,7 +60,7 @@ function Battery({ inverterData, displayInverterData, isSSEConnected }: ICProps)
                 isSSEConnected ? Math.round(data.soc / 2 / 10) : 0
               }_${iconColor}.png`}
             />
-            {data.bat_capacity && (
+            {!!data.bat_capacity && (
               <div className="battery-type-info">
                 <span>{data.soh > 0 ? t("batteryTypeLithium") : t("batteryTypeLeadAcid")}: </span>
                 <span className="battery-cap-bold">{data.bat_capacity}</span>
