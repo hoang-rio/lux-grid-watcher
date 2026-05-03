@@ -244,6 +244,8 @@
     "authPasswordRequired": "Mật khẩu là bắt buộc khi bật xác thực",
     "batterySection": "Cài đặt pin",
     "batteryFullNotifyEnabled": "Bật thông báo khi pin đầy",
+    "gridSettings": "Cài đặt lưới điện",
+    "gridStateNotifyEnabled": "Bật thông báo khi trạng thái lưới điện thay đổi",
     "notifyBody": "Nội dung thông báo",
     "save": "Lưu",
     "saving": "Đang lưu...",

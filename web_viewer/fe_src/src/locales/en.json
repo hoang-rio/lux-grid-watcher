@@ -229,6 +229,8 @@
     "offGridWarningEnabled": "Enable warning",
     "batterySection": "Battery settings",
     "batteryFullNotifyEnabled": "Enable battery full notification",
+    "gridSettings": "Grid settings",
+    "gridStateNotifyEnabled": "Enable grid state change notification",
     "notifyBody": "Notification body",
     "authSection": "Authentication",
     "authEnabled": "Require authentication for web viewer",

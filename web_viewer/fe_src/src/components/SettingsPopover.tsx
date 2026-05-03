@@ -18,6 +18,7 @@ interface Settings {
   OFF_GRID_WARNING_SOC: string;
   MAX_BATTERY_POWER: string;
   OFF_GRID_WARNING_ENABLED: string;
+  GRID_STATE_NOTIFY_ENABLED: string;
   BATTERY_FULL_NOTIFY_ENABLED: string;
   BATTERY_FULL_NOTIFY_BODY: string;
   ABNORMAL_NOTIFY_BODY: string;
@@ -88,6 +89,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
         OFF_GRID_WARNING_SOC: '87',
         MAX_BATTERY_POWER: '3000',
         OFF_GRID_WARNING_ENABLED: 'true',
+        GRID_STATE_NOTIFY_ENABLED: 'true',
         BATTERY_FULL_NOTIFY_ENABLED: 'true',
         BATTERY_FULL_NOTIFY_BODY: 'Pin đã sạc đầy 100%. Có thể bật bình nóng lạnh để tối ưu sử dụng.',
         ABNORMAL_NOTIFY_BODY: 'Tiêu thụ điện bất thường, vui lòng kiểm tra xem vòi nước đã khoá chưa.'
@@ -278,6 +280,26 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
             </div>
             <p className="setting-description">{t("settings.inverterSurveyIntervalDescription")}</p>
           </div>
+          {isPgMode && (
+          <div className="settings-section">
+            <h4>{t("settings.gridSettings")}</h4>
+            <div className="setting-item">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={settings.GRID_STATE_NOTIFY_ENABLED === "true"}
+                  onChange={(e) =>
+                    updateSetting(
+                      "GRID_STATE_NOTIFY_ENABLED",
+                      e.target.checked ? "true" : "false"
+                    )
+                  }
+                />
+                {t("settings.gridStateNotifyEnabled")}
+              </label>
+            </div>
+          </div>
+          )}
           <div className="settings-section">
             <h4>{t("settings.batterySection")}</h4>
             <div className="setting-item">
@@ -306,8 +328,7 @@ const SettingsPopover = forwardRef<HTMLDivElement, SettingsPopoverProps>(({ onCl
                 rows={3}
               />
             </div>
-          </div>
-          <div className="settings-section">
+          </div>          <div className="settings-section">
             <h4>{t("settings.abnormalUsageSection")}</h4>
             <div className="setting-item">
               <label>

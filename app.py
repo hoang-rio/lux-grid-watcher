@@ -845,11 +845,27 @@ def handle_grid_status(json_data: dict, fcm_service: FCM, inverter_ctx: dict | N
                 fw.write(str(is_grid_connected))
         
         if is_grid_connected:
-            fcm_service.ongrid_notify(inverter_ctx)
+            grid_state_notify_enabled = _to_bool(
+                _get_user_setting(
+                    inverter_ctx,
+                    "GRID_STATE_NOTIFY_ENABLED",
+                    "true",
+                )
+            )
+            if grid_state_notify_enabled:
+                fcm_service.ongrid_notify(inverter_ctx)
             play_audio("has-grid.mp3")
         else:
             logger.warning("All json data: %s", json_data)
-            fcm_service.offgrid_notify(inverter_ctx)
+            grid_state_notify_enabled = _to_bool(
+                _get_user_setting(
+                    inverter_ctx,
+                    "GRID_STATE_NOTIFY_ENABLED",
+                    "true",
+                )
+            )
+            if grid_state_notify_enabled:
+                fcm_service.offgrid_notify(inverter_ctx)
             play_audio("lost-grid.mp3", 5)
     else:
         logger.info("State did not change. Skip play notify audio")
