@@ -721,10 +721,16 @@
 .battery-type-info {
     position: absolute;
     bottom: -22px; /* Increased gap for PC */
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
     white-space: nowrap;
     font-size: 12px;
+}
+
+@media screen and (min-width: 444px) {
+    .battery-type-info {
+        left: 50%;
+        transform: translateX(-50%);
+    }
 }
 
 @media screen and (max-width: 900px) {
