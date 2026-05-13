@@ -63,7 +63,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_TO_RELEASE }},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
-          cache-to: ${{ env.DRY_RUN == 'false' && 'type=gha,mode=max' || '' }}
+          cache-to: ${{ env.DRY_RUN == 'false' && 'type=gha,mode=min' || '' }}
 
       - name: Get previous tag
         if: env.DRY_RUN == 'false'
